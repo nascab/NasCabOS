@@ -1,0 +1,63 @@
+name: NasCabOS TV
+options:
+  bundleIdPrefix: com.nascab
+  deploymentTarget:
+    tvOS: "17.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+packages:
+  Alamofire:
+    url: https://github.com/Alamofire/Alamofire.git
+    from: "5.9.0"
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess.git
+    from: "4.2.2"
+
+targets:
+  "NasCabOS TV":
+    type: application
+    platform: tvOS
+    deploymentTarget: "17.0"
+    sources:
+      - NasCabTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nascab.tv
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        "EXCLUDED_ARCHS[sdk=appletvsimulator*]": x86_64
+        INFOPLIST_FILE: NasCabTV/Info.plist
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: false
+        SWIFT_EMIT_LOC_STRINGS: "YES"
+    dependencies:
+      - package: Alamofire
+      - package: KeychainAccess
+      - framework: LiveKitWebRTC.xcframework
+        embed: true
+    postBuildScripts:
+      - name: Copy LiveKitWebRTC dSYM for Archive
+        script: |
+          # Ensure third-party dSYM is included in .xcarchive/dSYMs.
+          if [ "${ACTION}" != "install" ]; then
+            exit 0
+          fi
+
+          SRC_DSYM="${SRCROOT}/LiveKitWebRTC.xcframework/tvos-arm64/dSYMs/LiveKitWebRTC.framework.dSYM"
+          DST_DIR="${DWARF_DSYM_FOLDER_PATH}"
+          DST_DSYM="${DST_DIR}/LiveKitWebRTC.framework.dSYM"
+
+          if [ ! -d "${SRC_DSYM}" ]; then
+            echo "warning: Missing LiveKitWebRTC dSYM at ${SRC_DSYM}"
+            exit 0
+          fi
+
+          mkdir -p "${DST_DIR}"
+          rm -rf "${DST_DSYM}"
+          ditto "${SRC_DSYM}" "${DST_DSYM}"
+          echo "Copied LiveKitWebRTC dSYM to ${DST_DSYM}"

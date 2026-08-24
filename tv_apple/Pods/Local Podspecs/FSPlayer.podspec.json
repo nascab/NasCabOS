@@ -1,0 +1,67 @@
+{
+  "name": "FSPlayer",
+  "version": "1.0.4",
+  "summary": "FSPlayer is a free (as in freedom) media player for iOS and macOS and tvOS apps.",
+  "description": "FSPlayer is a free (as in freedom) media player for iOS and macOS and tvOS apps.\n\nIt supports a wide variety of media file formats, audio and video codecs, and subtitle types.",
+  "homepage": "https://github.com/debugly/fsplayer",
+  "documentation_url": "https://github.com/debugly/fsplayer",
+  "social_media_url": "https://github.com/debugly/fsplayer",
+  "license": {
+    "type": "LGPL",
+    "file": "FSPlayer/LICENSE"
+  },
+  "authors": {
+    "MattReach": "qianlongxu@gmail.com"
+  },
+  "platforms": {
+    "ios": "12.0",
+    "osx": "10.11",
+    "tvos": "12.0"
+  },
+  "source": {
+    "http": "https://github.com/debugly/fsplayer/releases/download/1.0.4/FSPlayer.zip"
+  },
+  "preserve_paths": [
+    "FSPlayer/README.md",
+    "FSPlayer/CHANGELOG.md",
+    "FSPlayer/LICENSE"
+  ],
+  "vendored_frameworks": "FSPlayer.xcframework",
+  "libraries": [
+    "z",
+    "iconv",
+    "xml2",
+    "bz2",
+    "c++",
+    "lzma"
+  ],
+  "frameworks": [
+    "AVFoundation",
+    "AudioToolbox",
+    "CoreMedia",
+    "CoreVideo",
+    "VideoToolbox",
+    "Metal"
+  ],
+  "osx": {
+    "frameworks": [
+      "Cocoa",
+      "AudioUnit",
+      "OpenGL",
+      "GLKit",
+      "CoreImage"
+    ]
+  },
+  "tvos": {
+    "frameworks": [
+      "UIKit",
+      "OpenGLES"
+    ]
+  },
+  "ios": {
+    "frameworks": [
+      "UIKit",
+      "OpenGLES"
+    ]
+  }
+}

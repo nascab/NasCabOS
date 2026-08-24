@@ -1,0 +1,28 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "NasCabOS"
+    },
+    {
+      "name": "permission_internet_reason",
+      "value": "连接 NasCab 服务器与 P2P 信令需要网络访问"
+    },
+    {
+      "name": "permission_network_info_reason",
+      "value": "检测网络状态以优化连接方式"
+    },
+    {
+      "name": "permission_wifi_info_reason",
+      "value": "局域网服务器发现需要 Wi-Fi 信息"
+    }
+  ]
+}

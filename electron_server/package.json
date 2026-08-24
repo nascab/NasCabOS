@@ -1,0 +1,237 @@
+{
+  "name": "nascab_os_server",
+  "version": "1.2.2",
+  "description": "NasCabOSServer",
+  "main": "src/main_nascab_os.js",
+  "isDocker": false,
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "npx @electron/rebuild",
+    "postinstall": "npx @electron/rebuild",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:staged": "prettier --write",
+    "build:win:x64": "electron-builder --win --x64",
+    "build:linux:x64": "electron-builder --linux --x64",
+    "build:linux:arm64": "electron-builder --linux --arm64",
+    "build:mac": "electron-builder --mac --x64 --arm64",
+    "build:mac:arm64": "electron-builder --arm64 --mac",
+    "build:mac:x64": "electron-builder --x64 --mac",
+    "rebuild-sqlite": "electron-rebuild -f -w better-sqlite3",
+    "prune:prod": "npm ci --omit=dev",
+    "depcheck": "depcheck --ignores=@electron/rebuild,electron,electron-builder,electron-rebuild,asarmor,javascript-obfuscator,prettier,supertest,terser,@types/jest"
+  },
+  "repository": "",
+  "keywords": [
+    "nascabos"
+  ],
+  "license": "GPL-3.0",
+  "build": {
+    "appId": "com.nascabos.server",
+    "productName": "NasCabOSServer",
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://download.nas.cab/package/"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node",
+      "**/node_modules/**"
+    ],
+    "files": [
+      {
+        "filter": [
+          "**/*",
+          "!**/*.{map,md,ts}",
+          "!**/node_modules/**/{test,tests,__tests__,docs,doc,example,examples,demo,samples}/**/*",
+          "!**/node_modules/**/README*",
+          "!web/*",
+          "!build/*",
+          "!buildScripts/*",
+          "!libs/ffmpeg/bin/*",
+          "!libs/ffprobe/bin/*",
+          "!libs/transmission/**/*",
+          "!libs/rclone/**/*",
+          "!libs/sftpgo/**/*",
+          "!libs/openlist/**/*",
+          "!libs/sharp/**/*",
+          "!tmp/*",
+          "!.npmrc",
+          "!.gitignore",
+          "!package-lock.json",
+          "!package-en.json",
+          "!package-pure.json",
+          "!configJson/**/*",
+          "!dockerFiles/**/*",
+          "!gitInstall/**/*",
+          "!dist/**/*",
+          "!vendor/**/*"
+        ]
+      }
+    ],
+    "extraFiles": [
+      "database/geonames.sqlite",
+      "web/**/*",
+      "language/*",
+      "onnx_models/**/*",
+      "libs/foliate-js-main/**/*",
+      "libs/ffprobe/bin/${os}/${arch}/",
+      "libs/ffmpeg/bin/${os}/${arch}/",
+      "libs/rclone/${os}/${arch}/",
+      "libs/sftpgo/${os}/${arch}/",
+      "libs/openlist/${os}/${arch}/",
+      "libs/transmission/${os}/${arch}/",
+      "libs/sharp/${os}/${arch}/",
+      "libs/256x256.png",
+      "libs/logo-tray.png",
+      "libs/logo.png",
+      "libs/logo.ico",
+      "libs/transcodetest_h264",
+      "libs/transcodetest_h265",
+      "libs/tray-linux.png",
+      "libs/tray-mac.png",
+      "libs/tray-mac@2x.png",
+      "libs/tray-mac@3x.png",
+      "libs/tray-win.png"
+    ],
+    "dmg": {
+      "sign": true,
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "mac": {
+      "darkModeSupport": true,
+      "category": "public.app-category.medical",
+      "identity": "MPCJ7BR2XR",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "icon": "libs/logo.png",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "icon": "libs/logo.png",
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        "nsis"
+      ],
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "publisherName": "Beijing Yunpiao Piao Technology Co., Ltd.",
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com",
+        "certificateFile": "../../nascabos-script/nascab.pfx"
+      }
+    },
+    "linux": {
+      "icon": "libs/256x256.png",
+      "target": [
+        "appimage"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": "always",
+      "shortcutName": "NasCabOSServer",
+      "include": "build/nsis/installer.nsh",
+      "installerHeaderIcon": "libs/logo.ico",
+      "installerIcon": "libs/logo.ico",
+      "uninstallerIcon": "libs/logo.ico",
+      "multiLanguageInstaller": true
+    }
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@types/jest": "^30.0.0",
+    "asarmor": "^3.0.2",
+    "depcheck": "^1.4.7",
+    "electron": "^37.9.0",
+    "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9",
+    "javascript-obfuscator": "^4.1.0",
+    "prettier": "^3.6.2",
+    "supertest": "^7.1.4",
+    "terser": "^5.30.0"
+  },
+  "dependencies": {
+    "@anohanafes/offline-document-viewer": "^1.0.1",
+    "@jvmr/pptx-to-html": "^1.0.0",
+    "@xmldom/xmldom": "^0.8.11",
+    "archiver": "^7.0.1",
+    "axios": "^1.5.0",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.5.0",
+    "body-parser": "^2.2.0",
+    "check-disk-space": "^3.4.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dcraw": "^1.0.3",
+    "docx-preview": "^0.3.7",
+    "exifr": "^7.1.3",
+    "express": "^4.22.1",
+    "express-static-gzip": "^3.0.0",
+    "express-validator": "^7.3.0",
+    "express-ws": "^5.0.2",
+    "fast-xml-parser": "^5.3.3",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.3.2",
+    "i18n": "^0.15.3",
+    "jsmediatags": "^3.9.7",
+    "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
+    "knex": "^3.1.0",
+    "libheif-js": "^1.19.8",
+    "multer": "^2.0.2",
+    "ngeohash": "^0.6.3",
+    "node-datachannel": "^0.32.1",
+    "node-forge": "^1.3.1",
+    "node-pty": "^1.1.0",
+    "node-unrar-js": "^2.0.2",
+    "nodejieba": "^3.5.6",
+    "onnxruntime-node": "^1.20.0",
+    "otplib": "^12.0.1",
+    "pac-proxy-agent": "^7.2.0",
+    "pinyin-pro": "^3.27.0",
+    "portfinder": "^1.0.38",
+    "pptx-preview": "^1.0.7",
+    "psd": "^3.4.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.34.5",
+    "sharp-bmp": "^0.1.5",
+    "sharp-phash": "^2.2.0",
+    "systeminformation": "^5.27.13",
+    "tunnel": "^0.0.6",
+    "ua-parser-js": "^2.0.6",
+    "uuid": "^11.0.3",
+    "watchpack": "^2.4.4",
+    "winston": "^3.18.3",
+    "yjs": "^13.6.27"
+  },
+  "optionalDependencies": {
+    "osx-temperature-sensor": "^1.0.8"
+  }
+}

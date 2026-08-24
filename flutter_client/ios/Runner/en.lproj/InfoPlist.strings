@@ -1,0 +1,5 @@
+/* Permission usage descriptions (aligned with lib/core/languages). */
+"NSCameraUsageDescription" = "NasCabOS needs the camera to scan QR codes when you add a server or sign in. It does not record video or save images unless you explicitly choose to save a photo.";
+"NSPhotoLibraryUsageDescription" = "NasCabOS needs photo library access to upload or back up photos and videos, browse albums, and pick media on this device. Only items you select or authorize (including limited library access) are used.";
+"NSPhotoLibraryAddUsageDescription" = "NasCabOS needs permission to save downloaded photos, videos, thumbnails, or exported files to your library when you use Save to Photos or similar actions.";
+"NSLocalNetworkUsageDescription" = "NasCabOS uses the local network to discover and connect to your NasCab server on Wi-Fi, stream and play media, receive LAN discovery messages, and build encrypted peer connections for remote access on your network.";

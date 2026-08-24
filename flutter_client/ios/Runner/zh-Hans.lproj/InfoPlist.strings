@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "NasCabOS 需要使用相机，在添加服务器或登录时扫描二维码。除您主动保存照片外，不会录制视频或保存画面。";
+"NSPhotoLibraryUsageDescription" = "NasCabOS 需要访问照片图库，用于上传或备份照片与视频、浏览相册及从本机选择媒体。仅处理您选中或授权范围内的内容（含相册有限访问）。";
+"NSPhotoLibraryAddUsageDescription" = "在您使用「保存到相册」或类似功能时，NasCabOS 需要将已下载的照片、视频、缩略图或导出文件写入相册，因此需要相应权限。";
+"NSLocalNetworkUsageDescription" = "NasCabOS 使用本地网络，以便在 Wi-Fi 下发现并连接 NasCab 服务器、流媒体播放、接收局域网发现广播，并在远程访问场景下在您的网络内建立加密点对点连接。";

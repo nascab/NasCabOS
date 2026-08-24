@@ -1,0 +1,36 @@
+const KEY_REMOTE_TOKEN = 'nascab_token';
+const KEY_P2P_DEVICE_ID = 'p2p_device_id';
+const KEY_P2P_DEVICE_SECRET = 'p2p_device_secret';
+const KEY_P2P_DEVICE_TOKEN = 'p2p_device_token';
+const KEY_P2P_WS_URL = 'p2p_ws_url';
+const KEY_P2P_PAIR_CODE = 'p2p_pair_code';
+const KEY_LAST_P2P_ERROR = 'last_p2p_error';
+const KEY_P2P_FIX_NODE_DOMAIN = 'p2pFixNodeDomain';
+const KEY_P2P_CONNECTED_DOMAIN = 'p2pConnectedDomain';
+const KEY_P2P_SERVERS_CACHE = 'p2pServers';
+const KEY_P2P_SERVERS_CACHE_UPDATED_AT = 'p2pServersUpdatedAt';
+
+const P2P_PROXY_MAX_REQ_BODY_BYTES = Math.max(64 * 1024, Math.min(256 * 1024 * 1024, Number(process.env.P2P_PROXY_MAX_REQ_BODY_BYTES ?? 16 * 1024 * 1024)));
+const P2P_PROXY_REQ_TIMEOUT_MS = Math.max(1000, Math.min(10 * 60 * 1000, Number(process.env.P2P_PROXY_REQ_TIMEOUT_MS ?? 30 * 1000)));
+const P2P_PROXY_MAX_PENDING_REQ = Math.max(1, Math.min(5000, Number(process.env.P2P_PROXY_MAX_PENDING_REQ ?? 200)));
+const P2P_PROXY_MAX_PENDING_STREAMS = Math.max(1, Math.min(5000, Number(process.env.P2P_PROXY_MAX_PENDING_STREAMS ?? 200)));
+const P2P_PROXY_MAX_CONCURRENT = Math.max(8, Math.min(200, Number(process.env.P2P_PROXY_MAX_CONCURRENT ?? 100)));
+
+module.exports = {
+  KEY_REMOTE_TOKEN,
+  KEY_P2P_DEVICE_ID,
+  KEY_P2P_DEVICE_SECRET,
+  KEY_P2P_DEVICE_TOKEN,
+  KEY_P2P_WS_URL,
+  KEY_P2P_PAIR_CODE,
+  KEY_LAST_P2P_ERROR,
+  KEY_P2P_FIX_NODE_DOMAIN,
+  KEY_P2P_CONNECTED_DOMAIN,
+  KEY_P2P_SERVERS_CACHE,
+  KEY_P2P_SERVERS_CACHE_UPDATED_AT,
+  P2P_PROXY_MAX_REQ_BODY_BYTES,
+  P2P_PROXY_REQ_TIMEOUT_MS,
+  P2P_PROXY_MAX_PENDING_REQ,
+  P2P_PROXY_MAX_PENDING_STREAMS,
+  P2P_PROXY_MAX_CONCURRENT,
+};

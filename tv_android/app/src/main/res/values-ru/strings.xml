@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">Серверы</string>
+    <string name="server_discovered_section">Обнаруженные</string>
+    <string name="server_saved_section">Сохранённые</string>
+    <string name="server_tag_auto_discovered">Автоматически обнаружен</string>
+    <string name="server_add_direct">Добавить сервер</string>
+    <string name="server_add_by_pair_code">Добавить по парному коду</string>
+    <string name="server_add_direct_desc">Прямой URL</string>
+    <string name="server_add_by_pair_code_desc">Парный код</string>
+    <string name="action_language">Язык</string>
+    <string name="language_title">Язык</string>
+    <string name="language_system">По умолчанию</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">Настройки</string>
+    <string name="home_menu_video">Медиа</string>
+    <string name="home_menu_photo">Фотографии</string>
+    <string name="home_menu_music">Музыка</string>
+    <string name="home_menu_files">Файлы</string>
+
+    <string name="home_video_movies">Фильмы</string>
+    <string name="home_video_tv_series">Сериалы</string>
+    <string name="home_video_recent">Недавно воспроизведённые</string>
+    <string name="home_video_favorite">Избранное</string>
+    <string name="home_video_custom_albums">Пользовательские альбомы</string>
+    <string name="home_video_smart_albums">Умные альбомы</string>
+    <string name="home_video_collections">Коллекции</string>
+
+    <string name="video_media_type_movie">Фильм</string>
+    <string name="video_media_type_tv">ТВ</string>
+
+    <string name="video_list_options_title">Опции</string>
+    <string name="video_list_action_search">Поиск</string>
+    <string name="video_list_action_media_type">Тип</string>
+    <string name="video_list_action_sort">Сортировка</string>
+    <string name="video_list_action_sources">Папки источников</string>
+    <string name="video_list_action_clear_filters">Очистить фильтры</string>
+    <string name="video_list_action_apply">Применить</string>
+    <string name="video_list_action_clear_search">Очистить поиск</string>
+    <string name="video_list_search_field">Ключевое слово</string>
+    <string name="video_list_search_hint">Поиск по названию или имени файла</string>
+    <string name="video_list_search_empty">Не задано</string>
+    <string name="video_list_sources_all">Все</string>
+    <string name="video_list_media_type_all">Все</string>
+    <string name="video_list_media_type_movie">Фильм</string>
+    <string name="video_list_media_type_tv">ТВ</string>
+    <string name="video_list_sources_hint">Выберите папки источников</string>
+    <string name="video_list_sources_selected_count">Выбрано: %1$d</string>
+    <string name="video_list_sort_view_time_desc">Время просмотра (новые)</string>
+    <string name="video_list_sort_view_time_asc">Время просмотра (старые)</string>
+    <string name="video_list_sort_create_time_desc">Время создания (новые)</string>
+    <string name="video_list_sort_create_time_asc">Время создания (старые)</string>
+    <string name="video_list_sort_favorite_time_desc">Время добавления в избранное (новые)</string>
+    <string name="video_list_sort_favorite_time_asc">Время добавления в избранное (старые)</string>
+    <string name="video_list_sort_year_desc">Год (новые)</string>
+    <string name="video_list_sort_year_asc">Год (старые)</string>
+    <string name="video_list_sort_score_desc">Рейтинг (от высокого к низкому)</string>
+    <string name="video_list_sort_score_asc">Рейтинг (от низкого к высокому)</string>
+    <string name="video_list_sort_name_asc">Название (А-Я)</string>
+    <string name="video_list_sort_name_desc">Название (Я-А)</string>
+
+    <string name="video_library_tag_album">Альбом</string>
+    <string name="video_library_tag_smart_album">Умный</string>
+    <string name="video_library_tag_collection">Коллекция</string>
+    <string name="video_library_open_title">Открыть</string>
+    <string name="video_library_sort_create_time_desc">Время создания (новые)</string>
+    <string name="video_library_sort_create_time_asc">Время создания (старые)</string>
+    <string name="video_library_sort_name_asc">Название (А-Я)</string>
+    <string name="video_library_sort_name_desc">Название (Я-А)</string>
+
+    <string name="video_detail_action_play">Воспроизвести</string>
+    <string name="video_detail_action_continue_play">Продолжить</string>
+    <string name="video_detail_action_favorite">Добавить в избранное</string>
+    <string name="video_detail_action_unfavorite">Убрать из избранного</string>
+    <string name="video_detail_action_delete">Удалить</string>
+    <string name="video_detail_action_scan">Сканировать изменения</string>
+    <string name="video_detail_action_select_episodes">Эпизоды</string>
+    <string name="video_detail_action_select_season">Выбор сезона</string>
+    <string name="video_detail_meta_seasons_count">Всего %1$d сезонов</string>
+    <string name="video_detail_meta_episodes_count">Всего %1$d серий</string>
+    <string name="video_detail_delete_title">Удалить</string>
+    <string name="video_detail_delete_message">Удалить «%1$s»?</string>
+    <string name="video_detail_delete_failed">Не удалось удалить</string>
+    <string name="video_detail_play_failed">Не удалось открыть плеер</string>
+    <string name="video_detail_scan_queued">Сканирование добавлено в очередь</string>
+    <string name="video_detail_seasons">Сезоны</string>
+    <string name="video_detail_episodes">Эпизоды</string>
+    <string name="video_detail_people">Люди</string>
+    <string name="video_detail_directors">Режиссёры</string>
+    <string name="video_detail_actors">Актёры</string>
+    <string name="video_detail_progress_format">Просмотрено %1$s / %2$s (%3$s)</string>
+    <string name="video_detail_progress_short_format">Просмотрено %1$s</string>
+    <string name="video_detail_season_label">Сезон</string>
+    <string name="video_detail_episode_title_format">Э%1$02d %2$s</string>
+    <string name="video_detail_select_episodes_title">Выбрать эпизоды</string>
+
+    <string name="player_options_title">Опции</string>
+    <string name="player_playlist_title">Плейлист</string>
+    <string name="player_setting_quality">Качество</string>
+    <string name="player_quality_original">Оригинал</string>
+    <string name="player_setting_speed">Скорость</string>
+    <string name="player_setting_audio_track">Аудиодорожка</string>
+    <string name="player_setting_subtitle_track">Субтитры</string>
+    <string name="player_setting_subtitle_search">Поиск субтитров</string>
+    <string name="player_subtitle_search_title">Поиск субтитров</string>
+    <string name="player_subtitle_searching">Поиск субтитров…</string>
+    <string name="player_subtitle_search_no_results">Субтитры не найдены</string>
+    <string name="player_subtitle_search_feature">Отпечаток</string>
+    <string name="player_subtitle_search_keyword">Ключевое слово</string>
+    <string name="player_subtitle_search_keyword_hint">Введите ключевое слово</string>
+    <string name="player_subtitle_download_success">Субтитры загружены</string>
+    <string name="player_subtitle_download_failed">Не удалось загрузить субтитры</string>
+    <string name="player_setting_subtitle_size">Размер субтитров</string>
+    <string name="player_setting_decoder">Декодер</string>
+    <string name="player_no_subtitle">Без субтитров</string>
+    <string name="player_setting_show_playlist">Показать плейлист</string>
+    <string name="player_subtitle_external">Внешние</string>
+    <string name="player_subtitle_size_small">Маленький</string>
+    <string name="player_subtitle_size_medium">Средний</string>
+    <string name="player_subtitle_size_large">Большой</string>
+    <string name="player_subtitle_size_xlarge">Очень большой</string>
+    <string name="player_decoder_auto">Авто</string>
+    <string name="player_decoder_system">Системный приоритет</string>
+    <string name="player_decoder_extension">Приоритет расширения</string>
+    <string name="player_dolby_vision_decoder_fallback">Включен режим совместимости видеодекодера Dolby Vision</string>
+    <string name="player_exit_title">Выйти из плеера</string>
+    <string name="player_exit_message">Выйти и остановить воспроизведение?</string>
+    <string name="player_resume_title">Продолжить воспроизведение</string>
+    <string name="player_resume_message">Продолжить с %1$s?</string>
+    <string name="player_resume_from_start">С начала</string>
+    <string name="player_resume_auto_close"> (автозакрытие через %d с)</string>
+    <string name="player_play_failed">Не удалось воспроизвести</string>
+    <string name="player_reconnect_title">Сеть отключена</string>
+    <string name="player_reconnect_message">Подключение разорвано, переподключить?</string>
+    <string name="player_reconnect_retry">Переподключить</string>
+    <string name="player_reconnect_exit">Выйти</string>
+    <string name="player_hint_controls">OK: Воспр./Пауза · Влево/Вправо: Перемотка · Вверх: Опции · Вниз: Плейлист · Назад: Выход</string>
+
+    <string name="home_photo_timeline">Хронология</string>
+    <string name="home_photo_today">В этот день</string>
+    <string name="home_photo_favorite">Избранное</string>
+    <string name="home_photo_custom_albums">Пользовательские альбомы</string>
+    <string name="home_photo_smart_albums">Умные альбомы</string>
+    <string name="home_photo_collections">Коллекции</string>
+
+    <string name="photo_library_tag_album">Альбом</string>
+    <string name="photo_library_tag_smart_album">Умный</string>
+    <string name="photo_library_tag_collection">Коллекция</string>
+    <string name="photo_library_prefix_album">Пользовательский альбом</string>
+    <string name="photo_library_prefix_smart_album">Умный альбом</string>
+    <string name="photo_library_prefix_collection">Коллекция</string>
+
+    <string name="video_library_prefix_album">Пользовательский альбом</string>
+    <string name="video_library_prefix_smart_album">Умный альбом</string>
+    <string name="video_library_prefix_collection">Коллекция</string>
+
+    <string name="photo_preview_auto_play">Автовоспроизведение</string>
+    <string name="photo_preview_auto_play_interval">Интервал</string>
+    <string name="photo_preview_seconds_format">%1$d с</string>
+    <string name="photo_preview_action_favorite">В избранное</string>
+    <string name="photo_preview_action_unfavorite">Убрать из избранного</string>
+    <string name="photo_preview_action_trash">В корзину</string>
+    <string name="photo_preview_toast_moved_to_trash">Перемещено в корзину</string>
+
+    <string name="photo_timeline_options_title">Опции хронологии</string>
+    <string name="photo_timeline_action_sort">Сортировка</string>
+    <string name="photo_timeline_action_type">Тип</string>
+    <string name="photo_timeline_action_sources">Папки источников</string>
+    <string name="photo_timeline_action_year">Год</string>
+    <string name="photo_timeline_action_month">Месяц</string>
+    <string name="photo_timeline_action_refresh">Обновить</string>
+    <string name="photo_timeline_action_clear_filters">Очистить фильтры</string>
+
+    <string name="photo_timeline_file_type_all">Все</string>
+    <string name="photo_timeline_file_type_image">Изображения</string>
+    <string name="photo_timeline_file_type_video">Видео</string>
+
+    <string name="photo_timeline_sort_desc">Время съёмки (новые)</string>
+    <string name="photo_timeline_sort_asc">Время съёмки (старые)</string>
+
+    <string name="photo_timeline_sources_all">Все</string>
+    <string name="photo_timeline_sources_selected_count">Выбрано: %1$d</string>
+
+    <string name="photo_timeline_year_all">Все годы</string>
+    <string name="photo_timeline_month_all">Все месяцы</string>
+    <string name="photo_timeline_month_pick_year_first">Сначала выберите год</string>
+    <string name="photo_timeline_month_format">%1$02d</string>
+
+    <string name="home_music_tracks">Треки</string>
+    <string name="home_music_albums">Альбомы</string>
+    <string name="home_music_artists">Исполнители</string>
+    <string name="home_music_playlists">Плейлисты</string>
+    <string name="home_music_favorite">Избранное</string>
+    <string name="home_music_now_playing">Сейчас играет</string>
+
+    <string name="music_item_type_folder">Папка</string>
+    <string name="music_item_folder_count">%1$d треков</string>
+    <string name="music_group_count">%1$d треков</string>
+
+    <string name="music_list_action_search">Поиск</string>
+    <string name="music_list_action_sort">Сортировка</string>
+    <string name="music_list_action_sources">Папки источников</string>
+    <string name="music_list_action_apply">Применить</string>
+    <string name="music_list_action_clear_search">Очистить поиск</string>
+    <string name="music_list_action_clear_filters">Очистить фильтры</string>
+    <string name="music_list_sources_all">Все</string>
+    <string name="music_list_sources_all_sources">Все источники</string>
+    <string name="music_list_sources_selected_count">Выбрано: %1$d</string>
+    <string name="music_list_search_empty">Нет</string>
+
+    <string name="music_sort_filename_asc">Имя файла (А–Я)</string>
+    <string name="music_sort_filename_desc">Имя файла (Я–А)</string>
+    <string name="music_sort_title_asc">Название (А–Я)</string>
+    <string name="music_sort_title_desc">Название (Я–А)</string>
+    <string name="music_sort_artist_asc">Исполнитель (А–Я)</string>
+    <string name="music_sort_artist_desc">Исполнитель (Я–А)</string>
+    <string name="music_sort_album_asc">Альбом (А–Я)</string>
+    <string name="music_sort_album_desc">Альбом (Я–А)</string>
+    <string name="music_sort_duration_asc">Длительность (короткие)</string>
+    <string name="music_sort_duration_desc">Длительность (длинные)</string>
+    <string name="music_sort_favorite_time_desc">Время добавления в избранное (новые)</string>
+    <string name="music_sort_favorite_time_asc">Время добавления в избранное (старые)</string>
+    <string name="music_sort_create_time_desc">Время создания (новые)</string>
+    <string name="music_sort_create_time_asc">Время создания (старые)</string>
+    <string name="music_sort_modify_time_desc">Время изменения (новые)</string>
+    <string name="music_sort_modify_time_asc">Время изменения (старые)</string>
+    <string name="music_sort_year_desc">Год (новее)</string>
+    <string name="music_sort_year_asc">Год (старше)</string>
+
+    <string name="music_group_sort_count_desc">Количество (больше)</string>
+    <string name="music_group_sort_count_asc">Количество (меньше)</string>
+    <string name="music_group_sort_name_asc">Название (А–Я)</string>
+    <string name="music_group_sort_name_desc">Название (Я–А)</string>
+
+    <string name="music_playlist_sort_create_time_desc">Время создания (новые)</string>
+    <string name="music_playlist_sort_create_time_asc">Время создания (старые)</string>
+    <string name="music_playlist_sort_name_asc">Название (А–Я)</string>
+    <string name="music_playlist_sort_name_desc">Название (Я–А)</string>
+
+    <string name="music_notification_channel_name">Воспроизведение музыки</string>
+    <string name="music_notification_channel_desc">Воспроизведение музыки в фоне</string>
+    <string name="music_action_prev">Предыдущий</string>
+    <string name="music_action_play">Воспроизвести</string>
+    <string name="music_action_pause">Пауза</string>
+    <string name="music_action_next">Следующий</string>
+    <string name="music_action_stop">Остановить</string>
+
+    <string name="music_now_playing_hint">Влево/Вправо: перемотка на 10 с</string>
+    <string name="music_now_playing_empty">Ничего не играет</string>
+    <string name="music_no_lyrics">Нет текста</string>
+    <string name="music_search_lyric">Поиск текста</string>
+    <string name="music_match_high">Высокое совпадение</string>
+    <string name="music_match_score">Совпадение %1$d%%</string>
+    <string name="music_favorite">Добавить в избранное</string>
+    <string name="music_unfavorite">Убрать из избранного</string>
+    <string name="no_data">Нет данных</string>
+    <string name="operation_success">Успешно</string>
+    <string name="operation_failed">Не удалось</string>
+
+    <string name="home_file_browse">Обзор файлов</string>
+    <string name="home_language_settings">Язык</string>
+    <string name="home_video_playback_settings">Настройки воспроизведения видео</string>
+    <string name="video_playback_default_quality">Качество воспроизведения по умолчанию</string>
+    <string name="video_playback_default_quality_desc">Качество по умолчанию при воспроизведении видео. Разрешения, отличные от оригинала, используют транскодирование и могут снизить нагрузку на сеть.</string>
+    <string name="feature_placeholder_video">Эта функция находится в разработке</string>
+    <string name="feature_placeholder_photos">Эта функция находится в разработке</string>
+    <string name="feature_placeholder_music">Эта функция находится в разработке</string>
+    <string name="feature_placeholder_files">Эта функция находится в разработке</string>
+
+    <string name="action_logout">Выйти</string>
+    <string name="logout_title">Выйти</string>
+    <string name="logout_confirm_message">Выйти из %1$s?</string>
+    <string name="logout_desc">Выйти из %1$s</string>
+
+    <string name="dev_network_channel">Сетевой канал</string>
+    <string name="dev_network_channel_desc">Принудительное переключение режима подключения для тестирования</string>
+    <string name="dev_network_mode_auto">Авто</string>
+    <string name="dev_network_mode_direct">Прямое</string>
+    <string name="dev_network_mode_p2p_direct">P2P прямое</string>
+    <string name="dev_network_mode_p2p_relay">P2P ретрансляция</string>
+    <string name="dev_network_switch_success">Переключено на: %1$s</string>
+
+    <string name="pair_code_input_title">Введите парный код</string>
+
+    <string name="action_connect">Подключить</string>
+    <string name="status_connecting">Подключение…</string>
+    <string name="action_edit">Редактировать</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_select">Выбрать</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_ok">OK</string>
+    <string name="common_on">Вкл.</string>
+    <string name="common_off">Выкл.</string>
+    <string name="update_dialog_title_format">Новая версия: %1$s</string>
+    <string name="update_action_upgrade">Обновить</string>
+    <string name="update_action_later">Позже</string>
+    <string name="update_action_ignore_this_version">Игнорировать эту версию</string>
+    <string name="update_action_downloading">Загрузка…</string>
+    <string name="update_action_install">Установить</string>
+    <string name="update_action_retry">Повторить</string>
+    <string name="update_status_ready">Готово</string>
+    <string name="update_status_failed">Не удалось загрузить</string>
+    <string name="update_status_ready_to_install">Готово к установке</string>
+    <string name="update_status_downloading_percent_format">Загрузка: %1$d%%</string>
+    <string name="exit_confirm_title">Выход</string>
+    <string name="exit_confirm_message">Вы уверены, что хотите выйти из приложения?</string>
+
+    <string name="field_server_name">Название сервера</string>
+    <string name="field_protocol">Протокол</string>
+    <string name="field_server_url">Адрес сервера (с портом)</string>
+    <string name="field_pair_code">Парный код</string>
+    <string name="field_username">Имя пользователя</string>
+    <string name="field_password">Пароль</string>
+    <string name="field_require_password_every_login">Требовать пароль при каждом входе</string>
+    <string name="prompt_password_desc">Введите пароль для входа</string>
+    <string name="twofa_prompt_title">2FA</string>
+    <string name="twofa_prompt_desc">Введите код 2FA</string>
+    <string name="field_twofa_code">Код 2FA</string>
+
+    <string name="hint_optional">Необязательно</string>
+
+    <string name="error_title">Ошибка</string>
+    <string name="tip">Подсказка</string>
+    <string name="server_version_too_low">Версия вашего сервера слишком низкая. Обновите сервер до последней версии, войдите снова и затем используйте эту функцию.</string>
+    <string name="error_pair_code_empty">Парный код пуст</string>
+    <string name="error_pair_code_invalid">Некорректный парный код</string>
+    <string name="error_server_url_empty">URL сервера пуст</string>
+    <string name="error_username_empty">Имя пользователя пусто</string>
+    <string name="error_password_empty">Пароль пуст</string>
+    <string name="error_twofa_empty">Код 2FA пуст</string>
+    <string name="error_twofa_invalid">Некорректный код 2FA</string>
+    <string name="error_twofa_too_many_attempts">Слишком много попыток, повторите позже</string>
+    <string name="error_twofa_invalid_token">Некорректный токен 2FA, войдите снова</string>
+    <string name="error_network_failed">Сетевой запрос не удался</string>
+    <string name="error_not_nascab_server">Не сервер NasCab</string>
+    <string name="error_not_logged_in">Сначала войдите</string>
+    <string name="error_server_unreachable">Сервер недоступен, проверьте состояние сервера</string>
+    <string name="error_no_direct_url">Нет доступного прямого URL</string>
+    <string name="error_no_pair_code">Нет доступного парного кода</string>
+
+    <string name="cancel_add_confirm_title">Отмена</string>
+    <string name="cancel_add_confirm_message">Вы уверены, что хотите отменить добавление сервера?</string>
+
+    <string name="common_no_data">Нет данных</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d элемент</item>
+        <item quantity="few">%d элемента</item>
+        <item quantity="many">%d элементов</item>
+        <item quantity="other">%d элементов</item>
+    </plurals>
+</resources>

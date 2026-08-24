@@ -1,0 +1,11 @@
+platform :tvos, '13.0'
+
+# 关闭 CocoaPods 统计，减少网络请求
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+target 'NasCabOS TV' do
+    use_frameworks!
+    pod 'TVVLCKit'
+    pod "FSPlayer", :podspec => 'https://github.com/debugly/fsplayer/releases/download/1.0.4/FSPlayer.spec.json'
+
+end

@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">サーバー</string>
+    <string name="server_discovered_section">発見済み</string>
+    <string name="server_saved_section">保存済み</string>
+    <string name="server_tag_auto_discovered">自動発見</string>
+    <string name="server_add_direct">サーバーを追加</string>
+    <string name="server_add_by_pair_code">ペアコードで追加</string>
+    <string name="server_add_direct_desc">直接URL</string>
+    <string name="server_add_by_pair_code_desc">ペアコード</string>
+    <string name="action_language">言語</string>
+    <string name="language_title">言語</string>
+    <string name="language_system">システム標準</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">設定</string>
+    <string name="home_menu_video">メディア</string>
+    <string name="home_menu_photo">写真</string>
+    <string name="home_menu_music">音楽</string>
+    <string name="home_menu_files">ファイル</string>
+
+    <string name="home_video_movies">映画</string>
+    <string name="home_video_tv_series">TVシリーズ</string>
+    <string name="home_video_recent">最近再生</string>
+    <string name="home_video_favorite">お気に入り</string>
+    <string name="home_video_custom_albums">カスタムアルバム</string>
+    <string name="home_video_smart_albums">スマートアルバム</string>
+    <string name="home_video_collections">コレクション</string>
+
+    <string name="video_media_type_movie">映画</string>
+    <string name="video_media_type_tv">TV</string>
+
+    <string name="video_list_options_title">オプション</string>
+    <string name="video_list_action_search">検索</string>
+    <string name="video_list_action_media_type">タイプ</string>
+    <string name="video_list_action_sort">並べ替え</string>
+    <string name="video_list_action_sources">ソースフォルダ</string>
+    <string name="video_list_action_clear_filters">フィルターをクリア</string>
+    <string name="video_list_action_apply">適用</string>
+    <string name="video_list_action_clear_search">検索をクリア</string>
+    <string name="video_list_search_field">キーワード</string>
+    <string name="video_list_search_hint">タイトルまたはファイル名で検索</string>
+    <string name="video_list_search_empty">未設定</string>
+    <string name="video_list_sources_all">すべて</string>
+    <string name="video_list_media_type_all">すべて</string>
+    <string name="video_list_media_type_movie">映画</string>
+    <string name="video_list_media_type_tv">TV</string>
+    <string name="video_list_sources_hint">ソースフォルダを選択</string>
+    <string name="video_list_sources_selected_count">選択済み: %1$d</string>
+    <string name="video_list_sort_view_time_desc">視聴時間（新しい順）</string>
+    <string name="video_list_sort_view_time_asc">視聴時間（古い順）</string>
+    <string name="video_list_sort_create_time_desc">作成時間（新しい順）</string>
+    <string name="video_list_sort_create_time_asc">作成時間（古い順）</string>
+    <string name="video_list_sort_favorite_time_desc">お気に入り時間（新しい順）</string>
+    <string name="video_list_sort_favorite_time_asc">お気に入り時間（古い順）</string>
+    <string name="video_list_sort_year_desc">年（新しい順）</string>
+    <string name="video_list_sort_year_asc">年（古い順）</string>
+    <string name="video_list_sort_score_desc">評価（高い順）</string>
+    <string name="video_list_sort_score_asc">評価（低い順）</string>
+    <string name="video_list_sort_name_asc">名前（A-Z）</string>
+    <string name="video_list_sort_name_desc">名前（Z-A）</string>
+
+    <string name="video_library_tag_album">アルバム</string>
+    <string name="video_library_tag_smart_album">スマート</string>
+    <string name="video_library_tag_collection">コレクション</string>
+    <string name="video_library_open_title">開く</string>
+    <string name="video_library_sort_create_time_desc">作成時間（新しい順）</string>
+    <string name="video_library_sort_create_time_asc">作成時間（古い順）</string>
+    <string name="video_library_sort_name_asc">名前（A-Z）</string>
+    <string name="video_library_sort_name_desc">名前（Z-A）</string>
+
+    <string name="video_detail_action_play">再生</string>
+    <string name="video_detail_action_continue_play">続きから</string>
+    <string name="video_detail_action_favorite">お気に入り</string>
+    <string name="video_detail_action_unfavorite">お気に入り解除</string>
+    <string name="video_detail_action_delete">削除</string>
+    <string name="video_detail_action_scan">変更をスキャン</string>
+    <string name="video_detail_action_select_episodes">エピソード</string>
+    <string name="video_detail_action_select_season">シーズン選択</string>
+    <string name="video_detail_meta_seasons_count">全%1$dシーズン</string>
+    <string name="video_detail_meta_episodes_count">全%1$d話</string>
+    <string name="video_detail_delete_title">削除</string>
+    <string name="video_detail_delete_message">「%1$s」を削除しますか？</string>
+    <string name="video_detail_delete_failed">削除に失敗しました</string>
+    <string name="video_detail_play_failed">プレーヤーを開けません</string>
+    <string name="video_detail_scan_queued">スキャンをキューに追加しました</string>
+    <string name="video_detail_seasons">シーズン</string>
+    <string name="video_detail_episodes">エピソード</string>
+    <string name="video_detail_people">人物</string>
+    <string name="video_detail_directors">監督</string>
+    <string name="video_detail_actors">俳優</string>
+    <string name="video_detail_progress_format">視聴済み %1$s / %2$s (%3$s)</string>
+    <string name="video_detail_progress_short_format">視聴済み %1$s</string>
+    <string name="video_detail_season_label">シーズン</string>
+    <string name="video_detail_episode_title_format">第%1$02d話 %2$s</string>
+    <string name="video_detail_select_episodes_title">エピソードを選択</string>
+
+    <string name="player_options_title">オプション</string>
+    <string name="player_playlist_title">プレイリスト</string>
+    <string name="player_setting_quality">画質</string>
+    <string name="player_quality_original">オリジナル</string>
+    <string name="player_setting_speed">再生速度</string>
+    <string name="player_setting_audio_track">音声トラック</string>
+    <string name="player_setting_subtitle_track">字幕</string>
+    <string name="player_setting_subtitle_search">字幕検索</string>
+    <string name="player_subtitle_search_title">字幕検索</string>
+    <string name="player_subtitle_searching">字幕を検索中…</string>
+    <string name="player_subtitle_search_no_results">字幕が見つかりません</string>
+    <string name="player_subtitle_search_feature">フィンガープリント</string>
+    <string name="player_subtitle_search_keyword">キーワード</string>
+    <string name="player_subtitle_search_keyword_hint">キーワードを入力</string>
+    <string name="player_subtitle_download_success">字幕をダウンロードしました</string>
+    <string name="player_subtitle_download_failed">字幕のダウンロードに失敗しました</string>
+    <string name="player_setting_subtitle_size">字幕サイズ</string>
+    <string name="player_setting_decoder">デコーダー</string>
+    <string name="player_no_subtitle">字幕なし</string>
+    <string name="player_setting_show_playlist">プレイリストを表示</string>
+    <string name="player_subtitle_external">外部</string>
+    <string name="player_subtitle_size_small">小</string>
+    <string name="player_subtitle_size_medium">標準</string>
+    <string name="player_subtitle_size_large">大</string>
+    <string name="player_subtitle_size_xlarge">特大</string>
+    <string name="player_decoder_auto">自動</string>
+    <string name="player_decoder_system">ハードウェア優先</string>
+    <string name="player_decoder_extension">ソフトウェアデコード</string>
+    <string name="player_dolby_vision_decoder_fallback">Dolby Vision をソフトウェアデコードに切り替えました</string>
+    <string name="player_exit_title">プレーヤーを終了</string>
+    <string name="player_exit_message">終了して再生を停止しますか？</string>
+    <string name="player_resume_title">再生を再開</string>
+    <string name="player_resume_message">%1$s から再生しますか？</string>
+    <string name="player_resume_from_start">最初から</string>
+    <string name="player_resume_auto_close"> (%d秒後に自動で閉じます)</string>
+    <string name="player_play_failed">再生に失敗しました</string>
+    <string name="player_reconnect_title">ネットワーク切断</string>
+    <string name="player_reconnect_message">接続が切断されました。再接続しますか？</string>
+    <string name="player_reconnect_retry">再接続</string>
+    <string name="player_reconnect_exit">終了</string>
+    <string name="player_hint_controls">OK: 再生/一時停止・左右: シーク・上: オプション・下: プレイリスト・戻る: 終了</string>
+
+    <string name="home_photo_timeline">タイムライン</string>
+    <string name="home_photo_today">この日の写真</string>
+    <string name="home_photo_favorite">お気に入り</string>
+    <string name="home_photo_custom_albums">カスタムアルバム</string>
+    <string name="home_photo_smart_albums">スマートアルバム</string>
+    <string name="home_photo_collections">コレクション</string>
+
+    <string name="photo_library_tag_album">アルバム</string>
+    <string name="photo_library_tag_smart_album">スマート</string>
+    <string name="photo_library_tag_collection">コレクション</string>
+    <string name="photo_library_prefix_album">カスタムアルバム</string>
+    <string name="photo_library_prefix_smart_album">スマートアルバム</string>
+    <string name="photo_library_prefix_collection">コレクション</string>
+
+    <string name="video_library_prefix_album">カスタムアルバム</string>
+    <string name="video_library_prefix_smart_album">スマートアルバム</string>
+    <string name="video_library_prefix_collection">コレクション</string>
+
+    <string name="photo_preview_auto_play">自動再生</string>
+    <string name="photo_preview_auto_play_interval">間隔</string>
+    <string name="photo_preview_seconds_format">%1$d 秒</string>
+    <string name="photo_preview_action_favorite">お気に入り</string>
+    <string name="photo_preview_action_unfavorite">お気に入り解除</string>
+    <string name="photo_preview_action_trash">ゴミ箱に移動</string>
+    <string name="photo_preview_toast_moved_to_trash">ゴミ箱に移動しました</string>
+
+    <string name="photo_timeline_options_title">タイムラインオプション</string>
+    <string name="photo_timeline_action_sort">並べ替え</string>
+    <string name="photo_timeline_action_type">タイプ</string>
+    <string name="photo_timeline_action_sources">ソースフォルダ</string>
+    <string name="photo_timeline_action_year">年</string>
+    <string name="photo_timeline_action_month">月</string>
+    <string name="photo_timeline_action_refresh">更新</string>
+    <string name="photo_timeline_action_clear_filters">フィルターをクリア</string>
+
+    <string name="photo_timeline_file_type_all">すべて</string>
+    <string name="photo_timeline_file_type_image">画像</string>
+    <string name="photo_timeline_file_type_video">動画</string>
+
+    <string name="photo_timeline_sort_desc">撮影時間（新しい順）</string>
+    <string name="photo_timeline_sort_asc">撮影時間（古い順）</string>
+
+    <string name="photo_timeline_sources_all">すべて</string>
+    <string name="photo_timeline_sources_selected_count">選択済み: %1$d</string>
+
+    <string name="photo_timeline_year_all">すべての年</string>
+    <string name="photo_timeline_month_all">すべての月</string>
+    <string name="photo_timeline_month_pick_year_first">まず年を選択してください</string>
+    <string name="photo_timeline_month_format">%1$02d月</string>
+
+    <string name="home_music_tracks">トラック</string>
+    <string name="home_music_albums">アルバム</string>
+    <string name="home_music_artists">アーティスト</string>
+    <string name="home_music_playlists">プレイリスト</string>
+    <string name="home_music_favorite">お気に入り</string>
+    <string name="home_music_now_playing">再生中</string>
+
+    <string name="music_item_type_folder">フォルダ</string>
+    <string name="music_item_folder_count">%1$d トラック</string>
+    <string name="music_group_count">%1$d トラック</string>
+
+    <string name="music_list_action_search">検索</string>
+    <string name="music_list_action_sort">並べ替え</string>
+    <string name="music_list_action_sources">ソースフォルダ</string>
+    <string name="music_list_action_apply">適用</string>
+    <string name="music_list_action_clear_search">検索をクリア</string>
+    <string name="music_list_action_clear_filters">フィルターをクリア</string>
+    <string name="music_list_sources_all">すべて</string>
+    <string name="music_list_sources_all_sources">すべてのソース</string>
+    <string name="music_list_sources_selected_count">選択済み: %1$d</string>
+    <string name="music_list_search_empty">なし</string>
+
+    <string name="music_sort_filename_asc">ファイル名（A–Z）</string>
+    <string name="music_sort_filename_desc">ファイル名（Z–A）</string>
+    <string name="music_sort_title_asc">タイトル（A–Z）</string>
+    <string name="music_sort_title_desc">タイトル（Z–A）</string>
+    <string name="music_sort_artist_asc">アーティスト（A–Z）</string>
+    <string name="music_sort_artist_desc">アーティスト（Z–A）</string>
+    <string name="music_sort_album_asc">アルバム（A–Z）</string>
+    <string name="music_sort_album_desc">アルバム（Z–A）</string>
+    <string name="music_sort_duration_asc">再生時間（短い順）</string>
+    <string name="music_sort_duration_desc">再生時間（長い順）</string>
+    <string name="music_sort_favorite_time_desc">お気に入り時間（新しい順）</string>
+    <string name="music_sort_favorite_time_asc">お気に入り時間（古い順）</string>
+    <string name="music_sort_create_time_desc">作成時間（新しい順）</string>
+    <string name="music_sort_create_time_asc">作成時間（古い順）</string>
+    <string name="music_sort_modify_time_desc">更新時間（新しい順）</string>
+    <string name="music_sort_modify_time_asc">更新時間（古い順）</string>
+    <string name="music_sort_year_desc">年（新しい順）</string>
+    <string name="music_sort_year_asc">年（古い順）</string>
+
+    <string name="music_group_sort_count_desc">数（多い順）</string>
+    <string name="music_group_sort_count_asc">数（少ない順）</string>
+    <string name="music_group_sort_name_asc">名前（A–Z）</string>
+    <string name="music_group_sort_name_desc">名前（Z–A）</string>
+
+    <string name="music_playlist_sort_create_time_desc">作成時間（新しい順）</string>
+    <string name="music_playlist_sort_create_time_asc">作成時間（古い順）</string>
+    <string name="music_playlist_sort_name_asc">名前（A–Z）</string>
+    <string name="music_playlist_sort_name_desc">名前（Z–A）</string>
+
+    <string name="music_notification_channel_name">音楽再生</string>
+    <string name="music_notification_channel_desc">バックグラウンド音楽再生</string>
+    <string name="music_action_prev">前へ</string>
+    <string name="music_action_play">再生</string>
+    <string name="music_action_pause">一時停止</string>
+    <string name="music_action_next">次へ</string>
+    <string name="music_action_stop">停止</string>
+
+    <string name="music_now_playing_hint">左右: 10秒スキップ</string>
+    <string name="music_now_playing_empty">再生中の曲はありません</string>
+    <string name="music_no_lyrics">歌詞なし</string>
+    <string name="music_search_lyric">歌詞を検索</string>
+    <string name="music_match_high">高い一致</string>
+    <string name="music_match_score">一致度 %1$d%%</string>
+    <string name="music_favorite">お気に入り</string>
+    <string name="music_unfavorite">お気に入り解除</string>
+    <string name="no_data">データなし</string>
+    <string name="operation_success">成功</string>
+    <string name="operation_failed">失敗</string>
+
+    <string name="home_file_browse">ファイルを閲覧</string>
+    <string name="home_language_settings">言語</string>
+    <string name="home_video_playback_settings">動画再生設定</string>
+    <string name="video_playback_default_quality">デフォルト再生画質</string>
+    <string name="video_playback_default_quality_desc">動画再生時にデフォルトで使用する画質です。オリジナル以外の解像度はトランスコードを使用し、ネットワーク帯域が限られる場合に帯域を抑えられます。</string>
+    <string name="feature_placeholder_video">この機能は開発中です</string>
+    <string name="feature_placeholder_photos">この機能は開発中です</string>
+    <string name="feature_placeholder_music">この機能は開発中です</string>
+    <string name="feature_placeholder_files">この機能は開発中です</string>
+
+    <string name="action_logout">ログアウト</string>
+    <string name="logout_title">ログアウト</string>
+    <string name="logout_confirm_message">%1$s からログアウトしますか？</string>
+    <string name="logout_desc">%1$s からログアウト</string>
+
+    <string name="dev_network_channel">ネットワークチャネル</string>
+    <string name="dev_network_channel_desc">テスト用に接続モードを強制的に切り替え</string>
+    <string name="dev_network_mode_auto">自動</string>
+    <string name="dev_network_mode_direct">ダイレクト</string>
+    <string name="dev_network_mode_p2p_direct">P2P ダイレクト</string>
+    <string name="dev_network_mode_p2p_relay">P2P リレー</string>
+    <string name="dev_network_switch_success">切り替え完了: %1$s</string>
+
+    <string name="pair_code_input_title">ペアコードを入力</string>
+
+    <string name="action_connect">接続</string>
+    <string name="status_connecting">接続中…</string>
+    <string name="action_edit">編集</string>
+    <string name="action_delete">削除</string>
+    <string name="action_save">保存</string>
+    <string name="action_search">検索</string>
+    <string name="action_select">選択</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="action_ok">OK</string>
+    <string name="common_on">オン</string>
+    <string name="common_off">オフ</string>
+    <string name="update_dialog_title_format">新しいバージョン: %1$s</string>
+    <string name="update_action_upgrade">アップグレード</string>
+    <string name="update_action_later">後で</string>
+    <string name="update_action_ignore_this_version">このバージョンを無視</string>
+    <string name="update_action_downloading">ダウンロード中…</string>
+    <string name="update_action_install">インストール</string>
+    <string name="update_action_retry">再試行</string>
+    <string name="update_status_ready">準備完了</string>
+    <string name="update_status_failed">ダウンロードに失敗しました</string>
+    <string name="update_status_ready_to_install">インストール準備完了</string>
+    <string name="update_status_downloading_percent_format">ダウンロード中: %1$d%%</string>
+    <string name="exit_confirm_title">終了</string>
+    <string name="exit_confirm_message">アプリを終了しますか？</string>
+
+    <string name="field_server_name">サーバー名</string>
+    <string name="field_protocol">プロトコル</string>
+    <string name="field_server_url">サーバーアドレス（ポート付き）</string>
+    <string name="field_pair_code">ペアコード</string>
+    <string name="field_username">ユーザー名</string>
+    <string name="field_password">パスワード</string>
+    <string name="field_require_password_every_login">ログインごとにパスワードを要求</string>
+    <string name="prompt_password_desc">ログインするためにパスワードを入力してください</string>
+    <string name="twofa_prompt_title">2FA</string>
+    <string name="twofa_prompt_desc">2FAコードを入力してください</string>
+    <string name="field_twofa_code">2FAコード</string>
+
+    <string name="hint_optional">任意</string>
+
+    <string name="error_title">エラー</string>
+    <string name="tip">ヒント</string>
+    <string name="server_version_too_low">サーバーのバージョンが低すぎます。最新バージョンにアップグレードし、再度ログインしてからこの機能を使用してください。</string>
+    <string name="error_pair_code_empty">ペアコードが空です</string>
+    <string name="error_pair_code_invalid">ペアコードが無効です</string>
+    <string name="error_server_url_empty">サーバーURLが空です</string>
+    <string name="error_username_empty">ユーザー名が空です</string>
+    <string name="error_password_empty">パスワードが空です</string>
+    <string name="error_twofa_empty">2FAコードが空です</string>
+    <string name="error_twofa_invalid">2FAコードが無効です</string>
+    <string name="error_twofa_too_many_attempts">試行回数が多すぎます。後でもう一度お試しください</string>
+    <string name="error_twofa_invalid_token">2FAトークンが無効です。再度ログインしてください</string>
+    <string name="error_network_failed">ネットワークリクエストに失敗しました</string>
+    <string name="error_not_nascab_server">NasCabサーバーではありません</string>
+    <string name="error_not_logged_in">先にログインしてください</string>
+    <string name="error_server_unreachable">サーバーに接続できません。サーバーの状態を確認してください</string>
+    <string name="error_no_direct_url">利用可能なダイレクトURLがありません</string>
+    <string name="error_no_pair_code">利用可能なペアコードがありません</string>
+
+    <string name="cancel_add_confirm_title">キャンセル</string>
+    <string name="cancel_add_confirm_message">サーバーの追加をキャンセルしますか？</string>
+
+    <string name="common_no_data">データなし</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d 件</item>
+        <item quantity="other">%d 件</item>
+    </plurals>
+</resources>

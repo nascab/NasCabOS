@@ -1,0 +1,14 @@
+{
+  "module": {
+    "name": "entry_test",
+    "type": "feature",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "car",
+      "tv"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false
+  }
+}

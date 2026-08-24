@@ -1,0 +1,127 @@
+================================================================================
+翻译文件缺失 Key 检测报告
+================================================================================
+
+参考语言：zh-CN (总 key 数：2431)
+
+--------------------------------------------------------------------------------
+
+EN_US:
+  现有 key 数：2431
+  缺失 key 数：0
+  多余 key 数：0
+  完整度：100.0%
+
+DE_DE:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+PT_BR:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+FR_FR:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+AR_AR:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+VI_VN:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+RU_RU:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+TH_TH:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+ID_ID:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+JA_JP:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+KO_KR:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+ES_ES:
+  现有 key 数：2428
+  缺失 key 数：3
+  多余 key 数：0
+  完整度：99.9%
+  缺失的 key 列表:
+    - network_issue_content
+    - network_issue_title
+    - network_recovered
+
+================================================================================
+检测完成
+================================================================================

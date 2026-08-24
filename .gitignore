@@ -1,0 +1,13 @@
+node_modules
+electron_server/test/**/*
+test.db
+*.db
+*.db-shm
+*.db-wal
+yarn.lock
+.DS_Store
+*.lock
+logs/**/*
+.env
+flutter_client/android/nascabos-pwd-nascab.jks
+electron_server/onnx_models/faces/insightFace/model.onnx

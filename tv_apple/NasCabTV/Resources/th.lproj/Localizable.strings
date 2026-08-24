@@ -1,0 +1,22 @@
+/* Common */
+"ok" = "OK";
+"cancel" = "Cancel";
+"delete" = "Delete";
+"edit" = "Edit";
+"save" = "Save";
+"error" = "Error";
+"loading" = "Loading...";
+
+/* Server List */
+"server_listTitle" = "Select Server";
+"server_saved" = "Saved Servers";
+"server_scanned" = "Discovered";
+"server_add" = "Add Server";
+"server_localServer" = "Local";
+"server_connect_fail" = "Cannot connect to server";
+"server_connecting" = "Connecting...";
+"server_add_by_pair_code_title" = "Pair Code";
+
+/* Auth */
+"auth_login_loading" = "Logging in...";
+"auth_login_failure" = "Login failed";

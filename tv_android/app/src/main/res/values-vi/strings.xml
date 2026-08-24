@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">Máy chủ</string>
+    <string name="server_discovered_section">Đã phát hiện</string>
+    <string name="server_saved_section">Đã lưu</string>
+    <string name="server_tag_auto_discovered">Tự động phát hiện</string>
+    <string name="server_add_direct">Thêm máy chủ</string>
+    <string name="server_add_by_pair_code">Thêm bằng mã ghép nối</string>
+    <string name="server_add_direct_desc">URL trực tiếp</string>
+    <string name="server_add_by_pair_code_desc">Mã ghép nối</string>
+    <string name="action_language">Ngôn ngữ</string>
+    <string name="language_title">Ngôn ngữ</string>
+    <string name="language_system">Mặc định hệ thống</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">Cài đặt</string>
+    <string name="home_menu_video">Truyền thông</string>
+    <string name="home_menu_photo">Ảnh</string>
+    <string name="home_menu_music">Nhạc</string>
+    <string name="home_menu_files">Tệp</string>
+
+    <string name="home_video_movies">Phim</string>
+    <string name="home_video_tv_series">Phim truyền hình</string>
+    <string name="home_video_recent">Đã xem gần đây</string>
+    <string name="home_video_favorite">Yêu thích</string>
+    <string name="home_video_custom_albums">Album tùy chỉnh</string>
+    <string name="home_video_smart_albums">Album thông minh</string>
+    <string name="home_video_collections">Bộ sưu tập</string>
+
+    <string name="video_media_type_movie">Phim</string>
+    <string name="video_media_type_tv">TV</string>
+
+    <string name="video_list_options_title">Tùy chọn</string>
+    <string name="video_list_action_search">Tìm kiếm</string>
+    <string name="video_list_action_media_type">Loại</string>
+    <string name="video_list_action_sort">Sắp xếp</string>
+    <string name="video_list_action_sources">Thư mục nguồn</string>
+    <string name="video_list_action_clear_filters">Xóa bộ lọc</string>
+    <string name="video_list_action_apply">Áp dụng</string>
+    <string name="video_list_action_clear_search">Xóa tìm kiếm</string>
+    <string name="video_list_search_field">Từ khóa</string>
+    <string name="video_list_search_hint">Tìm theo tiêu đề hoặc tên tệp</string>
+    <string name="video_list_search_empty">Chưa đặt</string>
+    <string name="video_list_sources_all">Tất cả</string>
+    <string name="video_list_media_type_all">Tất cả</string>
+    <string name="video_list_media_type_movie">Phim</string>
+    <string name="video_list_media_type_tv">TV</string>
+    <string name="video_list_sources_hint">Chọn thư mục nguồn</string>
+    <string name="video_list_sources_selected_count">Đã chọn: %1$d</string>
+    <string name="video_list_sort_view_time_desc">Thời gian xem (mới nhất)</string>
+    <string name="video_list_sort_view_time_asc">Thời gian xem (cũ nhất)</string>
+    <string name="video_list_sort_create_time_desc">Thời gian tạo (mới nhất)</string>
+    <string name="video_list_sort_create_time_asc">Thời gian tạo (cũ nhất)</string>
+    <string name="video_list_sort_favorite_time_desc">Thời gian yêu thích (mới nhất)</string>
+    <string name="video_list_sort_favorite_time_asc">Thời gian yêu thích (cũ nhất)</string>
+    <string name="video_list_sort_year_desc">Năm (mới nhất)</string>
+    <string name="video_list_sort_year_asc">Năm (cũ nhất)</string>
+    <string name="video_list_sort_score_desc">Điểm (cao đến thấp)</string>
+    <string name="video_list_sort_score_asc">Điểm (thấp đến cao)</string>
+    <string name="video_list_sort_name_asc">Tên (A-Z)</string>
+    <string name="video_list_sort_name_desc">Tên (Z-A)</string>
+
+    <string name="video_library_tag_album">Album</string>
+    <string name="video_library_tag_smart_album">Thông minh</string>
+    <string name="video_library_tag_collection">Bộ sưu tập</string>
+    <string name="video_library_open_title">Mở</string>
+    <string name="video_library_sort_create_time_desc">Thời gian tạo (mới nhất)</string>
+    <string name="video_library_sort_create_time_asc">Thời gian tạo (cũ nhất)</string>
+    <string name="video_library_sort_name_asc">Tên (A-Z)</string>
+    <string name="video_library_sort_name_desc">Tên (Z-A)</string>
+
+    <string name="video_detail_action_play">Phát</string>
+    <string name="video_detail_action_continue_play">Tiếp tục</string>
+    <string name="video_detail_action_favorite">Yêu thích</string>
+    <string name="video_detail_action_unfavorite">Bỏ yêu thích</string>
+    <string name="video_detail_action_delete">Xóa</string>
+    <string name="video_detail_action_scan">Quét thay đổi</string>
+    <string name="video_detail_action_select_episodes">Tập</string>
+    <string name="video_detail_action_select_season">Chọn mùa</string>
+    <string name="video_detail_meta_seasons_count">%1$d mùa</string>
+    <string name="video_detail_meta_episodes_count">%1$d tập</string>
+    <string name="video_detail_delete_title">Xóa</string>
+    <string name="video_detail_delete_message">Xóa “%1$s”?</string>
+    <string name="video_detail_delete_failed">Xóa thất bại</string>
+    <string name="video_detail_play_failed">Không thể mở trình phát</string>
+    <string name="video_detail_scan_queued">Đã xếp hàng quét</string>
+    <string name="video_detail_seasons">Phần</string>
+    <string name="video_detail_episodes">Tập</string>
+    <string name="video_detail_people">Người</string>
+    <string name="video_detail_directors">Đạo diễn</string>
+    <string name="video_detail_actors">Diễn viên</string>
+    <string name="video_detail_progress_format">Đã xem %1$s / %2$s (%3$s)</string>
+    <string name="video_detail_progress_short_format">Đã xem %1$s</string>
+    <string name="video_detail_season_label">Phần</string>
+    <string name="video_detail_episode_title_format">T%1$02d %2$s</string>
+    <string name="video_detail_select_episodes_title">Chọn tập</string>
+
+    <string name="player_options_title">Tùy chọn</string>
+    <string name="player_playlist_title">Danh sách phát</string>
+    <string name="player_setting_quality">Chất lượng</string>
+    <string name="player_quality_original">Gốc</string>
+    <string name="player_setting_speed">Tốc độ</string>
+    <string name="player_setting_audio_track">Âm thanh</string>
+    <string name="player_setting_subtitle_track">Phụ đề</string>
+    <string name="player_setting_subtitle_search">Tìm phụ đề</string>
+    <string name="player_subtitle_search_title">Tìm kiếm phụ đề</string>
+    <string name="player_subtitle_searching">Đang tìm phụ đề…</string>
+    <string name="player_subtitle_search_no_results">Không tìm thấy phụ đề</string>
+    <string name="player_subtitle_search_feature">Dấu vân tay</string>
+    <string name="player_subtitle_search_keyword">Từ khóa</string>
+    <string name="player_subtitle_search_keyword_hint">Nhập từ khóa</string>
+    <string name="player_subtitle_download_success">Đã tải phụ đề</string>
+    <string name="player_subtitle_download_failed">Tải phụ đề thất bại</string>
+    <string name="player_setting_subtitle_size">Co phu de</string>
+    <string name="player_setting_decoder">Bo giai ma</string>
+    <string name="player_no_subtitle">Không có phụ đề</string>
+    <string name="player_setting_show_playlist">Hiển thị danh sách phát</string>
+    <string name="player_subtitle_external">Ngoài</string>
+    <string name="player_subtitle_size_small">Nho</string>
+    <string name="player_subtitle_size_medium">Vua</string>
+    <string name="player_subtitle_size_large">Lon</string>
+    <string name="player_subtitle_size_xlarge">Rat lon</string>
+    <string name="player_decoder_auto">Tu dong</string>
+    <string name="player_decoder_system">Uu tien he thong</string>
+    <string name="player_decoder_extension">Uu tien phan mo rong</string>
+    <string name="player_dolby_vision_decoder_fallback">Da bat che do tuong thich bo giai ma video Dolby Vision</string>
+    <string name="player_exit_title">Thoát trình phát</string>
+    <string name="player_exit_message">Thoát và dừng phát?</string>
+    <string name="player_resume_title">Tiếp tục phát</string>
+    <string name="player_resume_message">Tiếp tục từ %1$s?</string>
+    <string name="player_resume_from_start">Từ đầu</string>
+    <string name="player_resume_auto_close"> (tự đóng sau %d giây)</string>
+    <string name="player_play_failed">Phát thất bại</string>
+    <string name="player_reconnect_title">Mạng bị ngắt</string>
+    <string name="player_reconnect_message">Kết nối đã bị ngắt, kết nối lại?</string>
+    <string name="player_reconnect_retry">Kết nối lại</string>
+    <string name="player_reconnect_exit">Thoát</string>
+    <string name="player_hint_controls">OK: Phát/Tạm dừng · Trái/Phải: Tua · Lên: Tùy chọn · Xuống: Danh sách phát · Quay lại: Thoát</string>
+
+    <string name="home_photo_timeline">Danh sách thời gian</string>
+    <string name="home_photo_today">Ngày này</string>
+    <string name="home_photo_favorite">Yêu thích</string>
+    <string name="home_photo_custom_albums">Album tùy chỉnh</string>
+    <string name="home_photo_smart_albums">Album thông minh</string>
+    <string name="home_photo_collections">Bộ sưu tập</string>
+
+    <string name="photo_library_tag_album">Album</string>
+    <string name="photo_library_tag_smart_album">Thông minh</string>
+    <string name="photo_library_tag_collection">Bộ sưu tập</string>
+    <string name="photo_library_prefix_album">Album tùy chỉnh</string>
+    <string name="photo_library_prefix_smart_album">Album thông minh</string>
+    <string name="photo_library_prefix_collection">Bộ sưu tập</string>
+
+    <string name="video_library_prefix_album">Album tùy chỉnh</string>
+    <string name="video_library_prefix_smart_album">Album thông minh</string>
+    <string name="video_library_prefix_collection">Bộ sưu tập</string>
+
+    <string name="photo_preview_auto_play">Tự động phát</string>
+    <string name="photo_preview_auto_play_interval">Khoảng thời gian</string>
+    <string name="photo_preview_seconds_format">%1$d giây</string>
+    <string name="photo_preview_action_favorite">Yêu thích</string>
+    <string name="photo_preview_action_unfavorite">Bỏ yêu thích</string>
+    <string name="photo_preview_action_trash">Chuyển vào thùng rác</string>
+    <string name="photo_preview_toast_moved_to_trash">Đã chuyển vào thùng rác</string>
+
+    <string name="photo_timeline_options_title">Tùy chọn danh sách thời gian</string>
+    <string name="photo_timeline_action_sort">Sắp xếp</string>
+    <string name="photo_timeline_action_type">Loại</string>
+    <string name="photo_timeline_action_sources">Thư mục nguồn</string>
+    <string name="photo_timeline_action_year">Năm</string>
+    <string name="photo_timeline_action_month">Tháng</string>
+    <string name="photo_timeline_action_refresh">Làm mới</string>
+    <string name="photo_timeline_action_clear_filters">Xóa bộ lọc</string>
+
+    <string name="photo_timeline_file_type_all">Tất cả</string>
+    <string name="photo_timeline_file_type_image">Hình ảnh</string>
+    <string name="photo_timeline_file_type_video">Video</string>
+
+    <string name="photo_timeline_sort_desc">Thời gian chụp (mới nhất)</string>
+    <string name="photo_timeline_sort_asc">Thời gian chụp (cũ nhất)</string>
+
+    <string name="photo_timeline_sources_all">Tất cả</string>
+    <string name="photo_timeline_sources_selected_count">Đã chọn: %1$d</string>
+
+    <string name="photo_timeline_year_all">Tất cả các năm</string>
+    <string name="photo_timeline_month_all">Tất cả các tháng</string>
+    <string name="photo_timeline_month_pick_year_first">Chọn năm trước</string>
+    <string name="photo_timeline_month_format">%1$02d</string>
+
+    <string name="home_music_tracks">Bài hát</string>
+    <string name="home_music_albums">Album</string>
+    <string name="home_music_artists">Nghệ sĩ</string>
+    <string name="home_music_playlists">Danh sách phát</string>
+    <string name="home_music_favorite">Yêu thích</string>
+    <string name="home_music_now_playing">Đang phát</string>
+
+    <string name="music_item_type_folder">Thư mục</string>
+    <string name="music_item_folder_count">%1$d bài hát</string>
+    <string name="music_group_count">%1$d bài hát</string>
+
+    <string name="music_list_action_search">Tìm kiếm</string>
+    <string name="music_list_action_sort">Sắp xếp</string>
+    <string name="music_list_action_sources">Thư mục nguồn</string>
+    <string name="music_list_action_apply">Áp dụng</string>
+    <string name="music_list_action_clear_search">Xóa tìm kiếm</string>
+    <string name="music_list_action_clear_filters">Xóa bộ lọc</string>
+    <string name="music_list_sources_all">Tất cả</string>
+    <string name="music_list_sources_all_sources">Tất cả nguồn</string>
+    <string name="music_list_sources_selected_count">Đã chọn: %1$d</string>
+    <string name="music_list_search_empty">Không có</string>
+
+    <string name="music_sort_filename_asc">Tên tệp (A-Z)</string>
+    <string name="music_sort_filename_desc">Tên tệp (Z-A)</string>
+    <string name="music_sort_title_asc">Tiêu đề (A-Z)</string>
+    <string name="music_sort_title_desc">Tiêu đề (Z-A)</string>
+    <string name="music_sort_artist_asc">Nghệ sĩ (A-Z)</string>
+    <string name="music_sort_artist_desc">Nghệ sĩ (Z-A)</string>
+    <string name="music_sort_album_asc">Album (A-Z)</string>
+    <string name="music_sort_album_desc">Album (Z-A)</string>
+    <string name="music_sort_duration_asc">Thời lượng (ngắn hơn)</string>
+    <string name="music_sort_duration_desc">Thời lượng (dài hơn)</string>
+    <string name="music_sort_favorite_time_desc">Thời gian yêu thích (mới nhất)</string>
+    <string name="music_sort_favorite_time_asc">Thời gian yêu thích (cũ nhất)</string>
+    <string name="music_sort_create_time_desc">Thời gian tạo (mới nhất)</string>
+    <string name="music_sort_create_time_asc">Thời gian tạo (cũ nhất)</string>
+    <string name="music_sort_modify_time_desc">Thời gian sửa đổi (mới nhất)</string>
+    <string name="music_sort_modify_time_asc">Thời gian sửa đổi (cũ nhất)</string>
+    <string name="music_sort_year_desc">Năm (mới hơn)</string>
+    <string name="music_sort_year_asc">Năm (cũ hơn)</string>
+
+    <string name="music_group_sort_count_desc">Số lượng (nhiều hơn)</string>
+    <string name="music_group_sort_count_asc">Số lượng (ít hơn)</string>
+    <string name="music_group_sort_name_asc">Tên (A-Z)</string>
+    <string name="music_group_sort_name_desc">Tên (Z-A)</string>
+
+    <string name="music_playlist_sort_create_time_desc">Thời gian tạo (mới nhất)</string>
+    <string name="music_playlist_sort_create_time_asc">Thời gian tạo (cũ nhất)</string>
+    <string name="music_playlist_sort_name_asc">Tên (A-Z)</string>
+    <string name="music_playlist_sort_name_desc">Tên (Z-A)</string>
+
+    <string name="music_notification_channel_name">Phát nhạc</string>
+    <string name="music_notification_channel_desc">Phát nhạc nền</string>
+    <string name="music_action_prev">Trước</string>
+    <string name="music_action_play">Phát</string>
+    <string name="music_action_pause">Tạm dừng</string>
+    <string name="music_action_next">Tiếp theo</string>
+    <string name="music_action_stop">Dừng</string>
+
+    <string name="music_now_playing_hint">Trái/Phải: tua 10 giây</string>
+    <string name="music_now_playing_empty">Không có gì đang phát</string>
+    <string name="music_no_lyrics">Không có lời bài hát</string>
+    <string name="music_search_lyric">Tìm lời bài hát</string>
+    <string name="music_match_high">Khớp cao</string>
+    <string name="music_match_score">Khớp %1$d%%</string>
+    <string name="music_favorite">Yêu thích</string>
+    <string name="music_unfavorite">Bỏ yêu thích</string>
+    <string name="no_data">Không có dữ liệu</string>
+    <string name="operation_success">Thành công</string>
+    <string name="operation_failed">Thất bại</string>
+
+    <string name="home_file_browse">Duyệt tệp</string>
+    <string name="home_language_settings">Ngôn ngữ</string>
+    <string name="home_video_playback_settings">Cài đặt phát video</string>
+    <string name="video_playback_default_quality">Chất lượng phát mặc định</string>
+    <string name="video_playback_default_quality_desc">Chất lượng mặc định khi phát video. Các độ phân giải khác bản gốc dùng chuyển mã và có thể giảm băng thông khi mạng hạn chế.</string>
+    <string name="feature_placeholder_video">Tính năng này đang được phát triển</string>
+    <string name="feature_placeholder_photos">Tính năng này đang được phát triển</string>
+    <string name="feature_placeholder_music">Tính năng này đang được phát triển</string>
+    <string name="feature_placeholder_files">Tính năng này đang được phát triển</string>
+
+    <string name="action_logout">Đăng xuất</string>
+    <string name="logout_title">Đăng xuất</string>
+    <string name="logout_confirm_message">Đăng xuất khỏi %1$s?</string>
+    <string name="logout_desc">Đăng xuất khỏi %1$s</string>
+
+    <string name="dev_network_channel">Kênh mạng</string>
+    <string name="dev_network_channel_desc">Buộc chuyển chế độ kết nối để kiểm tra</string>
+    <string name="dev_network_mode_auto">Tự động</string>
+    <string name="dev_network_mode_direct">Trực tiếp</string>
+    <string name="dev_network_mode_p2p_direct">P2P trực tiếp</string>
+    <string name="dev_network_mode_p2p_relay">P2P chuyển tiếp</string>
+    <string name="dev_network_switch_success">Đã chuyển sang: %1$s</string>
+
+    <string name="pair_code_input_title">Nhập mã ghép nối</string>
+
+    <string name="action_connect">Kết nối</string>
+    <string name="status_connecting">Đang kết nối…</string>
+    <string name="action_edit">Sửa</string>
+    <string name="action_delete">Xóa</string>
+    <string name="action_save">Lưu</string>
+    <string name="action_search">Tìm kiếm</string>
+    <string name="action_select">Chọn</string>
+    <string name="action_cancel">Hủy</string>
+    <string name="action_ok">OK</string>
+    <string name="common_on">Bật</string>
+    <string name="common_off">Tắt</string>
+    <string name="update_dialog_title_format">Phiên bản mới: %1$s</string>
+    <string name="update_action_upgrade">Nâng cấp</string>
+    <string name="update_action_later">Sau</string>
+    <string name="update_action_ignore_this_version">Bỏ qua phiên bản này</string>
+    <string name="update_action_downloading">Đang tải xuống…</string>
+    <string name="update_action_install">Cài đặt</string>
+    <string name="update_action_retry">Thử lại</string>
+    <string name="update_status_ready">Sẵn sàng</string>
+    <string name="update_status_failed">Tải xuống thất bại</string>
+    <string name="update_status_ready_to_install">Sẵn sàng cài đặt</string>
+    <string name="update_status_downloading_percent_format">Đang tải xuống: %1$d%%</string>
+    <string name="exit_confirm_title">Thoát</string>
+    <string name="exit_confirm_message">Bạn có chắc muốn thoát ứng dụng?</string>
+
+    <string name="field_server_name">Tên máy chủ</string>
+    <string name="field_protocol">Giao thức</string>
+    <string name="field_server_url">Địa chỉ máy chủ (với cổng)</string>
+    <string name="field_pair_code">Mã ghép nối</string>
+    <string name="field_username">Tên người dùng</string>
+    <string name="field_password">Mật khẩu</string>
+    <string name="field_require_password_every_login">Yêu cầu mật khẩu mỗi lần đăng nhập</string>
+    <string name="prompt_password_desc">Vui lòng nhập mật khẩu để đăng nhập</string>
+    <string name="twofa_prompt_title">2FA</string>
+    <string name="twofa_prompt_desc">Vui lòng nhập mã 2FA của bạn</string>
+    <string name="field_twofa_code">Mã 2FA</string>
+
+    <string name="hint_optional">Tùy chọn</string>
+
+    <string name="error_title">Lỗi</string>
+    <string name="tip">Gợi ý</string>
+    <string name="server_version_too_low">Phiên bản máy chủ của bạn quá thấp. Vui lòng nâng cấp lên phiên bản mới nhất, đăng nhập lại rồi sử dụng tính năng này.</string>
+    <string name="error_pair_code_empty">Mã ghép nối trống</string>
+    <string name="error_pair_code_invalid">Mã ghép nối không hợp lệ</string>
+    <string name="error_server_url_empty">URL máy chủ trống</string>
+    <string name="error_username_empty">Tên người dùng trống</string>
+    <string name="error_password_empty">Mật khẩu trống</string>
+    <string name="error_twofa_empty">Mã 2FA trống</string>
+    <string name="error_twofa_invalid">Mã 2FA không hợp lệ</string>
+    <string name="error_twofa_too_many_attempts">Quá nhiều lần thử, hãy thử lại sau</string>
+    <string name="error_twofa_invalid_token">Mã 2FA không hợp lệ, vui lòng đăng nhập lại</string>
+    <string name="error_network_failed">Yêu cầu mạng thất bại</string>
+    <string name="error_not_nascab_server">Không phải máy chủ NasCab</string>
+    <string name="error_not_logged_in">Vui lòng đăng nhập trước</string>
+    <string name="error_server_unreachable">Không thể truy cập máy chủ, vui lòng kiểm tra trạng thái máy chủ</string>
+    <string name="error_no_direct_url">Không có URL trực tiếp nào khả dụng</string>
+    <string name="error_no_pair_code">Không có mã ghép nối nào khả dụng</string>
+
+    <string name="cancel_add_confirm_title">Hủy</string>
+    <string name="cancel_add_confirm_message">Bạn có chắc muốn hủy thêm máy chủ?</string>
+
+    <string name="common_no_data">Không có dữ liệu</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d mục</item>
+        <item quantity="other">%d mục</item>
+    </plurals>
+</resources>

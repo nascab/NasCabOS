@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "NasCabOS cần quyền camera để quét mã QR khi bạn thêm máy chủ hoặc đăng nhập. Ứng dụng không ghi video hay lưu ảnh trừ khi bạn chủ động lưu ảnh.";
+"NSPhotoLibraryUsageDescription" = "NasCabOS cần truy cập thư viện ảnh để tải lên hoặc sao lưu ảnh và video, duyệt album và chọn nội dung trên thiết bị. Chỉ xử lý các mục bạn chọn hoặc cho phép (kể cả quyền truy cập hạn chế).";
+"NSPhotoLibraryAddUsageDescription" = "NasCabOS cần quyền để lưu ảnh, video, hình thu nhỏ hoặc tệp đã xuất tải về vào thư viện khi bạn dùng Lưu vào Ảnh hoặc thao tác tương tự.";
+"NSLocalNetworkUsageDescription" = "NasCabOS dùng mạng cục bộ để tìm và kết nối máy chủ NasCab qua Wi-Fi, phát và xem nội dung đa phương tiện, nhận thông báo khám phá LAN và thiết lập kết nối ngang hàng mã hóa cho truy cập từ xa trên mạng của bạn.";

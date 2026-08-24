@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     'LiveKitWebRTC.xcframework/tvos-arm64-simulator/LiveKitWebRTC.framework/LiveKitWebRTC'
+relocations:     []
+...

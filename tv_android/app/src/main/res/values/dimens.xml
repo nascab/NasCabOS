@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 字幕距屏幕底边固定留白（无需为底部操作栏额外抬高） -->
+    <dimen name="player_subtitle_bottom_margin">24dp</dimen>
+</resources>

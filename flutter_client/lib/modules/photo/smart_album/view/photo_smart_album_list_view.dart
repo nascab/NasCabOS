@@ -1,0 +1,146 @@
+import 'package:NasCabOS/core/theme/custom_colors.dart';
+import 'package:NasCabOS/modules/base/components.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_context_menu/flutter_context_menu.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/api/api_controller.dart';
+import '../../../base/components/custom_album.dart';
+import '../../../base/components/custom_extended_image.dart';
+import '../../../base/components/custom_no_data.dart';
+import '../../../base/components/custom_expandable_search_bar.dart';
+import '../../../base/components/custom_popup_select_button.dart';
+import '../../../../utils/context_menu_util.dart';
+import '../../../../utils/dialog_util.dart';
+import '../controller/photo_smart_album_controller.dart';
+import '../models/photo_smart_album_model.dart';
+import '../../timeline/view/pc_photo_timeline.dart';
+part 'parts/photo_smart_album_list_card.dart';
+part 'parts/photo_smart_album_list_dialogs.dart';
+part 'parts/photo_smart_album_list_top_bar.dart';
+part 'parts/photo_smart_album_list_timeline_overlay.dart';
+
+class PhotoSmartAlbumListView extends StatefulWidget {
+  final bool autoOpenCreate;
+  const PhotoSmartAlbumListView({super.key, this.autoOpenCreate = false});
+
+  @override
+  State<PhotoSmartAlbumListView> createState() =>
+      _PhotoSmartAlbumListViewState();
+}
+
+class _PhotoSmartAlbumListViewState extends State<PhotoSmartAlbumListView> {
+  bool _didAutoOpenCreate = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const tag = 'photo_smart_album';
+    return GetBuilder<PhotoSmartAlbumController>(
+      init: PhotoSmartAlbumController(),
+      tag: tag,
+      dispose: (_) => Get.delete<PhotoSmartAlbumController>(tag: tag),
+      builder: (ctrl) {
+        if (widget.autoOpenCreate && !_didAutoOpenCreate) {
+          _didAutoOpenCreate = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _showCreateDialog(context, ctrl);
+          });
+        }
+        final content = Obx(() {
+          if (ctrl.isLoading.value && ctrl.items.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.items.isEmpty) {
+            return CustomNoData(text: 'no_data'.tr);
+          }
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final crossAxisCount = (width / 240).floor().clamp(2, 6);
+              return CustomScrollView(
+                controller: ctrl.scrollController,
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.25,
+                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final album = ctrl.items[index];
+                        return _SmartAlbumCard(
+                          controller: ctrl,
+                          album: album,
+                          onOpen: () {
+                            ctrl.openAlbum(album);
+                          },
+                          onEdit: () => _showEditDialog(context, ctrl, album),
+                          onDelete: () => _confirmDelete(context, ctrl, album),
+                        );
+                      }, childCount: ctrl.items.length),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Center(
+                          child: ctrl.isLoading.value
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : (!ctrl.hasMore.value
+                                    ? Text(
+                                        'no_more'.tr,
+                                        style: Get.textTheme.bodySmall,
+                                      )
+                                    : OutlinedButton(
+                                        onPressed: ctrl.loadMore,
+                                        child: Text('load_more'.tr),
+                                      )),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        });
+
+        final list = Column(
+          children: [
+            _TopBar(controller: ctrl),
+            Expanded(child: content),
+          ],
+        );
+        final customColors = Theme.of(context).extension<CustomColors>();
+        return Container(
+          decoration: BoxDecoration(color: customColors?.mainContentBgColor),
+          child: Stack(
+            children: [
+              list,
+              Obx(() {
+                final album = ctrl.activeAlbum.value;
+                if (album == null) return const SizedBox.shrink();
+                return _SmartAlbumTimelineOverlay(
+                  album: album,
+                  onClose: ctrl.closeAlbum,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

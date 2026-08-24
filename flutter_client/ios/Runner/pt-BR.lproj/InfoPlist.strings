@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "O NasCabOS precisa da câmera para ler QR codes ao adicionar um servidor ou entrar na conta. Não grava vídeo nem salva imagens, a menos que você salve uma foto explicitamente.";
+"NSPhotoLibraryUsageDescription" = "O NasCabOS acessa a biblioteca de fotos para enviar ou fazer backup de fotos e vídeos, navegar em álbuns e escolher mídias no aparelho. Somente itens que você seleciona ou autoriza (incluindo acesso limitado) são usados.";
+"NSPhotoLibraryAddUsageDescription" = "O NasCabOS precisa de permissão para salvar na biblioteca fotos, vídeos, miniaturas ou arquivos exportados baixados quando você usar Salvar nas Fotos ou ação semelhante.";
+"NSLocalNetworkUsageDescription" = "O NasCabOS usa a rede local para descobrir e conectar ao seu servidor NasCab no Wi-Fi, transmitir e reproduzir mídia, receber mensagens de descoberta na LAN e formar conexões criptografadas ponto a ponto para acesso remoto na sua rede.";

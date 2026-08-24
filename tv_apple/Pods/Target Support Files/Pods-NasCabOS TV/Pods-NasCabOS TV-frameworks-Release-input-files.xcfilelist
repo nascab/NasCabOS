@@ -1,0 +1,3 @@
+${PODS_ROOT}/Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-frameworks.sh
+${PODS_XCFRAMEWORKS_BUILD_DIR}/FSPlayer/FSPlayer.framework/FSPlayer
+${PODS_XCFRAMEWORKS_BUILD_DIR}/TVVLCKit/TVVLCKit.framework/TVVLCKit

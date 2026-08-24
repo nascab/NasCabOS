@@ -1,0 +1,22 @@
+node_modules
+# 默认证书由程序首次启动时自动生成，不入库
+certs/*
+# 本地构建的 libvips（由 buildScripts/build-sharp-heif-mac.sh 生成，不入库）
+vendor/
+libs/sharp/**/*
+libs/ffmpeg/**/*
+libs/ffprobe/**/*
+libs/openlist/**/*
+libs/rclone/**/*
+onnx_models/**/*
+python/env/python-mac-arm64/**/*
+python/env/python-win-x64/**/*
+database/**/*
+test/**/*
+dist/**/*
+src/workers/ai/faces/insightface-master/**/*
+src/workers/ai/faces/debug_landmark/**/*
+web/main/**/*
+.tmp*
+.sharp-probe/
+.workbuddy

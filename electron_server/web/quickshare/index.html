@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Quick Share</title>
+    <link rel="icon" href="./assets/logo/logo.png" />
+    <link rel="stylesheet" href="./app.css" />
+    <link rel="stylesheet" href="./assets/vendor/viewerjs/viewer.min.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <img class="logo" src="./assets/logo/logo.png" alt="logo" />
+          <div class="brandText">
+            <div id="welcomeText" class="welcomeText"></div>
+            <div class="brandSub">
+              <div id="expireText" class="subText"></div>
+            </div>
+          </div>
+        </div>
+        <div class="topActions">
+          <button id="dlToggle" class="btnGhost actionBtn dlProgressBtn hidden" type="button"></button>
+          <div class="menuWrap">
+            <button id="themeToggle" class="btnGhost actionBtn iconOnly" type="button" aria-haspopup="menu" aria-expanded="false"></button>
+            <div id="themeMenu" class="menu hidden" role="menu"></div>
+          </div>
+          <div class="menuWrap">
+            <button id="langToggle" class="btnGhost actionBtn iconOnly" type="button" aria-haspopup="menu" aria-expanded="false"></button>
+            <div id="langMenu" class="menu hidden" role="menu"></div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="toolbar">
+          <div id="crumbs" class="crumbs"></div>
+        </div>
+
+        <div id="errorBox" class="errorBox hidden"></div>
+
+        <div class="listHead">
+          <div class="colName" id="colName"></div>
+          <div class="colTime" id="colTime"></div>
+          <div class="colSize" id="colSize"></div>
+          <div class="colActions"></div>
+        </div>
+        <div id="list" class="list"></div>
+      </main>
+    </div>
+
+    <div id="p2pConnecting" class="p2pConnecting hidden" aria-live="polite">
+      <div class="p2pConnectingCard">
+        <div class="p2pSpinner" aria-hidden="true"></div>
+        <div id="p2pConnectingText" class="p2pConnectingText"></div>
+      </div>
+    </div>
+
+    <div id="pwdModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modalCard">
+        <div class="modalTitle" id="pwdTitle"></div>
+        <div class="modalBody">
+          <input id="pwdInput" class="input" type="password" autocomplete="current-password" />
+          <div id="pwdHint" class="hint"></div>
+        </div>
+        <div class="modalActions">
+          <button id="pwdSubmit" class="btn" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="expiredModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="expiredTitle">
+      <div class="modalCard">
+        <div class="modalTitle" id="expiredTitle"></div>
+        <div class="modalActions">
+          <button id="expiredClose" class="btn" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dlModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modalCard dlModalCard">
+        <div class="modalTitleRow">
+          <div class="modalTitle" id="dlTitle"></div>
+          <div class="modalTitleActions">
+            <button id="dlClear" class="btnGhost actionBtn iconOnly" type="button"></button>
+            <button id="dlClose" class="btnGhost actionBtn iconOnly" type="button"></button>
+          </div>
+        </div>
+        <div id="dlList" class="dlList"></div>
+      </div>
+    </div>
+
+    <div id="memoryDownloadModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="memoryDownloadTitle">
+      <div class="modalCard">
+        <div class="modalTitle" id="memoryDownloadTitle"></div>
+        <div class="modalBody">
+          <div id="memoryDownloadText" class="hint"></div>
+        </div>
+        <div class="modalActions">
+          <button id="memoryDownloadCancel" class="btnGhost" type="button"></button>
+          <button id="memoryDownloadConfirm" class="btn" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <a id="viewerDownloadFab" class="viewerDownloadFab hidden" href="#" rel="noopener"></a>
+    <button id="viewerPrev" class="viewerNav viewerPrev hidden" type="button"></button>
+    <button id="viewerNext" class="viewerNav viewerNext hidden" type="button"></button>
+    <div id="toast" class="toast hidden"></div>
+    <script src="./i18n.js"></script>
+    <script src="./assets/vendor/web-streams-polyfill/polyfill.es2018.js"></script>
+    <script src="./assets/vendor/streamsaver/StreamSaver.js"></script>
+    <script src="./assets/vendor/viewerjs/viewer.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

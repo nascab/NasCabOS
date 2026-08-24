@@ -1,0 +1,22 @@
+/* Common */
+"ok" = "确定";
+"cancel" = "取消";
+"delete" = "删除";
+"edit" = "编辑";
+"save" = "保存";
+"error" = "错误";
+"loading" = "加载中...";
+
+/* Server List */
+"server_listTitle" = "选择服务器";
+"server_saved" = "已保存的服务器";
+"server_scanned" = "自动发现";
+"server_add" = "添加服务器";
+"server_localServer" = "本机";
+"server_connect_fail" = "无法连接到服务器";
+"server_connecting" = "正在连接...";
+"server_add_by_pair_code_title" = "配对码连接";
+
+/* Auth */
+"auth_login_loading" = "正在登录...";
+"auth_login_failure" = "登录失败";

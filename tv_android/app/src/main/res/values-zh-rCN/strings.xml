@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">服务器</string>
+    <string name="server_discovered_section">自动发现</string>
+    <string name="server_saved_section">已保存</string>
+    <string name="server_tag_auto_discovered">自动发现</string>
+    <string name="server_add_direct">添加服务器</string>
+    <string name="server_add_by_pair_code">通过配对码添加</string>
+    <string name="server_add_direct_desc">直连地址</string>
+    <string name="server_add_by_pair_code_desc">通过配对码添加服务器</string>
+    <string name="action_language">语言</string>
+    <string name="language_title">语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">设置</string>
+    <string name="home_menu_video">影音库</string>
+    <string name="home_menu_photo">照片管理</string>
+    <string name="home_menu_music">音乐库</string>
+    <string name="home_menu_files">文件管理</string>
+
+    <string name="home_video_movies">电影</string>
+    <string name="home_video_tv_series">电视剧</string>
+    <string name="home_video_recent">最近播放</string>
+    <string name="home_video_favorite">收藏</string>
+    <string name="home_video_custom_albums">自建影集</string>
+    <string name="home_video_smart_albums">智能影集</string>
+    <string name="home_video_collections">影音合集</string>
+
+    <string name="video_media_type_movie">电影</string>
+    <string name="video_media_type_tv">电视剧</string>
+
+    <string name="video_list_options_title">选项</string>
+    <string name="video_list_action_search">搜索</string>
+    <string name="video_list_action_media_type">类型</string>
+    <string name="video_list_action_sort">排序</string>
+    <string name="video_list_action_sources">来源目录</string>
+    <string name="video_list_action_clear_filters">清除筛选</string>
+    <string name="video_list_action_apply">应用</string>
+    <string name="video_list_action_clear_search">清除搜索</string>
+    <string name="video_list_search_field">关键词</string>
+    <string name="video_list_search_hint">按标题或文件名搜索</string>
+    <string name="video_list_search_empty">未设置</string>
+    <string name="video_list_sources_all">全部</string>
+    <string name="video_list_media_type_all">全部</string>
+    <string name="video_list_media_type_movie">电影</string>
+    <string name="video_list_media_type_tv">电视剧</string>
+    <string name="video_list_sources_hint">选择来源目录</string>
+    <string name="video_list_sources_selected_count">已选：%1$d</string>
+    <string name="video_list_sort_view_time_desc">观看时间（最新）</string>
+    <string name="video_list_sort_view_time_asc">观看时间（最早）</string>
+    <string name="video_list_sort_create_time_desc">创建时间（最新）</string>
+    <string name="video_list_sort_create_time_asc">创建时间（最早）</string>
+    <string name="video_list_sort_favorite_time_desc">收藏时间（最新）</string>
+    <string name="video_list_sort_favorite_time_asc">收藏时间（最早）</string>
+    <string name="video_list_sort_year_desc">年份（新到旧）</string>
+    <string name="video_list_sort_year_asc">年份（旧到新）</string>
+    <string name="video_list_sort_score_desc">评分（高到低）</string>
+    <string name="video_list_sort_score_asc">评分（低到高）</string>
+    <string name="video_list_sort_name_asc">名称（A-Z）</string>
+    <string name="video_list_sort_name_desc">名称（Z-A）</string>
+
+    <string name="video_library_tag_album">影集</string>
+    <string name="video_library_tag_smart_album">智能</string>
+    <string name="video_library_tag_collection">合集</string>
+    <string name="video_library_open_title">打开</string>
+    <string name="video_library_sort_create_time_desc">创建时间（最新）</string>
+    <string name="video_library_sort_create_time_asc">创建时间（最早）</string>
+    <string name="video_library_sort_name_asc">名称（A-Z）</string>
+    <string name="video_library_sort_name_desc">名称（Z-A）</string>
+
+    <string name="video_detail_action_play">播放</string>
+    <string name="video_detail_action_continue_play">继续播放</string>
+    <string name="video_detail_action_favorite">收藏</string>
+    <string name="video_detail_action_unfavorite">取消收藏</string>
+    <string name="video_detail_action_delete">删除</string>
+    <string name="video_detail_action_scan">扫描变动</string>
+    <string name="video_detail_action_select_episodes">选集</string>
+    <string name="video_detail_action_select_season">选季</string>
+    <string name="video_detail_meta_seasons_count">共%1$d季</string>
+    <string name="video_detail_meta_episodes_count">共%1$d集</string>
+    <string name="video_detail_delete_title">删除</string>
+    <string name="video_detail_delete_message">确认删除“%1$s”？</string>
+    <string name="video_detail_delete_failed">删除失败</string>
+    <string name="video_detail_play_failed">无法打开播放器</string>
+    <string name="video_detail_scan_queued">已加入扫描队列</string>
+    <string name="video_detail_seasons">季</string>
+    <string name="video_detail_episodes">集</string>
+    <string name="video_detail_people">演职人员</string>
+    <string name="video_detail_directors">导演</string>
+    <string name="video_detail_actors">演员</string>
+    <string name="video_detail_progress_format">已观看 %1$s / %2$s（%3$s）</string>
+    <string name="video_detail_progress_short_format">已观看 %1$s</string>
+    <string name="video_detail_season_label">季</string>
+    <string name="video_detail_episode_title_format">第%1$02d集 %2$s</string>
+    <string name="video_detail_select_episodes_title">选集</string>
+
+    <string name="player_options_title">播放设置</string>
+    <string name="player_playlist_title">播放列表</string>
+    <string name="player_action_previous">上一个</string>
+    <string name="player_action_next">下一个</string>
+    <string name="player_setting_quality">画质</string>
+    <string name="player_quality_original">原画</string>
+    <string name="player_setting_speed">倍速</string>
+    <string name="player_setting_audio_track">音轨</string>
+    <string name="player_setting_subtitle_track">字幕</string>
+    <string name="player_setting_subtitle_search">搜索字幕</string>
+    <string name="player_subtitle_search_title">字幕搜索</string>
+    <string name="player_subtitle_searching">搜索中…</string>
+    <string name="player_subtitle_search_no_results">没有结果</string>
+    <string name="player_subtitle_search_feature">特征</string>
+    <string name="player_subtitle_search_keyword">关键词</string>
+    <string name="player_subtitle_search_keyword_hint">关键词</string>
+    <string name="player_subtitle_download_success">字幕下载成功</string>
+    <string name="player_subtitle_download_failed">下载失败</string>
+    <string name="player_setting_subtitle_size">字幕大小</string>
+    <string name="player_setting_decoder">解码器</string>
+    <string name="player_no_subtitle">无字幕</string>
+    <string name="player_setting_show_playlist">查看播放列表</string>
+    <string name="player_subtitle_external">外挂字幕</string>
+    <string name="player_subtitle_size_small">小</string>
+    <string name="player_subtitle_size_medium">中</string>
+    <string name="player_subtitle_size_large">大</string>
+    <string name="player_subtitle_size_xlarge">特大</string>
+    <string name="player_decoder_auto">系统解码</string>
+    <string name="player_decoder_system">系统解码</string>
+    <string name="player_decoder_extension">VLC</string>
+    <string name="player_decoder_vlc">VLC</string>
+    <string name="player_dolby_vision_decoder_fallback">已手动切换解码器</string>
+    <string name="player_exit_title">退出播放器</string>
+    <string name="player_exit_message">确定退出并停止播放？</string>
+    <string name="player_resume_title">继续播放</string>
+    <string name="player_resume_message">从 %1$s 继续播放？</string>
+    <string name="player_resume_from_start">从开头播放</string>
+    <string name="player_resume_auto_close"> (%d秒后自动关闭)</string>
+    <string name="player_play_failed">播放失败</string>
+    <string name="player_reconnect_title">网络断开</string>
+    <string name="player_reconnect_message">连接已断开，是否重连？</string>
+    <string name="player_reconnect_retry">重连</string>
+    <string name="player_reconnect_exit">退出</string>
+    <string name="player_skip_opening">已跳过片头</string>
+    <string name="player_skip_ending">已跳过片尾</string>
+    <string name="player_hint_controls">确认键：播放/暂停 · 左右键：快进快退 · 上：设置 · 下：播放列表 · 返回：退出</string>
+
+    <string name="home_photo_timeline">时间轴</string>
+    <string name="home_photo_today">往年今日</string>
+    <string name="home_photo_favorite">收藏</string>
+    <string name="home_photo_custom_albums">自建相册</string>
+    <string name="home_photo_smart_albums">智能相册</string>
+    <string name="home_photo_collections">相册合集</string>
+
+    <string name="photo_library_tag_album">相册</string>
+    <string name="photo_library_tag_smart_album">智能</string>
+    <string name="photo_library_tag_collection">合集</string>
+    <string name="photo_library_prefix_album">自建相册</string>
+    <string name="photo_library_prefix_smart_album">智能相册</string>
+    <string name="photo_library_prefix_collection">合集</string>
+
+    <string name="video_library_prefix_album">自建影集</string>
+    <string name="video_library_prefix_smart_album">智能影集</string>
+    <string name="video_library_prefix_collection">影音合集</string>
+
+    <string name="photo_timeline_options_title">时间轴选项</string>
+    <string name="photo_timeline_action_sort">排序</string>
+    <string name="photo_timeline_action_type">类型</string>
+    <string name="photo_timeline_action_sources">来源目录</string>
+    <string name="photo_timeline_action_year">年份</string>
+    <string name="photo_timeline_action_month">月份</string>
+    <string name="photo_timeline_action_refresh">刷新</string>
+    <string name="photo_timeline_action_clear_filters">清除筛选</string>
+
+    <string name="photo_timeline_file_type_all">全部</string>
+    <string name="photo_timeline_file_type_image">图片</string>
+    <string name="photo_timeline_file_type_video">视频</string>
+
+    <string name="photo_timeline_sort_desc">拍摄时间（最新）</string>
+    <string name="photo_timeline_sort_asc">拍摄时间（最早）</string>
+
+    <string name="photo_timeline_sources_all">全部</string>
+    <string name="photo_timeline_sources_selected_count">已选：%1$d</string>
+
+    <string name="photo_timeline_year_all">全部年份</string>
+    <string name="photo_timeline_month_all">全部月份</string>
+    <string name="photo_timeline_month_pick_year_first">请先选择年份</string>
+    <string name="photo_timeline_month_format">%1$02d月</string>
+
+    <string name="photo_preview_auto_play">自动播放</string>
+    <string name="photo_preview_auto_play_interval">播放间隔</string>
+    <string name="photo_preview_seconds_format">%1$d 秒</string>
+    <string name="photo_preview_action_favorite">收藏</string>
+    <string name="photo_preview_action_unfavorite">取消收藏</string>
+    <string name="photo_preview_action_trash">放入回收站</string>
+    <string name="photo_preview_toast_moved_to_trash">已放入回收站</string>
+
+    <string name="home_music_tracks">曲库</string>
+    <string name="home_music_albums">专辑</string>
+    <string name="home_music_artists">艺术家</string>
+    <string name="home_music_playlists">歌单</string>
+    <string name="home_music_favorite">收藏</string>
+    <string name="home_music_now_playing">正在播放</string>
+
+    <string name="music_item_type_folder">文件夹</string>
+    <string name="music_item_folder_count">%1$d 首</string>
+    <string name="music_group_count">%1$d 首</string>
+
+    <string name="music_list_action_search">搜索</string>
+    <string name="music_list_action_sort">排序</string>
+    <string name="music_list_action_sources">来源筛选</string>
+    <string name="music_list_action_apply">应用</string>
+    <string name="music_list_action_clear_search">清空搜索</string>
+    <string name="music_list_action_clear_filters">清除筛选</string>
+    <string name="music_list_sources_all">全部</string>
+    <string name="music_list_sources_all_sources">全部来源</string>
+    <string name="music_list_sources_selected_count">已选：%1$d</string>
+    <string name="music_list_search_empty">无</string>
+
+    <string name="music_sort_filename_asc">文件名（A–Z）</string>
+    <string name="music_sort_filename_desc">文件名（Z–A）</string>
+    <string name="music_sort_title_asc">标题（A–Z）</string>
+    <string name="music_sort_title_desc">标题（Z–A）</string>
+    <string name="music_sort_artist_asc">艺术家（A–Z）</string>
+    <string name="music_sort_artist_desc">艺术家（Z–A）</string>
+    <string name="music_sort_album_asc">专辑（A–Z）</string>
+    <string name="music_sort_album_desc">专辑（Z–A）</string>
+    <string name="music_sort_duration_asc">时长（更短）</string>
+    <string name="music_sort_duration_desc">时长（更长）</string>
+    <string name="music_sort_favorite_time_desc">收藏时间（最新）</string>
+    <string name="music_sort_favorite_time_asc">收藏时间（最早）</string>
+    <string name="music_sort_create_time_desc">创建时间（最新）</string>
+    <string name="music_sort_create_time_asc">创建时间（最早）</string>
+    <string name="music_sort_modify_time_desc">修改时间（最新）</string>
+    <string name="music_sort_modify_time_asc">修改时间（最早）</string>
+    <string name="music_sort_year_desc">年份（更新）</string>
+    <string name="music_sort_year_asc">年份（更早）</string>
+
+    <string name="music_group_sort_count_desc">数量（更多）</string>
+    <string name="music_group_sort_count_asc">数量（更少）</string>
+    <string name="music_group_sort_name_asc">名称（A–Z）</string>
+    <string name="music_group_sort_name_desc">名称（Z–A）</string>
+
+    <string name="music_playlist_sort_create_time_desc">创建时间（最新）</string>
+    <string name="music_playlist_sort_create_time_asc">创建时间（最早）</string>
+    <string name="music_playlist_sort_name_asc">名称（A–Z）</string>
+    <string name="music_playlist_sort_name_desc">名称（Z–A）</string>
+
+    <string name="music_notification_channel_name">音乐播放</string>
+    <string name="music_notification_channel_desc">后台音乐播放</string>
+    <string name="music_action_prev">上一首</string>
+    <string name="music_action_play">播放</string>
+    <string name="music_action_pause">暂停</string>
+    <string name="music_action_next">下一首</string>
+    <string name="music_action_stop">停止</string>
+
+    <string name="music_now_playing_hint">左右键：快进/快退 10 秒</string>
+    <string name="music_now_playing_empty">暂无正在播放</string>
+    <string name="music_no_lyrics">暂无歌词</string>
+    <string name="music_search_lyric">搜索歌词</string>
+    <string name="music_match_high">高匹配度</string>
+    <string name="music_match_score">匹配度 %1$d%%</string>
+    <string name="music_favorite">收藏</string>
+    <string name="music_unfavorite">取消收藏</string>
+    <string name="no_data">暂无数据</string>
+    <string name="operation_success">操作成功</string>
+    <string name="operation_failed">操作失败</string>
+
+    <string name="home_file_browse">文件浏览</string>
+    <string name="home_language_settings">语言设置</string>
+    <string name="home_video_playback_settings">视频播放设置</string>
+    <string name="video_playback_default_quality">默认播放码率</string>
+    <string name="video_playback_default_quality_desc">视频播放时默认使用的码率，除原片外其他分辨率使用转码实现，在网络带宽有限时可使用此配置降低带宽需求</string>
+    <string name="feature_placeholder_video">功能开发中</string>
+    <string name="feature_placeholder_photos">功能开发中</string>
+    <string name="feature_placeholder_music">功能开发中</string>
+    <string name="feature_placeholder_files">功能开发中</string>
+
+    <string name="action_logout">登出</string>
+    <string name="logout_title">登出</string>
+    <string name="logout_confirm_message">是否从 %1$s 登出？</string>
+    <string name="logout_desc">从 %1$s 登出</string>
+
+    <string name="dev_network_channel">网络通道</string>
+    <string name="dev_network_channel_desc">用于测试连通性：强制切换连接模式</string>
+    <string name="dev_network_mode_auto">自动</string>
+    <string name="dev_network_mode_direct">直连</string>
+    <string name="dev_network_mode_p2p_direct">P2P 直连</string>
+    <string name="dev_network_mode_p2p_relay">P2P 中继</string>
+    <string name="dev_network_switch_success">已切换到：%1$s</string>
+
+    <string name="pair_code_input_title">输入配对码</string>
+
+    <string name="action_connect">连接</string>
+    <string name="status_connecting">连接中...</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_delete">删除</string>
+    <string name="action_save">保存</string>
+    <string name="action_search">搜索</string>
+    <string name="action_select">选择</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_ok">确定</string>
+    <string name="common_on">开</string>
+    <string name="common_off">关</string>
+    <string name="update_dialog_title_format">发现新版本：%1$s</string>
+    <string name="update_action_upgrade">升级</string>
+    <string name="update_action_later">稍后</string>
+    <string name="update_action_ignore_this_version">此版本不再提示</string>
+    <string name="update_action_downloading">下载中…</string>
+    <string name="update_action_install">安装</string>
+    <string name="update_action_retry">重试</string>
+    <string name="update_status_ready">准备就绪</string>
+    <string name="update_status_failed">下载失败</string>
+    <string name="update_status_ready_to_install">下载完成，可安装</string>
+    <string name="update_status_downloading_percent_format">下载中：%1$d%%</string>
+    <string name="exit_confirm_title">退出应用</string>
+    <string name="exit_confirm_message">是否确认退出应用？</string>
+
+    <string name="field_server_name">服务器名称</string>
+    <string name="field_protocol">协议</string>
+    <string name="field_server_url">服务器地址(含端口)</string>
+    <string name="field_pair_code">配对码</string>
+    <string name="field_username">用户名</string>
+    <string name="field_password">密码</string>
+    <string name="field_require_password_every_login">每次登录需要输入密码</string>
+    <string name="prompt_password_desc">请输入密码以登录服务器</string>
+    <string name="twofa_prompt_title">2FA 验证</string>
+    <string name="twofa_prompt_desc">请输入 2FA 验证码</string>
+    <string name="field_twofa_code">2FA 验证码</string>
+
+    <string name="hint_optional">可选</string>
+
+    <string name="error_title">错误</string>
+    <string name="tip">提示</string>
+    <string name="server_version_too_low">您的服务端版本过低，请升级到最新版本并重新登录后再使用此功能</string>
+    <string name="service_nascab_session_expired">登录已过期，请重新登录。</string>
+    <string name="error_pair_code_empty">配对码不能为空</string>
+    <string name="error_pair_code_invalid">配对码不合法</string>
+    <string name="error_server_url_empty">服务器地址不能为空</string>
+    <string name="error_username_empty">用户名不能为空</string>
+    <string name="error_password_empty">密码不能为空</string>
+    <string name="error_twofa_empty">2FA 验证码不能为空</string>
+    <string name="error_twofa_invalid">2FA 验证码错误</string>
+    <string name="error_twofa_too_many_attempts">尝试次数过多，请稍后再试</string>
+    <string name="error_twofa_invalid_token">2FA 已过期，请重新登录</string>
+    <string name="error_network_failed">网络请求失败</string>
+    <string name="error_not_nascab_server">不是 NasCab 服务器</string>
+    <string name="error_not_logged_in">请先登录</string>
+    <string name="error_server_unreachable">服务器无法连接，请检查服务器状态</string>
+    <string name="error_no_direct_url">没有可用的直连地址</string>
+    <string name="error_no_pair_code">没有可用的配对码</string>
+
+    <string name="cancel_add_confirm_title">取消添加</string>
+    <string name="cancel_add_confirm_message">是否取消添加服务器？</string>
+
+    <string name="common_no_data">暂无数据</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d 项</item>
+        <item quantity="other">%d 项</item>
+    </plurals>
+</resources>

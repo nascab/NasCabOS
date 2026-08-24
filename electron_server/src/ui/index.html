@@ -1,0 +1,413 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>NasCab OS Server</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <img src="assets/logo.png" alt="NasCab OS" />
+        </div>
+        <span>NasCab OS</span>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="active" data-target="status-tab">
+          <span class="menu-icon"><img src="assets/status.png" alt="" /></span>
+          <span data-i18n="nav.status">Status</span>
+        </li>
+        <li data-target="logs-tab">
+          <span class="menu-icon"><img src="assets/log.png" alt="" /></span>
+          <span data-i18n="nav.logs">Logs</span>
+        </li>
+
+        <li data-target="admin-tab">
+          <span class="menu-icon"><img src="assets/info.png" alt="" /></span>
+          <span data-i18n="nav.admin">Admin</span>
+        </li>
+        <li data-target="settings-tab">
+          <span class="menu-icon"><img src="assets/settings.png" alt="" /></span>
+          <span data-i18n="nav.settings">Settings</span>
+        </li>
+        <li data-target="feature-settings-tab">
+          <span class="menu-icon"><img src="assets/access-scope.svg" alt="" /></span>
+          <span data-i18n="nav.featureSettings">Access Scope</span>
+        </li>
+        <li data-target="process-tab">
+          <span class="menu-icon"><img src="assets/process.png" alt="" /></span>
+          <span data-i18n="nav.process">Process</span>
+        </li>
+        <li data-target="tutorial-tab">
+          <span class="menu-icon"><img src="assets/tutorial.png" alt="" /></span>
+          <span data-i18n="nav.tutorial">Tutorial</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <div id="status-tab" class="tab-content active">
+        <div class="card">
+          <div class="card-header" data-i18n="status.title">Service Status</div>
+          <div class="status-item">
+            <span class="status-label">
+              <span data-i18n="status.express">NasCabOS Service</span>
+              <span class="status-value status-badge" id="status-express" data-i18n="status.expressChecking">Checking...</span>
+            </span>
+            <div class="status-value">
+              <div class="status-address-group">
+                <div class="status-address-protocol">HTTP</div>
+                <div class="status-address-row" id="status-server-link"></div>
+              </div>
+              <div class="status-address-group">
+                <div class="status-address-protocol">HTTPS</div>
+                <div class="status-address-row" id="status-server-link-https"></div>
+              </div>
+            </div>
+          </div>
+          <div id="initial-admin-block" class="initial-admin-block hidden">
+            <div class="initial-admin-warning">
+              <span data-i18n="status.initialAdminWarning">You are using the initial admin account and password. Please change them as soon as possible.</span>
+              <a href="#" id="initial-admin-go-admin" data-i18n="status.initialAdminGoAdmin">Modify</a>
+            </div>
+            <div class="status-item">
+              <span class="status-label" data-i18n="status.initialAdminUsername">Initial Username</span>
+              <span class="status-value" id="initial-admin-username">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label" data-i18n="status.initialAdminPassword">Initial Password</span>
+              <span class="status-value">
+                <span id="initial-admin-password" class="mono">******</span>
+                <a href="#" id="initial-admin-toggle-password" class="small-link" data-i18n="common.show">Show</a>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-i18n="status.otherInfo">Other Info</div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="status.databaseDir">Database Directory</span>
+            <span class="status-value"><a href="#" id="open-db-dir-link"></a></span>
+          </div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="status.databaseTotalSize">Total database size on disk</span>
+            <span class="status-value status-value-inline-group">
+              <span id="database-total-size" class="mono">—</span>
+              <button type="button" id="database-vacuum-btn" class="btn btn-small btn-secondary" data-i18n="status.databaseVacuum">Vacuum</button>
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="status.cacheDir">Cache Directory</span>
+            <span class="status-value status-value-inline-group">
+              <a href="#" id="open-cache-dir-link"></a>
+              <button type="button" id="cache-stats-btn" class="btn btn-small btn-secondary" data-i18n="cache.statsAndClean">统计和清理</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-i18n="about.title">About</div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="about.version">Version</span>
+            <span class="status-value" id="app-version">Loading...</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="about.updateStatus">Update Status</span>
+            <span class="status-value">
+              <span id="about-update-status" data-i18n="about.updateStatusText">Up to date</span>
+              <button type="button" id="about-update-go-download-btn" class="btn btn-small hidden" data-i18n="about.goDownload">去下载</button>
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="about.website">Official Website</span>
+            <span class="status-value">
+              <a href="#" id="official-site-link">https://nas.cab</a>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div id="logs-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="logs.title">Real-time Logs</div>
+          <div id="log-container"></div>
+        </div>
+      </div>
+
+      <div id="process-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="process.title">Running Processes</div>
+          <div id="process-list-container"></div>
+        </div>
+      </div>
+
+      <div id="admin-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="admin.title">Admin Account</div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="admin.username">Username</span>
+            <span class="status-value" id="admin-username">Loading...</span>
+          </div>
+        </div>
+
+        <div class="card" id="admin-update-card">
+          <div class="card-header" data-i18n="admin.updateCredentials">Update Username / Password</div>
+          <form id="admin-update-form">
+            <div class="form-group">
+              <label data-i18n="admin.username">Username</label>
+              <input type="text" id="admin-username-input" class="form-control" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label data-i18n="admin.newPwd">New Password</label>
+              <input type="password" id="admin-new-password" class="form-control" autocomplete="new-password" />
+            </div>
+            <button type="submit" class="btn btn-primary" data-i18n="admin.updateCredentialsBtn">Update</button>
+          </form>
+        </div>
+
+        <div class="card" id="admin-2fa-card">
+          <div class="card-header" data-i18n="admin.twofaTitle">Two-Factor Authentication</div>
+          <div class="status-item">
+            <span class="status-label" data-i18n="admin.twofaStatus">Status</span>
+            <span class="status-value" id="admin-2fa-status">-</span>
+          </div>
+          <button id="admin-2fa-reset-btn" class="btn btn-danger hidden" data-i18n="admin.reset2fa">Reset 2FA</button>
+        </div>
+      </div>
+
+      <div id="settings-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="settings.general">General Settings</div>
+          <div class="form-group">
+            <label for="ui-language" data-i18n="settings.uiLanguage">UI Language</label>
+            <select id="ui-language" class="form-control">
+              <option value="en-US">English</option>
+              <option value="zh-CN">中文</option>
+              <option value="ja-JP">日本語</option>
+              <option value="ko-KR">한국어</option>
+              <option value="es-ES">Español</option>
+              <option value="pt-BR">Português</option>
+              <option value="fr-FR">Français</option>
+              <option value="de-DE">Deutsch</option>
+              <option value="ru-RU">Русский</option>
+              <option value="id-ID">Bahasa Indonesia</option>
+              <option value="vi-VN">Tiếng Việt</option>
+              <option value="th-TH">ไทย</option>
+              <option value="ar-SA">العربية</option>
+            </select>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="start-on-boot" />
+            <label for="start-on-boot" data-i18n="settings.startOnBoot">Start on System Boot</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="minimize-on-start" />
+            <label for="minimize-on-start" data-i18n="settings.minimizeOnStart">Minimize to Tray on Start</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="auto-discover-server" />
+            <div class="checkbox-text-group">
+              <label for="auto-discover-server" data-i18n="settings.autoDiscoverServer">Auto-discover server</label>
+              <div class="checkbox-subtitle" data-i18n="settings.autoDiscoverServer.desc">Broadcast server presence on the LAN so clients can discover it automatically.</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 16px">
+            <label data-i18n="settings.legalDocuments">Legal information</label>
+            <div class="settings-legal-links" style="margin-top: 8px">
+              <a href="#" id="settings-open-user-agreement" class="small-link" data-i18n="settings.userAgreement">User Agreement</a>
+              <span style="opacity: 0.55; margin: 0 6px">·</span>
+              <a href="#" id="settings-open-privacy-policy" class="small-link" data-i18n="settings.privacyPolicy">Privacy Policy</a>
+            </div>
+          </div>
+          <div style="margin-top: 20px">
+            <button id="save-settings-btn" class="btn btn-primary" data-i18n="settings.save">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="feature-settings-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="featureSettings.title">Access Scope</div>
+          <div class="settings-description" data-i18n="featureSettings.description">Set the directory range this application can use.</div>
+
+          <div class="form-group">
+            <label data-i18n="featureSettings.modeLabel">Directory Scope</label>
+            <div class="feature-scope-options">
+              <label class="feature-scope-option">
+                <input type="radio" name="feature-access-mode" value="specified" />
+                <div class="feature-scope-option-body">
+                  <div class="feature-scope-option-title" data-i18n="featureSettings.modeSpecified">Specified Directories</div>
+                  <div class="feature-scope-option-desc" data-i18n="featureSettings.modeSpecifiedDesc">Only allow access to the selected directories below.</div>
+                </div>
+              </label>
+              <label class="feature-scope-option">
+                <input type="radio" name="feature-access-mode" value="all" />
+                <div class="feature-scope-option-body">
+                  <div class="feature-scope-option-title" data-i18n="featureSettings.modeAll">All Directories</div>
+                  <div class="feature-scope-option-desc" data-i18n="featureSettings.modeAllDesc">Allow access to all directories permitted by the application.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div id="feature-access-directory-section">
+            <div class="form-group">
+              <label data-i18n="featureSettings.directoryListLabel">Specified Directories</label>
+              <div id="feature-access-directory-list" class="feature-access-directory-list"></div>
+            </div>
+            <button type="button" id="feature-access-add-btn" class="btn btn-secondary" data-i18n="featureSettings.addDirectory">Add Directory</button>
+          </div>
+
+          <div style="margin-top: 20px">
+            <button type="button" id="feature-access-save-btn" class="btn btn-primary" data-i18n="featureSettings.save">Save Settings</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-i18n="featureSettings.terminalTitle">Terminal</div>
+          <div class="settings-description" data-i18n="featureSettings.terminalDescription">Whether to allow administrator accounts to use the Terminal app from the client. Enabled by default.</div>
+          <div class="feature-terminal-toggle">
+            <label class="checkbox-group">
+              <input type="checkbox" id="feature-terminal-enabled" />
+              <div class="checkbox-text-group">
+                <span data-i18n="featureSettings.terminalEnabledLabel">Enable Terminal</span>
+                <span class="checkbox-subtitle" data-i18n="featureSettings.terminalEnabledHint">When disabled, the client cannot connect to Terminal.</span>
+              </div>
+            </label>
+          </div>
+          <div style="margin-top: 20px">
+            <button type="button" id="feature-terminal-save-btn" class="btn btn-primary" data-i18n="featureSettings.save">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div id="tutorial-tab" class="tab-content">
+        <div class="card">
+          <div class="card-header" data-i18n="tutorial.title">Tutorial</div>
+          <div class="tutorial-cards">
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/help.html" data-i18n="tutorial.helpCenter">Help Center</a>
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/helpInit.html" data-i18n="tutorial.quickStart">Quick Start Guide</a>
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/helpP2p.html" data-i18n="tutorial.remoteConnection">Remote Connection Guide</a>
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/helpPairCode.html" data-i18n="tutorial.pairCode">Remote Connection and Pairing Code</a>
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/vipDiff.html" data-i18n="tutorial.vipDiff">VIP Version Differences</a>
+            <a href="#" class="tutorial-card" data-url="https://nas.cab/others/helpSystemTrans.html" data-i18n="tutorial.systemMigration">System Migration Guide</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mac-full-disk-access-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-title" data-i18n="macFullDiskAccess.title">Full Disk Access Required</div>
+        <div class="modal-body">
+          <p data-i18n="macFullDiskAccess.desc1">This app needs Full Disk Access to work properly.</p>
+          <p data-i18n="macFullDiskAccess.desc2">Open System Settings and enable Full Disk Access for this app, then restart.</p>
+        </div>
+        <div class="modal-actions">
+          <button id="open-full-disk-access-settings" class="btn btn-primary" data-i18n="macFullDiskAccess.openSettings">Open System Settings</button>
+          <button id="close-full-disk-access-modal" class="btn btn-secondary" data-i18n="macFullDiskAccess.close">Later</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="database-vacuum-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-title" data-i18n="status.databaseVacuumTitle">Defragment databases</div>
+        <div class="modal-body">
+          <p data-i18n="status.databaseVacuumConfirm">This operation may take a long time and may briefly affect API access. Continue?</p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="database-vacuum-cancel-btn" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+          <button type="button" id="database-vacuum-confirm-btn" class="btn btn-primary" data-i18n="common.confirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ui-language-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-title" data-i18n="langSelect.title">Language</div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-top: 12px">
+            <label for="ui-language-init-select" data-i18n="settings.uiLanguage">UI Language</label>
+            <select id="ui-language-init-select" class="form-control">
+              <option value="en-US">English</option>
+              <option value="zh-CN">中文</option>
+              <option value="ja-JP">日本語</option>
+              <option value="ko-KR">한국어</option>
+              <option value="es-ES">Español</option>
+              <option value="pt-BR">Português</option>
+              <option value="fr-FR">Français</option>
+              <option value="de-DE">Deutsch</option>
+              <option value="ru-RU">Русский</option>
+              <option value="id-ID">Bahasa Indonesia</option>
+              <option value="vi-VN">Tiếng Việt</option>
+              <option value="th-TH">ไทย</option>
+              <option value="ar-SA">العربية</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="confirm-ui-language" class="btn btn-primary" data-i18n="langSelect.confirm">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="update-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-title" data-i18n="update.title">New version available</div>
+        <div class="modal-body">
+          <p id="update-message" data-i18n="update.message">A new version is available. Do you want to update now?</p>
+          <p id="update-version"></p>
+          <div class="update-progress-wrapper">
+            <div class="update-progress-bar-bg">
+              <div class="update-progress-bar-fill" id="update-progress-bar"></div>
+            </div>
+            <div class="update-progress-text" id="update-progress-text" data-i18n="update.waiting">Waiting for your choice...</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="update-view-btn" class="btn btn-secondary" data-i18n="update.view">View on website</button>
+          <button id="update-now-btn" class="btn btn-primary" data-i18n="update.updateNow">Update now</button>
+          <button id="update-later-btn" class="btn btn-secondary" data-i18n="update.later">Later</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cache-stats-modal" class="modal-overlay hidden">
+      <div class="modal modal-wide">
+        <div class="modal-title" data-i18n="cache.statsTitle">缓存统计与清理</div>
+        <div class="modal-body">
+          <div class="cache-stats-progress-bar" id="cache-stats-progress-bar-bg">
+            <div class="cache-stats-progress-fill" id="cache-stats-progress-fill"></div>
+          </div>
+          <div class="cache-stats-progress-text" id="cache-stats-progress-text"></div>
+          <div class="cache-stats-toolbar">
+            <button type="button" id="cache-stats-refresh-btn" class="btn btn-small btn-secondary" data-i18n="cache.forceRefresh">强制重新统计</button>
+            <span class="cache-stats-toolbar-gap"></span>
+            <a href="#" class="small-link" id="cache-stats-select-all" data-i18n="cache.selectAll">全选</a>
+            <a href="#" class="small-link" id="cache-stats-deselect-all" data-i18n="cache.deselectAll">取消全选</a>
+          </div>
+          <div class="cache-stats-summary" id="cache-stats-summary">
+            <span class="cache-stats-summary-item"><span data-i18n="cache.totalCacheSize">缓存总量</span>: <span id="cache-stats-total-size" class="cache-stats-summary-value">—</span></span>
+            <span class="cache-stats-summary-item"><span data-i18n="cache.checkedTotalSize">已勾选</span>: <span id="cache-stats-checked-size" class="cache-stats-summary-value">—</span></span>
+          </div>
+          <div class="cache-stats-list" id="cache-stats-list">
+            <!-- populated dynamically -->
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cache-stats-cancel-btn" class="btn btn-secondary" data-i18n="common.cancel">取消</button>
+          <button type="button" id="cache-stats-clean-btn" class="btn btn-danger" data-i18n="cache.cleanSelected" disabled>清理选中</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="renderer.js"></script>
+  </body>
+</html>

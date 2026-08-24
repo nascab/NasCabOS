@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="NasCabOS">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>NasCabOS</title>
+  <style>
+    #flutter-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      color: #eaeaea;
+      font-family: system-ui, -apple-system, sans-serif;
+      transition: opacity 0.3s ease;
+    }
+    #flutter-loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #flutter-loading .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #4fc3f7;
+      border-radius: 50%;
+      animation: flutter-load-spin 0.9s linear infinite;
+    }
+    #flutter-loading .text {
+      margin-top: 20px;
+      font-size: 15px;
+      color: #b0b0b0;
+    }
+    @keyframes flutter-load-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="flutter-loading">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="text">NasCabOS Loading…</div>
+  </div>
+  <script>
+    (function() {
+      var loading = document.getElementById('flutter-loading');
+      var done = false;
+      function hideLoading() {
+        if (done) return;
+        done = true;
+        if (!loading) return;
+        loading.classList.add('hidden');
+        setTimeout(function() {
+          if (loading && loading.parentNode) loading.parentNode.removeChild(loading);
+        }, 350);
+      }
+      window.addEventListener('flutter-first-frame', hideLoading);
+      var fallback = setInterval(function() {
+        if (document.querySelector('flt-glass-pane') || document.querySelector('canvas')) {
+          clearInterval(fallback);
+          hideLoading();
+        }
+      }, 100);
+      setTimeout(function() { clearInterval(fallback); fallback = null; }, 60000);
+      setTimeout(hideLoading, 60000);
+    })();
+  </script>
+  <script src="./assets/vendor/hls/hls.min.js" type="application/javascript"></script>
+  <script type="application/javascript">
+    (function () {
+      try {
+        if (window.Hls && window.Hls.DefaultConfig && window.Hls.FetchLoader) {
+          window.Hls.DefaultConfig.loader = window.Hls.FetchLoader;
+        }
+      } catch (_) {}
+
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', function (ev) {
+            var msg = ev && ev.data;
+            if (!msg) return;
+            
+            // Handle sw_fetch (SW -> Flutter)
+            if (msg.__p2p === 'sw_fetch') {
+              try {
+                window.postMessage(JSON.stringify({
+                  __p2p: 'fetch',
+                  id: msg.id,
+                  url: msg.url,
+                  method: msg.method,
+                  headers: msg.headers,
+                  bodyBase64: msg.bodyBase64,
+                }), '*');
+              } catch (_) {}
+              return;
+            }
+
+            // Handle sw_fetch_abort (SW -> Flutter)
+            if (msg.__p2p === 'sw_fetch_abort') {
+              try {
+                window.postMessage(JSON.stringify({ 
+                  __p2p: 'fetch_abort', 
+                  id: msg.id 
+                }), '*');
+              } catch (_) {}
+              return;
+            }
+          });
+
+          window.addEventListener('load', () => {
+            // 使用与当前页面一致的 base path 注册 SW，公网部署时 base href 可能为 /client/，
+            // 这样 SW 与 /__p2p__/ 请求同 scope，可正确拦截 P2P 代理请求
+            var basePath = '/';
+            try {
+              var base = document.querySelector('base');
+              if (base && base.href) {
+                var u = new URL(base.href);
+                basePath = u.pathname;
+                if (!basePath.endsWith('/')) basePath += '/';
+              }
+            } catch (_) {}
+            var swPath = basePath + 'p2p_sw.js';
+            navigator.serviceWorker.register(swPath)
+              .catch(err => console.log('Service Worker registration failed:', err));
+          });
+        }
+      } catch (_) {}
+
+      if (window.__p2pFetchWrapped) return;
+      window.__p2pFetchWrapped = true;
+
+      const origFetch = window.fetch ? window.fetch.bind(window) : null;
+      const pending = new Map();
+      let seq = 1;
+
+      // 追踪直连模式下的视频 segment/m3u8 请求，用于播放器关闭时批量取消
+      const videoFetchControllers = new Map();
+      let vfSeq = 1;
+
+      function isP2pLocal(url) {
+        try {
+          const u = new URL(url, window.location.href);
+          return u.hostname === 'p2p.local';
+        } catch (_) {
+          return false;
+        }
+      }
+
+      // 检测是否为需要追踪的视频播放器路径（直连模式下关闭播放器时 abort）。
+      // 原画使用专用 /api/videoPlayer/rawFile，与 /api/file/rawFile（音乐/下载等）区分。
+      function isVideoPlayerPath(url) {
+        try {
+          const p = new URL(url, window.location.href).pathname;
+          return p.startsWith('/api/videoPlayer/hls/') ||
+              p.startsWith('/api/videoPlayer/transcode') ||
+              p === '/api/videoPlayer/rawFile' ||
+              p.endsWith('/api/videoPlayer/rawFile');
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function normalizeHeaders(headers) {
+        const out = {};
+        try {
+          if (!headers) return out;
+          const h = new Headers(headers);
+          h.forEach((v, k) => {
+            out[k] = v;
+          });
+        } catch (_) {}
+        return out;
+      }
+
+      function base64ToUint8Array(b64) {
+        const bin = atob(b64);
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+      }
+
+      window.addEventListener('message', (ev) => {
+        let msg = ev && ev.data;
+        if (!msg) return;
+        if (typeof msg === 'string') {
+          try {
+            msg = JSON.parse(msg);
+          } catch (_) {
+            return;
+          }
+        }
+        
+        // 0. Handle cancel_video_fetches from Flutter (direct-connection mode segment abort)
+        if (msg && msg.__p2p === 'cancel_video_fetches') {
+          try {
+            const ctrls = Array.from(videoFetchControllers.values());
+            videoFetchControllers.clear();
+            ctrls.forEach(function(ctrl) {
+              try { ctrl.abort(); } catch(_) {}
+            });
+          } catch(_) {}
+          return;
+        }
+
+        // 1. Handle Fetch Bridge Responses for Service Worker (Flutter -> SW)
+        if (msg && typeof msg.__p2p === 'string' && msg.__p2p.startsWith('fetch_res')) {
+          try {
+            if ('serviceWorker' in navigator) {
+              var payload = null;
+              if (msg.__p2p === 'fetch_res') {
+                payload = {
+                  __p2p: 'sw_fetch_res',
+                  id: msg.id,
+                  status: msg.status,
+                  headers: msg.headers,
+                  bodyBase64: msg.bodyBase64,
+                  bodyText: msg.bodyText,
+                  error: msg.error,
+                };
+              } else if (msg.__p2p === 'fetch_res_begin') {
+                payload = { __p2p: 'sw_fetch_res_begin', id: msg.id, status: msg.status, headers: msg.headers };
+              } else if (msg.__p2p === 'fetch_res_chunk') {
+                payload = { __p2p: 'sw_fetch_res_chunk', id: msg.id };
+                if (msg.chunk) {
+                  payload.chunk = msg.chunk;
+                } else {
+                  payload.dataBase64 = msg.dataBase64;
+                }
+              } else if (msg.__p2p === 'fetch_res_end') {
+                payload = { __p2p: 'sw_fetch_res_end', id: msg.id };
+              } else if (msg.__p2p === 'fetch_res_error') {
+                payload = { __p2p: 'sw_fetch_res_error', id: msg.id, error: msg.error };
+              }
+
+              if (payload) {
+                const transfer = (payload.chunk && payload.chunk.buffer) ? [payload.chunk.buffer] : [];
+                if (navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.controller.postMessage(payload, transfer);
+                } else {
+                  navigator.serviceWorker.ready.then(function (reg) {
+                    try {
+                      if (reg && reg.active) {
+                        reg.active.postMessage(payload, transfer);
+                      }
+                    } catch (_) {}
+                  }).catch(function () {});
+                }
+              }
+            }
+          } catch (_) {}
+          // Continue to check if it's a response for window.fetch
+        }
+
+        // 2. Handle Fetch Bridge Responses for window.fetch (Flutter -> Window)
+        const id = msg.id;
+        if (!id || !pending.has(id)) return;
+        const st = pending.get(id);
+        if (!st) return;
+
+        if (msg.__p2p === 'fetch_res') {
+          pending.delete(id);
+          const { resolve, reject } = st;
+          if (msg.error) {
+            reject(new Error(msg.error));
+            return;
+          }
+          try {
+            const status = typeof msg.status === 'number' ? msg.status : 200;
+            const headers = new Headers(msg.headers || {});
+            let body = null;
+            if (typeof msg.bodyBase64 === 'string' && msg.bodyBase64.length > 0) {
+              body = base64ToUint8Array(msg.bodyBase64);
+            } else if (typeof msg.bodyText === 'string') {
+              body = msg.bodyText;
+            }
+            resolve(new Response(body, { status, headers }));
+          } catch (e) {
+            reject(e);
+          }
+          return;
+        }
+
+        // Handle streaming response for window.fetch (if we ever support it directly here)
+        // Current implementation of window.fetch bridge only supports 'fetch_res' (full response)
+        // or we could implement streaming here too if needed. 
+        // For now, SW handles streaming, window.fetch handles simple JSON API calls.
+        
+        if (msg.__p2p === 'fetch_res_begin') {
+           // Not implemented for window.fetch yet, assuming SW handles large streams
+           return;
+        }
+      });
+
+      if (!origFetch) return;
+      window.fetch = function (input, init) {
+        const url = typeof input === 'string' ? input : (input && input.url) ? input.url : '';
+        if (!url) return origFetch(input, init);
+
+        if (!isP2pLocal(url)) {
+          // 直连模式：拦截视频播放器路径，用 AbortController 追踪，以便播放器关闭时批量取消
+          if (isVideoPlayerPath(url)) {
+            const ctrl = new AbortController();
+            const vfId = 'vf_' + (vfSeq++);
+            videoFetchControllers.set(vfId, ctrl);
+            const newInit = Object.assign({}, init || {}, { signal: ctrl.signal });
+            const p = origFetch(input, newInit);
+            p.finally(function() { videoFetchControllers.delete(vfId); });
+            return p;
+          }
+          return origFetch(input, init);
+        }
+        const id = 'p2p_' + (seq++);
+        const method = (init && init.method) ? init.method : 'GET';
+        const headers = normalizeHeaders(init && init.headers);
+        const body = init && init.body ? init.body : null;
+        if (body != null) {
+          // POST/PUT with body not supported efficiently yet, fallback to direct fetch?
+          // Or just fail? For now, let's assume P2P fetches are mostly GETs for video/api.
+          // If we need to send body, we need to serialize it.
+          // If it's a string/json, we can send it.
+          if (typeof body === 'string') {
+             // ok
+          } else {
+             return origFetch(input, init);
+          }
+        }
+        return new Promise((resolve, reject) => {
+          pending.set(id, { resolve, reject });
+          try {
+            window.postMessage(JSON.stringify({
+              __p2p: 'fetch',
+              id,
+              url,
+              method,
+              headers,
+              body: body
+            }), '*');
+          } catch (e) {
+            pending.delete(id);
+            reject(e);
+          }
+        });
+      };
+    })();
+  </script>
+  <script src="./assets/vendor/streamsaver/StreamSaver.js"></script>
+  <script type="application/javascript">
+    (function () {
+      function getSs() {
+        try {
+          const ss = window.streamSaver;
+          if (!ss || typeof ss !== 'object') return null;
+          if (typeof ss.createWriteStream !== 'function') return null;
+          if (typeof ss.WritableStream !== 'function') return null;
+          try {
+            ss.mitm = './assets/vendor/streamsaver/mitm.html';
+          } catch (_) {}
+          return ss;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      window.__nascabStreamSaverInit = function () {
+        return !!getSs();
+      };
+
+      window.__nascabStreamSaverCreateWriter = function (filename, size, mimeType) {
+        const ss = getSs();
+        if (!ss) throw new Error('streamsaver_not_ready');
+        const name = String(filename || '').trim() || 'download';
+        const opts = {};
+        const n = Number(size);
+        if (Number.isFinite(n) && n > 0) opts.size = n;
+        if (mimeType && typeof mimeType === 'string' && mimeType.trim()) {
+          try {
+            opts.headers = { 'Content-Type': mimeType.trim() };
+          } catch (_) {}
+        }
+        const ws = ss.createWriteStream(name, opts);
+        if (!ws || typeof ws.getWriter !== 'function') throw new Error('streamsaver_no_writer');
+        return ws.getWriter();
+      };
+
+      window.__nascabStreamSaverWrite = function (writer, buffer) {
+        return writer.write(new Uint8Array(buffer));
+      };
+
+      window.__nascabStreamSaverClose = function (writer) {
+        return writer.close();
+      };
+
+      window.__nascabStreamSaverAbort = function (writer) {
+        if (!writer) return;
+        if (typeof writer.abort === 'function') return writer.abort();
+      };
+
+      window.__nascabHasShowSaveFilePicker = function () {
+        try {
+          return typeof window.showSaveFilePicker === 'function';
+        } catch (_) {
+          return false;
+        }
+      };
+
+      window.__nascabShowSaveFilePicker = function (suggestedName) {
+        const name = String(suggestedName || '').trim() || 'download';
+        if (typeof window.showSaveFilePicker !== 'function') {
+          return Promise.reject(new Error('showSaveFilePicker_not_supported'));
+        }
+        return window.showSaveFilePicker({ suggestedName: name });
+      };
+    })();
+  </script>
+  <!-- Safari：Flutter Web 依赖 Intl.v8BreakIterator，须在 flutter 引擎加载前注入 -->
+  <script src="./assets/vendor/intl_v8_break_iterator_polyfill.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

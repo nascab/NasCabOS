@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>pdf预览</title>
+    <script src="js-preview-lib/pdf.umd.js"></script>
+  </head>
+  <body>
+    <div id="pdf"></div>
+
+    <script>
+      function normalizeP2pUrl(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return s;
+        try {
+          const u = new URL(s, window.location.href);
+          if (u.hostname !== 'p2p.local') return s;
+          return `/__p2p__${u.pathname}${u.search}${u.hash}`;
+        } catch (_) {
+          return s;
+        }
+      }
+
+      function getGetParameter(paramName) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(paramName);
+      }
+
+      const fileUrl = normalizeP2pUrl(getGetParameter('fileUrl'));
+      const myPdfPreviewer = jsPreviewPdf.init(document.getElementById('pdf'), {
+        onError: () => {
+          console.log('发生错误', fileUrl);
+        },
+        onRendered: () => {
+          console.log('渲染完成', fileUrl);
+        },
+      });
+
+      console.log('fileUrl', fileUrl);
+      myPdfPreviewer.preview(fileUrl);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+name: flutter_read
+description: Flutter Novel Reader is a multi-platform reading app offering smooth scrolling, diverse text styles, and personalized settings. It supports chapter evaluation and interaction features, easy installation and usage, real-time reading progress monitoring, and is released under the LGPLv3 license.
+version: 1.0.6
+homepage: https://github.com/ysbing/flutter_read
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  synchronized: ^3.0.0+3
+  fast_gbk: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0

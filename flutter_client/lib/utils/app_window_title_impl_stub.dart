@@ -1,0 +1,1 @@
+void appWindowTitleSetImpl(String title) {}

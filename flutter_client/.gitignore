@@ -1,0 +1,165 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+.gstatic_cache/
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+test/smoke_test.dart
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+dist/
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Flutter localization generated files
+lib/l10n/generated/
+
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+*.dart.log
+
+# Android
+android/app/src/main/res/drawable/*_bg.png
+android/app/src/main/res/drawable-v21/*_bg.png
+android/key.properties
+android/gradle.properties
+android/local.properties
+android/captures/
+android/app/build/
+android/app/.settings/
+android/app/*.iml
+android/.idea/
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+!android/gradle/wrapper/gradle-wrapper.properties
+android/**/*.apk
+android/**/*.aab
+
+# iOS
+ios/Flutter/App.framework
+ios/Flutter/Frameworks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner/xcuserdata/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/Info.plist.local
+ios/Runner/GoogleService-Info.plist  # 如果你使用 Firebase，且不希望提交 plist 文件
+ios/**/*.ipa
+ios/**/*.dSYM/
+
+# macOS
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/Flutter/ephemeral/
+macos/Build/
+
+# Web
+web/flutter_service_worker.js
+web/flutter.js
+web/manifest.json
+web/version.json
+web/icons/
+
+# Windows
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+windows/flutter/generated_plugins.cmake
+windows/flutter/ephemeral/
+windows/Build/
+windows/Runner.sln
+windows/Runner.vcxproj.filters
+windows/Runner.vcxproj
+windows/Runner.vcxproj.user
+
+# Linux
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+linux/flutter/generated_plugins.cmake
+linux/flutter/ephemeral/
+linux/Build/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+tags
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+
+# Testing
+test/.test_coverage
+.nascabpro/nascabos-pwd-nascab.jks
+
+# flutter_gen 生成的资源代码（flutter_gen.yaml 配置 output: lib/gen/）
+lib/gen/
+
+# 内存/堆转储文件（Android Studio profiler 等）
+*.hprof
+
+# 签名密钥与证书（通用匹配，防止误提交）
+*.jks
+*.keystore
+*.p12
+*.pfx

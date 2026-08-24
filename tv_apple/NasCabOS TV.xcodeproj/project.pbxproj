@@ -1,0 +1,958 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02FA9A9F8C8588BCF0157295 /* VideoLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C210BC459A4BED21857373 /* VideoLibraryView.swift */; };
+		04BD8ED499FE84C37D608F5B /* MusicModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7D639D1C03BABBDDBF70FF1 /* MusicModels.swift */; };
+		057E0ED8C846338C68ED342B /* TVVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5209638EE97ECC018EF03E95 /* TVVideoPlayerView.swift */; };
+		0652E6F9CE61B7F89F5AAA6A /* PhotoTimelineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC42744BB9CBBEA300D9A729 /* PhotoTimelineService.swift */; };
+		0667786633395BE872A7E10B /* VideoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875A453CCBCACD84799751E3 /* VideoModels.swift */; };
+		07F6134F01BA1CB552D0478A /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 331D19ED8A38E09A4134E767 /* KeychainAccess */; };
+		0A3BDE7C48120EC4CDAADD00 /* P2PProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71044D34BC3D07FCA74349A /* P2PProtocol.swift */; };
+		0F2CEEA9A9B7DB871CAA5CB3 /* PhotoTimelineModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DF38579C378AFE719E9424 /* PhotoTimelineModels.swift */; };
+		157E4D3862734A1A7646B3A2 /* PairCodeInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C132D5C7CC196417EF1C04 /* PairCodeInputView.swift */; };
+		196E9EA40F293B64C1EADCD2 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066ACF38EC68EDC3300EFC0E /* APIClient.swift */; };
+		1A69822E9165A25C06381B75 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE50A03CA5A7AF1C5F6EAC4 /* LoginResponse.swift */; };
+		1B2C18DCEFC804A9EB72A5ED /* L10n+jaJP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2223DA0AFF64BD85795EEA42 /* L10n+jaJP.swift */; };
+		1C643AE26845AAE7E97332AE /* LocalPlaybackProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434BFC4C4145A976AE1CCB6B /* LocalPlaybackProxy.swift */; };
+		1FF42ABFD1EB6B8185CD2E56 /* L10n+ruRU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD0252048B45DF8AA1A8734 /* L10n+ruRU.swift */; };
+		216823CDD4AED9A5AFF961CB /* MusicPlayerSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9365511D5B0284F3B8A233 /* MusicPlayerSheetView.swift */; };
+		27418402BCCE70747AA9A54C /* ServerInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054A792C8C804F80BCC8B805 /* ServerInfo.swift */; };
+		2B2F78379C0AC44D05C52D6C /* L10n+frFR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F15F8337B3B982BB6F953CD /* L10n+frFR.swift */; };
+		368255E06AA81773BF997D63 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B0D6AC49610F30E6D296B337 /* Alamofire */; };
+		3B23B10177B29F3A80B6F896 /* AddServerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25285EAF6317D527825BC961 /* AddServerView.swift */; };
+		417388C7CC6957C6D415D5A0 /* ServerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 915440CF3804AA9AC7D3384F /* ServerListView.swift */; };
+		4241A255677C51FFE7C4F5D6 /* DeviceFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0938314EC250D2DEA2145B3 /* DeviceFingerprint.swift */; };
+		5060B0DF9DF8142285E3296B /* L10n+thTH.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD1AA533D97730D32873926 /* L10n+thTH.swift */; };
+		5231ACCA6B25C03212FE3CD7 /* MusicPlayerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E4715E182659279E869CF54 /* MusicPlayerConfig.swift */; };
+		530FA1BD3F512EFD951AF276 /* VideoPlaybackSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0E5C1632881F972C83C475 /* VideoPlaybackSettings.swift */; };
+		56BFA92DD26027542FC70CB1 /* L10n+idID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC735B00226EDBFADC1A9A /* L10n+idID.swift */; };
+		6383820BBF7349021DB0A019 /* ServerCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16E9F85A4130378889DE3E4B /* ServerCardView.swift */; };
+		63E9F56B78E50ED9432EFB2D /* VideoImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8B5908B9D144ABB662DBD3D /* VideoImageUtils.swift */; };
+		64801990812E4B4C87CB249B /* NCComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB67D1EEC4665254F21519C /* NCComponents.swift */; };
+		6C59FAC42679BD28CE28B4FE /* MusicCoverImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5020A9DEBDDBE4D26512898C /* MusicCoverImage.swift */; };
+		6DE72ADB587625FD81A316C8 /* UdpBroadcastListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20AD4899EC7320C5BD5729B /* UdpBroadcastListener.swift */; };
+		6F9D5752A3272F791F826101 /* VideoPlaybackSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63336C0D70AD0AAADE1A6256 /* VideoPlaybackSettingsView.swift */; };
+		70FDC5CA2D99A40A4047EE0E /* PhotoLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF1E19F1D810F19B84AA46A /* PhotoLibraryView.swift */; };
+		7105641CBB4528DE09A277A3 /* MusicGridSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6467DBEDE6193E228D19F1E8 /* MusicGridSections.swift */; };
+		7510CB1694EA53EFADD84868 /* L10n+zhCN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6132744B69F04A2B559DAB72 /* L10n+zhCN.swift */; };
+		80E8512163454D613649FE76 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B07D887A7918CEB42171D /* L10n.swift */; };
+		843A34848439E78A0BBBC662 /* PhotoTimelineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D048F329B42CF048A631FF /* PhotoTimelineViewModel.swift */; };
+		84ACB899C0826E86E9F1F33C /* L10n+viVN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C08BB10339137E3CE2BF9F /* L10n+viVN.swift */; };
+		89008A2B602A27D02B7C9C15 /* LiveKitWebRTC.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E5A97D355D90FAFDD35C7F2A /* LiveKitWebRTC.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		8ADECEF992B03FDAF15F5CF7 /* L10n+arSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568AF166F396A67D4BC3AFCB /* L10n+arSA.swift */; };
+		8C13D7236C3E391A635E4A45 /* L10n+esES.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A971C476C92914893D73CB4 /* L10n+esES.swift */; };
+		8F534C841E8914AB928E8F12 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0644654550FFCC31760282C /* AuthService.swift */; };
+		8F607A142FBA8EC83C3AC4B6 /* LiveKitWebRTC.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E5A97D355D90FAFDD35C7F2A /* LiveKitWebRTC.xcframework */; };
+		93BFF0D51EFE0FF7643D16F8 /* VideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE248AD208EB0EE0F2A2402 /* VideoDetailView.swift */; };
+		94CBCB829C41C4E19EDCDCC2 /* VideoListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC36AEF0D4150C0AEFDEAF8 /* VideoListService.swift */; };
+		9512E733AD4D9B59E7804089 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68108B629B03247037177AA4 /* ContentView.swift */; };
+		951EE44857AD7CF395CE54A8 /* MusicLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D8DBD5914C7E70E7890E91 /* MusicLibraryView.swift */; };
+		96001860DBF6F76CE15C8A67 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4FEDC2296163E3BBF4677A9F /* Localizable.strings */; };
+		96E2DC0A43AE01048E8172A9 /* PhotoAlbumModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFBD467FDAB3E1F135368F7 /* PhotoAlbumModels.swift */; };
+		97BD11840850C21B6768BECB /* MusicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85BDFC884D2018664A3235D /* MusicDetailView.swift */; };
+		9F51E58A797BBF1F5061E46C /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2E78E61E15F48866668245 /* APIResponse.swift */; };
+		A4918B87070047964E600630 /* TVVideoEpisodePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CE1F272836F3EAA158B84E /* TVVideoEpisodePickerView.swift */; };
+		A9C23D7787D5FFE8688FAB26 /* L10n+deDE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719FA815432EC53EB583FDD4 /* L10n+deDE.swift */; };
+		B5D90097A661B4887DA2357C /* TrustAllCertsDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C48DA09C900AEF03B514EB40 /* TrustAllCertsDelegate.swift */; };
+		B78619B1BFC0E831E3594B17 /* DevConnectMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABD22DB96431F96C58311BE /* DevConnectMode.swift */; };
+		B9240FD775BA37FBB5CAE264 /* WebSocketSignaling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8173D3F08893F9749A163314 /* WebSocketSignaling.swift */; };
+		B9CA78F8160566C5171E3C0C /* WebVttParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78EF22416A9E8D5DB43BEE /* WebVttParser.swift */; };
+		BC7C81AD9DF50F4EB211996E /* ServerListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D1A8E60937874DB093BBBB /* ServerListViewModel.swift */; };
+		BDA3FB050A639062E87BA95E /* P2PService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2474950A4280E8675001B08E /* P2PService.swift */; };
+		BFBD82D1B8123E2174823D57 /* Pods_NasCabOS_TV.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC7FCBEDB831857903D284BC /* Pods_NasCabOS_TV.framework */; };
+		C08B0B39BC6CDD339F2D9B51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E75C2386109CE04F1506A679 /* Assets.xcassets */; };
+		C2C39A0A5314179D9305C8C9 /* NasCabTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 254019C280D66ABE24396A87 /* NasCabTVApp.swift */; };
+		C831F37414B1894CCC6DE702 /* L10n+koKR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51AD2D6DD8E7D787D3525FD /* L10n+koKR.swift */; };
+		CBCA5813DF1C1198E946870D /* WebRTCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A43C138232A2F978DB0AAEF /* WebRTCClient.swift */; };
+		CE1AD5A4431B3BFB57C5FE4C /* MusicService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C0D7E68A5217A91359300C /* MusicService.swift */; };
+		D0248A924E3BE8CEE7B64071 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91629D8338226AE762647C9B /* NetworkConfig.swift */; };
+		DA73D7885F6A7045D9E1E244 /* MusicPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B9270751BD68AE540B237A9 /* MusicPlayerService.swift */; };
+		DB6F4F687998C1F03F938093 /* MusicSongsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F657EDCA51A86CC61A876198 /* MusicSongsSection.swift */; };
+		DD65536644AF6181E6C85B3E /* PhotoAlbumViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9D99AAC7E1A8FD9467290 /* PhotoAlbumViewModel.swift */; };
+		ED1AFCDB921089135D77115B /* PhotoAlbumService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9790A3B57C548BB6877172 /* PhotoAlbumService.swift */; };
+		F7C9D1BA4621F429156D9EC8 /* VideoDetailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B23ED0328044BB8390CEE50 /* VideoDetailService.swift */; };
+		F833457DA9C0F1CFBE465C9A /* NotoSansSC-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B7CDD6463368BAF9088F01E /* NotoSansSC-Regular.ttf */; };
+		FB4723779927FFD770C6786E /* L10n+ptBR.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98C4FFD48F3D6E5D5667DFA /* L10n+ptBR.swift */; };
+		FBBC3E500FD10C590CAD1AA3 /* P2pSignalingBinary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8214B8A28834349B17F184B /* P2pSignalingBinary.swift */; };
+		FEF7F5F99054D758AB02FBAD /* APIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4E3A11478659151D2F90E0 /* APIState.swift */; };
+		FF29618F36A7D76794FA47EF /* ServerStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7707317E1259C5343D592327 /* ServerStorageService.swift */; };
+		FF42ECD5AF3599973C3269E6 /* L10n+enUS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5623F72BF9F70B34F4CF24 /* L10n+enUS.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		71A6C57D2232678D054F88BC /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				89008A2B602A27D02B7C9C15 /* LiveKitWebRTC.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		054A792C8C804F80BCC8B805 /* ServerInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerInfo.swift; sourceTree = "<group>"; };
+		066ACF38EC68EDC3300EFC0E /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		158DBD7CF6AE737C5C592B41 /* Pods-NasCabOS TV.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NasCabOS TV.debug.xcconfig"; path = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV.debug.xcconfig"; sourceTree = "<group>"; };
+		16E9F85A4130378889DE3E4B /* ServerCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerCardView.swift; sourceTree = "<group>"; };
+		176B06AAEDD7AECFABA529C6 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		1AA2A63234996139FE8CCCCC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1B4E3A11478659151D2F90E0 /* APIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIState.swift; sourceTree = "<group>"; };
+		2223DA0AFF64BD85795EEA42 /* L10n+jaJP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+jaJP.swift"; sourceTree = "<group>"; };
+		2474950A4280E8675001B08E /* P2PService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2PService.swift; sourceTree = "<group>"; };
+		25285EAF6317D527825BC961 /* AddServerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddServerView.swift; sourceTree = "<group>"; };
+		254019C280D66ABE24396A87 /* NasCabTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NasCabTVApp.swift; sourceTree = "<group>"; };
+		26B3084E405E0F2EDBF7A3DC /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		29D8DBD5914C7E70E7890E91 /* MusicLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryView.swift; sourceTree = "<group>"; };
+		2A1458F6C7B5E097E5620EB3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2A43C138232A2F978DB0AAEF /* WebRTCClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebRTCClient.swift; sourceTree = "<group>"; };
+		2B23ED0328044BB8390CEE50 /* VideoDetailService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDetailService.swift; sourceTree = "<group>"; };
+		2EFC735B00226EDBFADC1A9A /* L10n+idID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+idID.swift"; sourceTree = "<group>"; };
+		30C0D7E68A5217A91359300C /* MusicService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicService.swift; sourceTree = "<group>"; };
+		386B9F18D4A7B5D2D2D87688 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3ABD22DB96431F96C58311BE /* DevConnectMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevConnectMode.swift; sourceTree = "<group>"; };
+		3B0E5C1632881F972C83C475 /* VideoPlaybackSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlaybackSettings.swift; sourceTree = "<group>"; };
+		40C08BB10339137E3CE2BF9F /* L10n+viVN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+viVN.swift"; sourceTree = "<group>"; };
+		434BFC4C4145A976AE1CCB6B /* LocalPlaybackProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPlaybackProxy.swift; sourceTree = "<group>"; };
+		43BF683435822DC60DC8BE2B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		4BF1E19F1D810F19B84AA46A /* PhotoLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryView.swift; sourceTree = "<group>"; };
+		5020A9DEBDDBE4D26512898C /* MusicCoverImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCoverImage.swift; sourceTree = "<group>"; };
+		5209638EE97ECC018EF03E95 /* TVVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoPlayerView.swift; sourceTree = "<group>"; };
+		568AF166F396A67D4BC3AFCB /* L10n+arSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+arSA.swift"; sourceTree = "<group>"; };
+		5A5623F72BF9F70B34F4CF24 /* L10n+enUS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+enUS.swift"; sourceTree = "<group>"; };
+		5BD0252048B45DF8AA1A8734 /* L10n+ruRU.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+ruRU.swift"; sourceTree = "<group>"; };
+		6132744B69F04A2B559DAB72 /* L10n+zhCN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+zhCN.swift"; sourceTree = "<group>"; };
+		63336C0D70AD0AAADE1A6256 /* VideoPlaybackSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlaybackSettingsView.swift; sourceTree = "<group>"; };
+		6467DBEDE6193E228D19F1E8 /* MusicGridSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicGridSections.swift; sourceTree = "<group>"; };
+		6516741F0B2EF16FFF244A22 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		68108B629B03247037177AA4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		68D1A8E60937874DB093BBBB /* ServerListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerListViewModel.swift; sourceTree = "<group>"; };
+		6A1B07D887A7918CEB42171D /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
+		6F15F8337B3B982BB6F953CD /* L10n+frFR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+frFR.swift"; sourceTree = "<group>"; };
+		719FA815432EC53EB583FDD4 /* L10n+deDE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+deDE.swift"; sourceTree = "<group>"; };
+		71B2DA3305757BFF72C851E6 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/Localizable.strings; sourceTree = "<group>"; };
+		743960EAD99C23E8A2F0912C /* NasCabOS TV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NasCabOS TV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7707317E1259C5343D592327 /* ServerStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerStorageService.swift; sourceTree = "<group>"; };
+		7A971C476C92914893D73CB4 /* L10n+esES.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+esES.swift"; sourceTree = "<group>"; };
+		7E4715E182659279E869CF54 /* MusicPlayerConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerConfig.swift; sourceTree = "<group>"; };
+		7E9790A3B57C548BB6877172 /* PhotoAlbumService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumService.swift; sourceTree = "<group>"; };
+		8173D3F08893F9749A163314 /* WebSocketSignaling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketSignaling.swift; sourceTree = "<group>"; };
+		8703B46CD27D734AE2EF6AAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		875A453CCBCACD84799751E3 /* VideoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoModels.swift; sourceTree = "<group>"; };
+		8B7CDD6463368BAF9088F01E /* NotoSansSC-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "NotoSansSC-Regular.ttf"; sourceTree = "<group>"; };
+		8BC36AEF0D4150C0AEFDEAF8 /* VideoListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoListService.swift; sourceTree = "<group>"; };
+		915440CF3804AA9AC7D3384F /* ServerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerListView.swift; sourceTree = "<group>"; };
+		91629D8338226AE762647C9B /* NetworkConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConfig.swift; sourceTree = "<group>"; };
+		93C210BC459A4BED21857373 /* VideoLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoLibraryView.swift; sourceTree = "<group>"; };
+		9B1BEA458DE4F6F5C8016620 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
+		9B9270751BD68AE540B237A9 /* MusicPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerService.swift; sourceTree = "<group>"; };
+		A924E032C023A1CE872320C4 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A98C4FFD48F3D6E5D5667DFA /* L10n+ptBR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+ptBR.swift"; sourceTree = "<group>"; };
+		AAE50A03CA5A7AF1C5F6EAC4 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
+		AF9365511D5B0284F3B8A233 /* MusicPlayerSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerSheetView.swift; sourceTree = "<group>"; };
+		B3F9D99AAC7E1A8FD9467290 /* PhotoAlbumViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewModel.swift; sourceTree = "<group>"; };
+		B51AD2D6DD8E7D787D3525FD /* L10n+koKR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+koKR.swift"; sourceTree = "<group>"; };
+		B5D048F329B42CF048A631FF /* PhotoTimelineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTimelineViewModel.swift; sourceTree = "<group>"; };
+		B8214B8A28834349B17F184B /* P2pSignalingBinary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2pSignalingBinary.swift; sourceTree = "<group>"; };
+		B85BDFC884D2018664A3235D /* MusicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDetailView.swift; sourceTree = "<group>"; };
+		B8B5908B9D144ABB662DBD3D /* VideoImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImageUtils.swift; sourceTree = "<group>"; };
+		B9C132D5C7CC196417EF1C04 /* PairCodeInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairCodeInputView.swift; sourceTree = "<group>"; };
+		B9DF38579C378AFE719E9424 /* PhotoTimelineModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTimelineModels.swift; sourceTree = "<group>"; };
+		BC42744BB9CBBEA300D9A729 /* PhotoTimelineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTimelineService.swift; sourceTree = "<group>"; };
+		BFB67D1EEC4665254F21519C /* NCComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCComponents.swift; sourceTree = "<group>"; };
+		C48DA09C900AEF03B514EB40 /* TrustAllCertsDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustAllCertsDelegate.swift; sourceTree = "<group>"; };
+		CBFBD467FDAB3E1F135368F7 /* PhotoAlbumModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumModels.swift; sourceTree = "<group>"; };
+		D0644654550FFCC31760282C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		D0938314EC250D2DEA2145B3 /* DeviceFingerprint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFingerprint.swift; sourceTree = "<group>"; };
+		D20AD4899EC7320C5BD5729B /* UdpBroadcastListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UdpBroadcastListener.swift; sourceTree = "<group>"; };
+		D42C2DE194CDF93B6B8C4A01 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/Localizable.strings; sourceTree = "<group>"; };
+		DB78EF22416A9E8D5DB43BEE /* WebVttParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebVttParser.swift; sourceTree = "<group>"; };
+		DFD1AA533D97730D32873926 /* L10n+thTH.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "L10n+thTH.swift"; sourceTree = "<group>"; };
+		E1CE1F272836F3EAA158B84E /* TVVideoEpisodePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoEpisodePickerView.swift; sourceTree = "<group>"; };
+		E5A97D355D90FAFDD35C7F2A /* LiveKitWebRTC.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = LiveKitWebRTC.xcframework; sourceTree = "<group>"; };
+		E71044D34BC3D07FCA74349A /* P2PProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2PProtocol.swift; sourceTree = "<group>"; };
+		E75C2386109CE04F1506A679 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EA2E78E61E15F48866668245 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
+		EAA6DF5D8953AE1F80CC5B92 /* Pods-NasCabOS TV.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NasCabOS TV.release.xcconfig"; path = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV.release.xcconfig"; sourceTree = "<group>"; };
+		EC7FCBEDB831857903D284BC /* Pods_NasCabOS_TV.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_NasCabOS_TV.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDE248AD208EB0EE0F2A2402 /* VideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDetailView.swift; sourceTree = "<group>"; };
+		F0DFBFB89BA3D35591367381 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F1F5D057665A2B43CF8EE5DE /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F657EDCA51A86CC61A876198 /* MusicSongsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicSongsSection.swift; sourceTree = "<group>"; };
+		F7D639D1C03BABBDDBF70FF1 /* MusicModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModels.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0DE8AA4330DC1946DB0DA4BE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				368255E06AA81773BF997D63 /* Alamofire in Frameworks */,
+				07F6134F01BA1CB552D0478A /* KeychainAccess in Frameworks */,
+				8F607A142FBA8EC83C3AC4B6 /* LiveKitWebRTC.xcframework in Frameworks */,
+				BFBD82D1B8123E2174823D57 /* Pods_NasCabOS_TV.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		001A2ED684383FB86AA4978D /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				158DBD7CF6AE737C5C592B41 /* Pods-NasCabOS TV.debug.xcconfig */,
+				EAA6DF5D8953AE1F80CC5B92 /* Pods-NasCabOS TV.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		1911AED5DD8B43E5EB1809C2 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				D0644654550FFCC31760282C /* AuthService.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		196BFA7CD08E0E414A1A7D0F = {
+			isa = PBXGroup;
+			children = (
+				722FCF51B728086C1DD88A70 /* NasCabTV */,
+				D309D599CD9BFC7313FDE4B8 /* Frameworks */,
+				1F3E5DF614057E9F6D573544 /* Products */,
+				001A2ED684383FB86AA4978D /* Pods */,
+			);
+			sourceTree = "<group>";
+		};
+		1F3E5DF614057E9F6D573544 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				743960EAD99C23E8A2F0912C /* NasCabOS TV.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		265001C25DD606A0F2F93C0A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				3B0E5C1632881F972C83C475 /* VideoPlaybackSettings.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		2A13B24F366764E269811C86 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				066ACF38EC68EDC3300EFC0E /* APIClient.swift */,
+				EA2E78E61E15F48866668245 /* APIResponse.swift */,
+				1B4E3A11478659151D2F90E0 /* APIState.swift */,
+				3ABD22DB96431F96C58311BE /* DevConnectMode.swift */,
+				91629D8338226AE762647C9B /* NetworkConfig.swift */,
+				C48DA09C900AEF03B514EB40 /* TrustAllCertsDelegate.swift */,
+				D20AD4899EC7320C5BD5729B /* UdpBroadcastListener.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		2D4D8D8E616128FF10CEB77B /* MusicLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				5020A9DEBDDBE4D26512898C /* MusicCoverImage.swift */,
+				B85BDFC884D2018664A3235D /* MusicDetailView.swift */,
+				6467DBEDE6193E228D19F1E8 /* MusicGridSections.swift */,
+				29D8DBD5914C7E70E7890E91 /* MusicLibraryView.swift */,
+				F7D639D1C03BABBDDBF70FF1 /* MusicModels.swift */,
+				7E4715E182659279E869CF54 /* MusicPlayerConfig.swift */,
+				9B9270751BD68AE540B237A9 /* MusicPlayerService.swift */,
+				AF9365511D5B0284F3B8A233 /* MusicPlayerSheetView.swift */,
+				30C0D7E68A5217A91359300C /* MusicService.swift */,
+				F657EDCA51A86CC61A876198 /* MusicSongsSection.swift */,
+			);
+			path = MusicLibrary;
+			sourceTree = "<group>";
+		};
+		67AB4632AEA982B165E66B7A /* ServerList */ = {
+			isa = PBXGroup;
+			children = (
+				25285EAF6317D527825BC961 /* AddServerView.swift */,
+				B9C132D5C7CC196417EF1C04 /* PairCodeInputView.swift */,
+				16E9F85A4130378889DE3E4B /* ServerCardView.swift */,
+				915440CF3804AA9AC7D3384F /* ServerListView.swift */,
+				68D1A8E60937874DB093BBBB /* ServerListViewModel.swift */,
+			);
+			path = ServerList;
+			sourceTree = "<group>";
+		};
+		722FCF51B728086C1DD88A70 /* NasCabTV */ = {
+			isa = PBXGroup;
+			children = (
+				1AA2A63234996139FE8CCCCC /* Info.plist */,
+				8EA7121201BD31595E4619E2 /* App */,
+				E84F73A677AB3FA7E6D1E181 /* Core */,
+				A1F5B2DE26F1EA9F007B7983 /* Features */,
+				F42B73AE505A67184BCA67E1 /* Models */,
+				AD1CC9F6AC2296C2F25C684D /* Resources */,
+			);
+			path = NasCabTV;
+			sourceTree = "<group>";
+		};
+		75CFDCF59BBCA159255A881D /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				63336C0D70AD0AAADE1A6256 /* VideoPlaybackSettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		8349BBC7DFEB1B3F951F27E0 /* P2P */ = {
+			isa = PBXGroup;
+			children = (
+				434BFC4C4145A976AE1CCB6B /* LocalPlaybackProxy.swift */,
+				E71044D34BC3D07FCA74349A /* P2PProtocol.swift */,
+				2474950A4280E8675001B08E /* P2PService.swift */,
+				B8214B8A28834349B17F184B /* P2pSignalingBinary.swift */,
+				2A43C138232A2F978DB0AAEF /* WebRTCClient.swift */,
+				8173D3F08893F9749A163314 /* WebSocketSignaling.swift */,
+			);
+			path = P2P;
+			sourceTree = "<group>";
+		};
+		8EA7121201BD31595E4619E2 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				68108B629B03247037177AA4 /* ContentView.swift */,
+				254019C280D66ABE24396A87 /* NasCabTVApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		957FE807A354AC09F60EEBF6 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				BFB67D1EEC4665254F21519C /* NCComponents.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		A1F5B2DE26F1EA9F007B7983 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				D4D01FF47148A3DF930F7035 /* MediaLibrary */,
+				2D4D8D8E616128FF10CEB77B /* MusicLibrary */,
+				A8B4D76EF2A472F9F8C7B010 /* PhotoLibrary */,
+				67AB4632AEA982B165E66B7A /* ServerList */,
+				75CFDCF59BBCA159255A881D /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A8B4D76EF2A472F9F8C7B010 /* PhotoLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				CBFBD467FDAB3E1F135368F7 /* PhotoAlbumModels.swift */,
+				7E9790A3B57C548BB6877172 /* PhotoAlbumService.swift */,
+				B3F9D99AAC7E1A8FD9467290 /* PhotoAlbumViewModel.swift */,
+				4BF1E19F1D810F19B84AA46A /* PhotoLibraryView.swift */,
+				B9DF38579C378AFE719E9424 /* PhotoTimelineModels.swift */,
+				BC42744BB9CBBEA300D9A729 /* PhotoTimelineService.swift */,
+				B5D048F329B42CF048A631FF /* PhotoTimelineViewModel.swift */,
+			);
+			path = PhotoLibrary;
+			sourceTree = "<group>";
+		};
+		AD1CC9F6AC2296C2F25C684D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E75C2386109CE04F1506A679 /* Assets.xcassets */,
+				4FEDC2296163E3BBF4677A9F /* Localizable.strings */,
+				8B7CDD6463368BAF9088F01E /* NotoSansSC-Regular.ttf */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BCC1C948C5D59BC1971D4AA4 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B07D887A7918CEB42171D /* L10n.swift */,
+				568AF166F396A67D4BC3AFCB /* L10n+arSA.swift */,
+				719FA815432EC53EB583FDD4 /* L10n+deDE.swift */,
+				5A5623F72BF9F70B34F4CF24 /* L10n+enUS.swift */,
+				7A971C476C92914893D73CB4 /* L10n+esES.swift */,
+				6F15F8337B3B982BB6F953CD /* L10n+frFR.swift */,
+				2EFC735B00226EDBFADC1A9A /* L10n+idID.swift */,
+				2223DA0AFF64BD85795EEA42 /* L10n+jaJP.swift */,
+				B51AD2D6DD8E7D787D3525FD /* L10n+koKR.swift */,
+				A98C4FFD48F3D6E5D5667DFA /* L10n+ptBR.swift */,
+				5BD0252048B45DF8AA1A8734 /* L10n+ruRU.swift */,
+				DFD1AA533D97730D32873926 /* L10n+thTH.swift */,
+				40C08BB10339137E3CE2BF9F /* L10n+viVN.swift */,
+				6132744B69F04A2B559DAB72 /* L10n+zhCN.swift */,
+			);
+			path = Localization;
+			sourceTree = "<group>";
+		};
+		D309D599CD9BFC7313FDE4B8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E5A97D355D90FAFDD35C7F2A /* LiveKitWebRTC.xcframework */,
+				EC7FCBEDB831857903D284BC /* Pods_NasCabOS_TV.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D4D01FF47148A3DF930F7035 /* MediaLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				E1CE1F272836F3EAA158B84E /* TVVideoEpisodePickerView.swift */,
+				5209638EE97ECC018EF03E95 /* TVVideoPlayerView.swift */,
+				2B23ED0328044BB8390CEE50 /* VideoDetailService.swift */,
+				EDE248AD208EB0EE0F2A2402 /* VideoDetailView.swift */,
+				B8B5908B9D144ABB662DBD3D /* VideoImageUtils.swift */,
+				93C210BC459A4BED21857373 /* VideoLibraryView.swift */,
+				8BC36AEF0D4150C0AEFDEAF8 /* VideoListService.swift */,
+				875A453CCBCACD84799751E3 /* VideoModels.swift */,
+				DB78EF22416A9E8D5DB43BEE /* WebVttParser.swift */,
+			);
+			path = MediaLibrary;
+			sourceTree = "<group>";
+		};
+		E590036E93FF53FBCB3AA7E2 /* Device */ = {
+			isa = PBXGroup;
+			children = (
+				D0938314EC250D2DEA2145B3 /* DeviceFingerprint.swift */,
+			);
+			path = Device;
+			sourceTree = "<group>";
+		};
+		E84F73A677AB3FA7E6D1E181 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				1911AED5DD8B43E5EB1809C2 /* Auth */,
+				E590036E93FF53FBCB3AA7E2 /* Device */,
+				BCC1C948C5D59BC1971D4AA4 /* Localization */,
+				2A13B24F366764E269811C86 /* Network */,
+				8349BBC7DFEB1B3F951F27E0 /* P2P */,
+				265001C25DD606A0F2F93C0A /* Settings */,
+				FA00D5E17005410BF1508293 /* Storage */,
+				957FE807A354AC09F60EEBF6 /* UI */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		F42B73AE505A67184BCA67E1 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AAE50A03CA5A7AF1C5F6EAC4 /* LoginResponse.swift */,
+				054A792C8C804F80BCC8B805 /* ServerInfo.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		FA00D5E17005410BF1508293 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				7707317E1259C5343D592327 /* ServerStorageService.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3F008684778FCF91ACC353DD /* NasCabOS TV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 757678B896A68FE093E44B1C /* Build configuration list for PBXNativeTarget "NasCabOS TV" */;
+			buildPhases = (
+				4B3254C433207F9A2E3D8816 /* [CP] Check Pods Manifest.lock */,
+				800DB45DAC583B33E905EEE2 /* Sources */,
+				DF768042F724E155E6201D08 /* Resources */,
+				0DE8AA4330DC1946DB0DA4BE /* Frameworks */,
+				71A6C57D2232678D054F88BC /* Embed Frameworks */,
+				07B212D8DC3E70E5DBB49F2A /* Copy LiveKitWebRTC dSYM for Archive */,
+				F9363B4DAD6C6C4714E3EBA7 /* [CP] Embed Pods Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "NasCabOS TV";
+			packageProductDependencies = (
+				B0D6AC49610F30E6D296B337 /* Alamofire */,
+				331D19ED8A38E09A4134E767 /* KeychainAccess */,
+			);
+			productName = "NasCabOS TV";
+			productReference = 743960EAD99C23E8A2F0912C /* NasCabOS TV.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C0F3541CAEBD8C6F010333AE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 9FF8124C67F7EF96F8C1E3BD /* Build configuration list for PBXProject "NasCabOS TV" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				ar,
+				de,
+				en,
+				es,
+				fr,
+				id,
+				ja,
+				ko,
+				"pt-BR",
+				ru,
+				th,
+				vi,
+				"zh-Hans",
+			);
+			mainGroup = 196BFA7CD08E0E414A1A7D0F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2FABB21DE390AC7E9F91A387 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				6F96BB23B5B892DC23E6566D /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
+			productRefGroup = 1F3E5DF614057E9F6D573544 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3F008684778FCF91ACC353DD /* NasCabOS TV */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DF768042F724E155E6201D08 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C08B0B39BC6CDD339F2D9B51 /* Assets.xcassets in Resources */,
+				96001860DBF6F76CE15C8A67 /* Localizable.strings in Resources */,
+				F833457DA9C0F1CFBE465C9A /* NotoSansSC-Regular.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		07B212D8DC3E70E5DBB49F2A /* Copy LiveKitWebRTC dSYM for Archive */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy LiveKitWebRTC dSYM for Archive";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Ensure third-party dSYM is included in .xcarchive/dSYMs.\nif [ \"${ACTION}\" != \"install\" ]; then\n  exit 0\nfi\n\nSRC_DSYM=\"${SRCROOT}/LiveKitWebRTC.xcframework/tvos-arm64/dSYMs/LiveKitWebRTC.framework.dSYM\"\nDST_DIR=\"${DWARF_DSYM_FOLDER_PATH}\"\nDST_DSYM=\"${DST_DIR}/LiveKitWebRTC.framework.dSYM\"\n\nif [ ! -d \"${SRC_DSYM}\" ]; then\n  echo \"warning: Missing LiveKitWebRTC dSYM at ${SRC_DSYM}\"\n  exit 0\nfi\n\nmkdir -p \"${DST_DIR}\"\nrm -rf \"${DST_DSYM}\"\nditto \"${SRC_DSYM}\" \"${DST_DSYM}\"\necho \"Copied LiveKitWebRTC dSYM to ${DST_DSYM}\"\n";
+		};
+		4B3254C433207F9A2E3D8816 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-NasCabOS TV-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F9363B4DAD6C6C4714E3EBA7 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		800DB45DAC583B33E905EEE2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				196E9EA40F293B64C1EADCD2 /* APIClient.swift in Sources */,
+				9F51E58A797BBF1F5061E46C /* APIResponse.swift in Sources */,
+				FEF7F5F99054D758AB02FBAD /* APIState.swift in Sources */,
+				3B23B10177B29F3A80B6F896 /* AddServerView.swift in Sources */,
+				8F534C841E8914AB928E8F12 /* AuthService.swift in Sources */,
+				9512E733AD4D9B59E7804089 /* ContentView.swift in Sources */,
+				B78619B1BFC0E831E3594B17 /* DevConnectMode.swift in Sources */,
+				4241A255677C51FFE7C4F5D6 /* DeviceFingerprint.swift in Sources */,
+				8ADECEF992B03FDAF15F5CF7 /* L10n+arSA.swift in Sources */,
+				A9C23D7787D5FFE8688FAB26 /* L10n+deDE.swift in Sources */,
+				FF42ECD5AF3599973C3269E6 /* L10n+enUS.swift in Sources */,
+				8C13D7236C3E391A635E4A45 /* L10n+esES.swift in Sources */,
+				2B2F78379C0AC44D05C52D6C /* L10n+frFR.swift in Sources */,
+				56BFA92DD26027542FC70CB1 /* L10n+idID.swift in Sources */,
+				1B2C18DCEFC804A9EB72A5ED /* L10n+jaJP.swift in Sources */,
+				C831F37414B1894CCC6DE702 /* L10n+koKR.swift in Sources */,
+				FB4723779927FFD770C6786E /* L10n+ptBR.swift in Sources */,
+				1FF42ABFD1EB6B8185CD2E56 /* L10n+ruRU.swift in Sources */,
+				5060B0DF9DF8142285E3296B /* L10n+thTH.swift in Sources */,
+				84ACB899C0826E86E9F1F33C /* L10n+viVN.swift in Sources */,
+				7510CB1694EA53EFADD84868 /* L10n+zhCN.swift in Sources */,
+				80E8512163454D613649FE76 /* L10n.swift in Sources */,
+				1C643AE26845AAE7E97332AE /* LocalPlaybackProxy.swift in Sources */,
+				1A69822E9165A25C06381B75 /* LoginResponse.swift in Sources */,
+				6C59FAC42679BD28CE28B4FE /* MusicCoverImage.swift in Sources */,
+				97BD11840850C21B6768BECB /* MusicDetailView.swift in Sources */,
+				7105641CBB4528DE09A277A3 /* MusicGridSections.swift in Sources */,
+				951EE44857AD7CF395CE54A8 /* MusicLibraryView.swift in Sources */,
+				04BD8ED499FE84C37D608F5B /* MusicModels.swift in Sources */,
+				5231ACCA6B25C03212FE3CD7 /* MusicPlayerConfig.swift in Sources */,
+				DA73D7885F6A7045D9E1E244 /* MusicPlayerService.swift in Sources */,
+				216823CDD4AED9A5AFF961CB /* MusicPlayerSheetView.swift in Sources */,
+				CE1AD5A4431B3BFB57C5FE4C /* MusicService.swift in Sources */,
+				DB6F4F687998C1F03F938093 /* MusicSongsSection.swift in Sources */,
+				64801990812E4B4C87CB249B /* NCComponents.swift in Sources */,
+				C2C39A0A5314179D9305C8C9 /* NasCabTVApp.swift in Sources */,
+				D0248A924E3BE8CEE7B64071 /* NetworkConfig.swift in Sources */,
+				0A3BDE7C48120EC4CDAADD00 /* P2PProtocol.swift in Sources */,
+				BDA3FB050A639062E87BA95E /* P2PService.swift in Sources */,
+				FBBC3E500FD10C590CAD1AA3 /* P2pSignalingBinary.swift in Sources */,
+				157E4D3862734A1A7646B3A2 /* PairCodeInputView.swift in Sources */,
+				96E2DC0A43AE01048E8172A9 /* PhotoAlbumModels.swift in Sources */,
+				ED1AFCDB921089135D77115B /* PhotoAlbumService.swift in Sources */,
+				DD65536644AF6181E6C85B3E /* PhotoAlbumViewModel.swift in Sources */,
+				70FDC5CA2D99A40A4047EE0E /* PhotoLibraryView.swift in Sources */,
+				0F2CEEA9A9B7DB871CAA5CB3 /* PhotoTimelineModels.swift in Sources */,
+				0652E6F9CE61B7F89F5AAA6A /* PhotoTimelineService.swift in Sources */,
+				843A34848439E78A0BBBC662 /* PhotoTimelineViewModel.swift in Sources */,
+				6383820BBF7349021DB0A019 /* ServerCardView.swift in Sources */,
+				27418402BCCE70747AA9A54C /* ServerInfo.swift in Sources */,
+				417388C7CC6957C6D415D5A0 /* ServerListView.swift in Sources */,
+				BC7C81AD9DF50F4EB211996E /* ServerListViewModel.swift in Sources */,
+				FF29618F36A7D76794FA47EF /* ServerStorageService.swift in Sources */,
+				A4918B87070047964E600630 /* TVVideoEpisodePickerView.swift in Sources */,
+				057E0ED8C846338C68ED342B /* TVVideoPlayerView.swift in Sources */,
+				B5D90097A661B4887DA2357C /* TrustAllCertsDelegate.swift in Sources */,
+				6DE72ADB587625FD81A316C8 /* UdpBroadcastListener.swift in Sources */,
+				F7C9D1BA4621F429156D9EC8 /* VideoDetailService.swift in Sources */,
+				93BFF0D51EFE0FF7643D16F8 /* VideoDetailView.swift in Sources */,
+				63E9F56B78E50ED9432EFB2D /* VideoImageUtils.swift in Sources */,
+				02FA9A9F8C8588BCF0157295 /* VideoLibraryView.swift in Sources */,
+				94CBCB829C41C4E19EDCDCC2 /* VideoListService.swift in Sources */,
+				0667786633395BE872A7E10B /* VideoModels.swift in Sources */,
+				530FA1BD3F512EFD951AF276 /* VideoPlaybackSettings.swift in Sources */,
+				6F9D5752A3272F791F826101 /* VideoPlaybackSettingsView.swift in Sources */,
+				CBCA5813DF1C1198E946870D /* WebRTCClient.swift in Sources */,
+				B9240FD775BA37FBB5CAE264 /* WebSocketSignaling.swift in Sources */,
+				B9CA78F8160566C5171E3C0C /* WebVttParser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		4FEDC2296163E3BBF4677A9F /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9B1BEA458DE4F6F5C8016620 /* ar */,
+				176B06AAEDD7AECFABA529C6 /* de */,
+				8703B46CD27D734AE2EF6AAC /* en */,
+				2A1458F6C7B5E097E5620EB3 /* es */,
+				A924E032C023A1CE872320C4 /* fr */,
+				71B2DA3305757BFF72C851E6 /* id */,
+				F1F5D057665A2B43CF8EE5DE /* ja */,
+				F0DFBFB89BA3D35591367381 /* ko */,
+				6516741F0B2EF16FFF244A22 /* pt-BR */,
+				26B3084E405E0F2EDBF7A3DC /* ru */,
+				D42C2DE194CDF93B6B8C4A01 /* th */,
+				386B9F18D4A7B5D2D2D87688 /* vi */,
+				43BF683435822DC60DC8BE2B /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		170ADD4A23CC0EE18B2A7D52 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 158DBD7CF6AE737C5C592B41 /* Pods-NasCabOS TV.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = MPCJ7BR2XR;
+				"EXCLUDED_ARCHS[sdk=appletvsimulator*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NasCabTV/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nascab.tv;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+		29C0BE8C201AD4DEB890D4CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+		954B596F692D8B71006990E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+		B3330AF017831723B399C12D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAA6DF5D8953AE1F80CC5B92 /* Pods-NasCabOS TV.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = MPCJ7BR2XR;
+				"EXCLUDED_ARCHS[sdk=appletvsimulator*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NasCabTV/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nascab.tv;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		757678B896A68FE093E44B1C /* Build configuration list for PBXNativeTarget "NasCabOS TV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				170ADD4A23CC0EE18B2A7D52 /* Debug */,
+				B3330AF017831723B399C12D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9FF8124C67F7EF96F8C1E3BD /* Build configuration list for PBXProject "NasCabOS TV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				954B596F692D8B71006990E7 /* Debug */,
+				29C0BE8C201AD4DEB890D4CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2FABB21DE390AC7E9F91A387 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.9.0;
+			};
+		};
+		6F96BB23B5B892DC23E6566D /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		331D19ED8A38E09A4134E767 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F96BB23B5B892DC23E6566D /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+		B0D6AC49610F30E6D296B337 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2FABB21DE390AC7E9F91A387 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = C0F3541CAEBD8C6F010333AE /* Project object */;
+}

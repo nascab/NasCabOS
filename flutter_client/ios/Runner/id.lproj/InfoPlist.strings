@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "NasCabOS memerlukan kamera untuk memindai kode QR saat menambahkan server atau masuk. Aplikasi tidak merekam video atau menyimpan gambar kecuali Anda secara eksplisit menyimpan foto.";
+"NSPhotoLibraryUsageDescription" = "NasCabOS mengakses pustaka foto untuk mengunggah atau mencadangkan foto dan video, menjelajah album, dan memilih media di perangkat. Hanya item yang Anda pilih atau izinkan (termasuk akses terbatas) yang diproses.";
+"NSPhotoLibraryAddUsageDescription" = "NasCabOS memerlukan izin untuk menyimpan foto, video, thumbnail, atau file ekspor yang diunduh ke pustaka saat Anda menggunakan Simpan ke Foto atau tindakan serupa.";
+"NSLocalNetworkUsageDescription" = "NasCabOS menggunakan jaringan lokal untuk menemukan dan terhubung ke server NasCab lewat Wi-Fi, streaming dan memutar media, menerima pesan penemuan LAN, dan membentuk koneksi peer terenkripsi untuk akses jarak jauh di jaringan Anda.";

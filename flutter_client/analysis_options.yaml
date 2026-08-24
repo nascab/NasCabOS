@@ -1,0 +1,19 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    experimental_member_use: ignore
+    package_names: ignore
+    unused_element: ignore
+
+linter:
+  rules:
+    prefer_const_constructors: false
+    prefer_final_fields: false
+    use_key_in_widget_constructors: false
+    prefer_const_literals_to_create_immutables: false
+    prefer_const_constructors_in_immutables: false
+    avoid_print: false
+    use_null_aware_elements: false
+    sort_child_properties_last: false

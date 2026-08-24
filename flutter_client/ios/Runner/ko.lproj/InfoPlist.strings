@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "NasCabOS는 서버 추가 또는 로그인 시 QR 코드를 스캔하기 위해 카메라 접근이 필요합니다. 사용자가 사진을 저장하지 않는 한 녹화하거나 이미지를 저장하지 않습니다.";
+"NSPhotoLibraryUsageDescription" = "NasCabOS는 사진 및 동영상 업로드·백업, 앨범 탐색, 기기에서 미디어 선택을 위해 사진 보관함 접근이 필요합니다. 선택하거나 허용한 항목(제한된 라이브러리 접근 포함)만 사용합니다.";
+"NSPhotoLibraryAddUsageDescription" = "「사진에 저장」 등의 기능 사용 시 다운로드한 사진·동영상·썸네일 또는 보낸 파일을 보관함에 저장하려면 권한이 필요합니다.";
+"NSLocalNetworkUsageDescription" = "NasCabOS는 Wi-Fi에서 NasCab 서버를 찾아 연결하고, 미디어를 스트리밍·재생하며, LAN 탐지 메시지를 수신하고, 원격 접속 시 동일 네트워크에서 암호화된 피어 연결을 구성하기 위해 로컬 네트워크를 사용합니다.";

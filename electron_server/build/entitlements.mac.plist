@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 允许 JIT（Electron/V8 需要） -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<!-- 允许未签名的可执行内存（V8 等） -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<!-- 关闭库校验，以便加载原生 Node 模块（better-sqlite3、node-pty、onnxruntime-node 等） -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<!-- 作为网络服务端监听端口 -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+	<!-- 作为客户端发起网络请求 -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- 用户选择的文件读写 -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- 应用沙盒内文件读写 -->
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+</dict>
+</plist>

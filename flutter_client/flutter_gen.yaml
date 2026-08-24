@@ -1,0 +1,25 @@
+flutter_gen:
+  output: lib/gen/
+  integrations:
+    - flutter_svg: false
+    - flare_flutter: false
+    - lottie: false
+  colors:
+    inputs:
+      - assets/colors.xml
+  fonts:
+    inputs:
+      - assets/fonts/
+  
+# 国际化配置
+intl:
+  enabled: true
+  class_name: AppLocalizations
+  arb_dir: lib/l10n
+  template_arb_file: app_en.arb
+  output_localization_file: app_localizations.dart
+  output_dir: lib/l10n
+  
+# 资源文件配置
+assets:
+  enabled: true

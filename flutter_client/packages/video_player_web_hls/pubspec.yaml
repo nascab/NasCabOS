@@ -1,0 +1,30 @@
+name: video_player_web_hls
+description: Web platform implementation of video_player and supports hls on chrome and other browsers.
+homepage: https://github.com/balvinderz/video_player_web_hls
+# 0.1.y+z is compatible with 1.0.0, if you land a breaking change bump
+# the version to 2.0.0.
+# See more details: https://github.com/flutter/flutter/wiki/Package-migration-to-1.0.0
+version: 1.3.0
+
+flutter:
+  plugin:
+    platforms:
+      web:
+        pluginClass: VideoPlayerPluginHls
+        fileName: video_player_web_hls.dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  http: ^1.0.0
+  video_player_platform_interface: ^6.2.0
+  web: ">=1.0.0 <2.0.0"
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+environment:
+  sdk: ^3.4.0
+  flutter: ">=3.22.0"

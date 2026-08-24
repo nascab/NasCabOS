@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">서버</string>
+    <string name="server_discovered_section">발견됨</string>
+    <string name="server_saved_section">저장됨</string>
+    <string name="server_tag_auto_discovered">자동 발견</string>
+    <string name="server_add_direct">서버 추가</string>
+    <string name="server_add_by_pair_code">페어 코드로 추가</string>
+    <string name="server_add_direct_desc">직접 URL</string>
+    <string name="server_add_by_pair_code_desc">페어 코드</string>
+    <string name="action_language">언어</string>
+    <string name="language_title">언어</string>
+    <string name="language_system">시스템 기본값</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">설정</string>
+    <string name="home_menu_video">미디어</string>
+    <string name="home_menu_photo">사진</string>
+    <string name="home_menu_music">음악</string>
+    <string name="home_menu_files">파일</string>
+
+    <string name="home_video_movies">영화</string>
+    <string name="home_video_tv_series">TV 시리즈</string>
+    <string name="home_video_recent">최근 재생</string>
+    <string name="home_video_favorite">즐겨찾기</string>
+    <string name="home_video_custom_albums">사용자 정의 앨범</string>
+    <string name="home_video_smart_albums">스마트 앨범</string>
+    <string name="home_video_collections">컬렉션</string>
+
+    <string name="video_media_type_movie">영화</string>
+    <string name="video_media_type_tv">TV</string>
+
+    <string name="video_list_options_title">옵션</string>
+    <string name="video_list_action_search">검색</string>
+    <string name="video_list_action_media_type">유형</string>
+    <string name="video_list_action_sort">정렬</string>
+    <string name="video_list_action_sources">소스 폴더</string>
+    <string name="video_list_action_clear_filters">필터 지우기</string>
+    <string name="video_list_action_apply">적용</string>
+    <string name="video_list_action_clear_search">검색 지우기</string>
+    <string name="video_list_search_field">키워드</string>
+    <string name="video_list_search_hint">제목 또는 파일명으로 검색</string>
+    <string name="video_list_search_empty">설정되지 않음</string>
+    <string name="video_list_sources_all">전체</string>
+    <string name="video_list_media_type_all">전체</string>
+    <string name="video_list_media_type_movie">영화</string>
+    <string name="video_list_media_type_tv">TV</string>
+    <string name="video_list_sources_hint">소스 폴더 선택</string>
+    <string name="video_list_sources_selected_count">선택됨: %1$d</string>
+    <string name="video_list_sort_view_time_desc">시청 시간 (최신)</string>
+    <string name="video_list_sort_view_time_asc">시청 시간 (오래된)</string>
+    <string name="video_list_sort_create_time_desc">생성 시간 (최신)</string>
+    <string name="video_list_sort_create_time_asc">생성 시간 (오래된)</string>
+    <string name="video_list_sort_favorite_time_desc">즐겨찾기 시간 (최신)</string>
+    <string name="video_list_sort_favorite_time_asc">즐겨찾기 시간 (오래된)</string>
+    <string name="video_list_sort_year_desc">연도 (최신)</string>
+    <string name="video_list_sort_year_asc">연도 (오래된)</string>
+    <string name="video_list_sort_score_desc">평점 (높은 순)</string>
+    <string name="video_list_sort_score_asc">평점 (낮은 순)</string>
+    <string name="video_list_sort_name_asc">이름 (A-Z)</string>
+    <string name="video_list_sort_name_desc">이름 (Z-A)</string>
+
+    <string name="video_library_tag_album">앨범</string>
+    <string name="video_library_tag_smart_album">스마트</string>
+    <string name="video_library_tag_collection">컬렉션</string>
+    <string name="video_library_open_title">열기</string>
+    <string name="video_library_sort_create_time_desc">생성 시간 (최신)</string>
+    <string name="video_library_sort_create_time_asc">생성 시간 (오래된)</string>
+    <string name="video_library_sort_name_asc">이름 (A-Z)</string>
+    <string name="video_library_sort_name_desc">이름 (Z-A)</string>
+
+    <string name="video_detail_action_play">재생</string>
+    <string name="video_detail_action_continue_play">계속 재생</string>
+    <string name="video_detail_action_favorite">즐겨찾기</string>
+    <string name="video_detail_action_unfavorite">즐겨찾기 해제</string>
+    <string name="video_detail_action_delete">삭제</string>
+    <string name="video_detail_action_scan">변경 사항 스캔</string>
+    <string name="video_detail_action_select_episodes">에피소드</string>
+    <string name="video_detail_action_select_season">시즌 선택</string>
+    <string name="video_detail_meta_seasons_count">총 %1$d시즌</string>
+    <string name="video_detail_meta_episodes_count">총 %1$d화</string>
+    <string name="video_detail_delete_title">삭제</string>
+    <string name="video_detail_delete_message">"%1$s" 삭제하시겠습니까?</string>
+    <string name="video_detail_delete_failed">삭제 실패</string>
+    <string name="video_detail_play_failed">플레이어를 열 수 없습니다</string>
+    <string name="video_detail_scan_queued">스캔 대기열에 추가됨</string>
+    <string name="video_detail_seasons">시즌</string>
+    <string name="video_detail_episodes">에피소드</string>
+    <string name="video_detail_people">인물</string>
+    <string name="video_detail_directors">감독</string>
+    <string name="video_detail_actors">배우</string>
+    <string name="video_detail_progress_format">시청됨 %1$s / %2$s (%3$s)</string>
+    <string name="video_detail_progress_short_format">시청됨 %1$s</string>
+    <string name="video_detail_season_label">시즌</string>
+    <string name="video_detail_episode_title_format">E%1$02d %2$s</string>
+    <string name="video_detail_select_episodes_title">에피소드 선택</string>
+
+    <string name="player_options_title">옵션</string>
+    <string name="player_playlist_title">재생 목록</string>
+    <string name="player_setting_quality">품질</string>
+    <string name="player_quality_original">원본</string>
+    <string name="player_setting_speed">속도</string>
+    <string name="player_setting_audio_track">오디오 트랙</string>
+    <string name="player_setting_subtitle_track">자막</string>
+    <string name="player_setting_subtitle_search">자막 검색</string>
+    <string name="player_subtitle_search_title">자막 검색</string>
+    <string name="player_subtitle_searching">자막을 검색 중…</string>
+    <string name="player_subtitle_search_no_results">자막을 찾을 수 없습니다</string>
+    <string name="player_subtitle_search_feature">지문 검색</string>
+    <string name="player_subtitle_search_keyword">키워드</string>
+    <string name="player_subtitle_search_keyword_hint">키워드를 입력하세요</string>
+    <string name="player_subtitle_download_success">자막 다운로드 완료</string>
+    <string name="player_subtitle_download_failed">자막 다운로드 실패</string>
+    <string name="player_setting_subtitle_size">자막 크기</string>
+    <string name="player_setting_decoder">디코더</string>
+    <string name="player_no_subtitle">자막 없음</string>
+    <string name="player_setting_show_playlist">재생 목록 표시</string>
+    <string name="player_subtitle_external">외부</string>
+    <string name="player_subtitle_size_small">작게</string>
+    <string name="player_subtitle_size_medium">보통</string>
+    <string name="player_subtitle_size_large">크게</string>
+    <string name="player_subtitle_size_xlarge">매우 크게</string>
+    <string name="player_decoder_auto">자동</string>
+    <string name="player_decoder_system">시스템 우선</string>
+    <string name="player_decoder_extension">확장 우선</string>
+    <string name="player_dolby_vision_decoder_fallback">Dolby Vision 비디오 디코더 호환 모드로 전환했습니다</string>
+    <string name="player_exit_title">플레이어 종료</string>
+    <string name="player_exit_message">종료하고 재생을 중지하시겠습니까?</string>
+    <string name="player_resume_title">재생 재개</string>
+    <string name="player_resume_message">%1$s부터 재생하시겠습니까?</string>
+    <string name="player_resume_from_start">처음부터</string>
+    <string name="player_resume_auto_close"> (%d초 후 자동으로 닫힘)</string>
+    <string name="player_play_failed">재생 실패</string>
+    <string name="player_reconnect_title">네트워크 연결 끊김</string>
+    <string name="player_reconnect_message">연결이 끊어졌습니다. 재연결하시겠습니까?</string>
+    <string name="player_reconnect_retry">재연결</string>
+    <string name="player_reconnect_exit">종료</string>
+    <string name="player_hint_controls">OK: 재생/일시정지 · 좌/우: 탐색 · 위: 옵션 · 아래: 재생 목록 · 뒤로: 종료</string>
+
+    <string name="home_photo_timeline">타임라인</string>
+    <string name="home_photo_today">오늘 이 날</string>
+    <string name="home_photo_favorite">즐겨찾기</string>
+    <string name="home_photo_custom_albums">사용자 정의 앨범</string>
+    <string name="home_photo_smart_albums">스마트 앨범</string>
+    <string name="home_photo_collections">컬렉션</string>
+
+    <string name="photo_library_tag_album">앨범</string>
+    <string name="photo_library_tag_smart_album">스마트</string>
+    <string name="photo_library_tag_collection">컬렉션</string>
+    <string name="photo_library_prefix_album">사용자 정의 앨범</string>
+    <string name="photo_library_prefix_smart_album">스마트 앨범</string>
+    <string name="photo_library_prefix_collection">컬렉션</string>
+
+    <string name="video_library_prefix_album">사용자 정의 앨범</string>
+    <string name="video_library_prefix_smart_album">스마트 앨범</string>
+    <string name="video_library_prefix_collection">컬렉션</string>
+
+    <string name="photo_preview_auto_play">자동 재생</string>
+    <string name="photo_preview_auto_play_interval">간격</string>
+    <string name="photo_preview_seconds_format">%1$d 초</string>
+    <string name="photo_preview_action_favorite">즐겨찾기</string>
+    <string name="photo_preview_action_unfavorite">즐겨찾기 해제</string>
+    <string name="photo_preview_action_trash">휴지통으로 이동</string>
+    <string name="photo_preview_toast_moved_to_trash">휴지통으로 이동했습니다</string>
+
+    <string name="photo_timeline_options_title">타임라인 옵션</string>
+    <string name="photo_timeline_action_sort">정렬</string>
+    <string name="photo_timeline_action_type">유형</string>
+    <string name="photo_timeline_action_sources">소스 폴더</string>
+    <string name="photo_timeline_action_year">연도</string>
+    <string name="photo_timeline_action_month">월</string>
+    <string name="photo_timeline_action_refresh">새로 고침</string>
+    <string name="photo_timeline_action_clear_filters">필터 지우기</string>
+
+    <string name="photo_timeline_file_type_all">전체</string>
+    <string name="photo_timeline_file_type_image">이미지</string>
+    <string name="photo_timeline_file_type_video">동영상</string>
+
+    <string name="photo_timeline_sort_desc">촬영 시간 (최신)</string>
+    <string name="photo_timeline_sort_asc">촬영 시간 (오래된)</string>
+
+    <string name="photo_timeline_sources_all">전체</string>
+    <string name="photo_timeline_sources_selected_count">선택됨: %1$d</string>
+
+    <string name="photo_timeline_year_all">모든 연도</string>
+    <string name="photo_timeline_month_all">모든 월</string>
+    <string name="photo_timeline_month_pick_year_first">먼저 연도를 선택하세요</string>
+    <string name="photo_timeline_month_format">%1$02d</string>
+
+    <string name="home_music_tracks">트랙</string>
+    <string name="home_music_albums">앨범</string>
+    <string name="home_music_artists">아티스트</string>
+    <string name="home_music_playlists">재생 목록</string>
+    <string name="home_music_favorite">즐겨찾기</string>
+    <string name="home_music_now_playing">지금 재생 중</string>
+
+    <string name="music_item_type_folder">폴더</string>
+    <string name="music_item_folder_count">%1$d 트랙</string>
+    <string name="music_group_count">%1$d 트랙</string>
+
+    <string name="music_list_action_search">검색</string>
+    <string name="music_list_action_sort">정렬</string>
+    <string name="music_list_action_sources">소스 폴더</string>
+    <string name="music_list_action_apply">적용</string>
+    <string name="music_list_action_clear_search">검색 지우기</string>
+    <string name="music_list_action_clear_filters">필터 지우기</string>
+    <string name="music_list_sources_all">전체</string>
+    <string name="music_list_sources_all_sources">모든 소스</string>
+    <string name="music_list_sources_selected_count">선택됨: %1$d</string>
+    <string name="music_list_search_empty">없음</string>
+
+    <string name="music_sort_filename_asc">파일명 (A–Z)</string>
+    <string name="music_sort_filename_desc">파일명 (Z–A)</string>
+    <string name="music_sort_title_asc">제목 (A–Z)</string>
+    <string name="music_sort_title_desc">제목 (Z–A)</string>
+    <string name="music_sort_artist_asc">아티스트 (A–Z)</string>
+    <string name="music_sort_artist_desc">아티스트 (Z–A)</string>
+    <string name="music_sort_album_asc">앨범 (A–Z)</string>
+    <string name="music_sort_album_desc">앨범 (Z–A)</string>
+    <string name="music_sort_duration_asc">길이 (짧은 순)</string>
+    <string name="music_sort_duration_desc">길이 (긴 순)</string>
+    <string name="music_sort_favorite_time_desc">즐겨찾기 시간 (최신)</string>
+    <string name="music_sort_favorite_time_asc">즐겨찾기 시간 (오래된)</string>
+    <string name="music_sort_create_time_desc">생성 시간 (최신)</string>
+    <string name="music_sort_create_time_asc">생성 시간 (오래된)</string>
+    <string name="music_sort_modify_time_desc">수정 시간 (최신)</string>
+    <string name="music_sort_modify_time_asc">수정 시간 (오래된)</string>
+    <string name="music_sort_year_desc">연도 (최신)</string>
+    <string name="music_sort_year_asc">연도 (오래된)</string>
+
+    <string name="music_group_sort_count_desc">개수 (많은 순)</string>
+    <string name="music_group_sort_count_asc">개수 (적은 순)</string>
+    <string name="music_group_sort_name_asc">이름 (A–Z)</string>
+    <string name="music_group_sort_name_desc">이름 (Z–A)</string>
+
+    <string name="music_playlist_sort_create_time_desc">생성 시간 (최신)</string>
+    <string name="music_playlist_sort_create_time_asc">생성 시간 (오래된)</string>
+    <string name="music_playlist_sort_name_asc">이름 (A–Z)</string>
+    <string name="music_playlist_sort_name_desc">이름 (Z–A)</string>
+
+    <string name="music_notification_channel_name">음악 재생</string>
+    <string name="music_notification_channel_desc">백그라운드 음악 재생</string>
+    <string name="music_action_prev">이전</string>
+    <string name="music_action_play">재생</string>
+    <string name="music_action_pause">일시정지</string>
+    <string name="music_action_next">다음</string>
+    <string name="music_action_stop">정지</string>
+
+    <string name="music_now_playing_hint">좌/우: 10초 탐색</string>
+    <string name="music_now_playing_empty">재생 중인 것이 없습니다</string>
+    <string name="music_no_lyrics">가사 없음</string>
+    <string name="music_search_lyric">가사 검색</string>
+    <string name="music_match_high">높은 일치</string>
+    <string name="music_match_score">일치 %1$d%%</string>
+    <string name="music_favorite">즐겨찾기</string>
+    <string name="music_unfavorite">즐겨찾기 해제</string>
+    <string name="no_data">데이터 없음</string>
+    <string name="operation_success">성공</string>
+    <string name="operation_failed">실패</string>
+
+    <string name="home_file_browse">파일 탐색</string>
+    <string name="home_language_settings">언어</string>
+    <string name="home_video_playback_settings">동영상 재생 설정</string>
+    <string name="video_playback_default_quality">기본 재생 화질</string>
+    <string name="video_playback_default_quality_desc">동영상 재생 시 기본으로 사용하는 화질입니다. 원본 외 해상도는 트랜스코딩을 사용하며, 네트워크 대역폭이 제한적일 때 대역폭을 줄이는 데 도움이 됩니다.</string>
+    <string name="feature_placeholder_video">이 기능은 개발 중입니다</string>
+    <string name="feature_placeholder_photos">이 기능은 개발 중입니다</string>
+    <string name="feature_placeholder_music">이 기능은 개발 중입니다</string>
+    <string name="feature_placeholder_files">이 기능은 개발 중입니다</string>
+
+    <string name="action_logout">로그아웃</string>
+    <string name="logout_title">로그아웃</string>
+    <string name="logout_confirm_message">%1$s에서 로그아웃하시겠습니까?</string>
+    <string name="logout_desc">%1$s에서 로그아웃</string>
+
+    <string name="dev_network_channel">네트워크 채널</string>
+    <string name="dev_network_channel_desc">테스트를 위해 연결 모드 강제 전환</string>
+    <string name="dev_network_mode_auto">자동</string>
+    <string name="dev_network_mode_direct">직접</string>
+    <string name="dev_network_mode_p2p_direct">P2P 직접</string>
+    <string name="dev_network_mode_p2p_relay">P2P 릴레이</string>
+    <string name="dev_network_switch_success">전환됨: %1$s</string>
+
+    <string name="pair_code_input_title">페어 코드 입력</string>
+
+    <string name="action_connect">연결</string>
+    <string name="status_connecting">연결 중…</string>
+    <string name="action_edit">편집</string>
+    <string name="action_delete">삭제</string>
+    <string name="action_save">저장</string>
+    <string name="action_search">검색</string>
+    <string name="action_select">선택</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_ok">확인</string>
+    <string name="common_on">켜짐</string>
+    <string name="common_off">꺼짐</string>
+    <string name="update_dialog_title_format">새 버전: %1$s</string>
+    <string name="update_action_upgrade">업그레이드</string>
+    <string name="update_action_later">나중에</string>
+    <string name="update_action_ignore_this_version">이 버전 무시</string>
+    <string name="update_action_downloading">다운로드 중…</string>
+    <string name="update_action_install">설치</string>
+    <string name="update_action_retry">재시도</string>
+    <string name="update_status_ready">준비됨</string>
+    <string name="update_status_failed">다운로드 실패</string>
+    <string name="update_status_ready_to_install">설치 준비됨</string>
+    <string name="update_status_downloading_percent_format">다운로드 중: %1$d%%</string>
+    <string name="exit_confirm_title">종료</string>
+    <string name="exit_confirm_message">앱을 종료하시겠습니까?</string>
+
+    <string name="field_server_name">서버 이름</string>
+    <string name="field_protocol">프로토콜</string>
+    <string name="field_server_url">서버 주소 (포트 포함)</string>
+    <string name="field_pair_code">페어 코드</string>
+    <string name="field_username">사용자 이름</string>
+    <string name="field_password">비밀번호</string>
+    <string name="field_require_password_every_login">매 로그인 시 비밀번호 요청</string>
+    <string name="prompt_password_desc">로그인하려면 비밀번호를 입력하세요</string>
+    <string name="twofa_prompt_title">2FA</string>
+    <string name="twofa_prompt_desc">2FA 코드를 입력하세요</string>
+    <string name="field_twofa_code">2FA 코드</string>
+
+    <string name="hint_optional">선택사항</string>
+
+    <string name="error_title">오류</string>
+    <string name="tip">팁</string>
+    <string name="server_version_too_low">서버 버전이 너무 낮습니다. 최신 버전으로 업그레이드한 뒤 다시 로그인한 후 이 기능을 사용하세요.</string>
+    <string name="error_pair_code_empty">페어 코드가 비어 있습니다</string>
+    <string name="error_pair_code_invalid">페어 코드가 유효하지 않습니다</string>
+    <string name="error_server_url_empty">서버 URL이 비어 있습니다</string>
+    <string name="error_username_empty">사용자 이름이 비어 있습니다</string>
+    <string name="error_password_empty">비밀번호가 비어 있습니다</string>
+    <string name="error_twofa_empty">2FA 코드가 비어 있습니다</string>
+    <string name="error_twofa_invalid">2FA 코드가 유효하지 않습니다</string>
+    <string name="error_twofa_too_many_attempts">시도 횟수가 너무 많습니다. 나중에 다시 시도하세요</string>
+    <string name="error_twofa_invalid_token">2FA 토큰이 유효하지 않습니다. 다시 로그인하세요</string>
+    <string name="error_network_failed">네트워크 요청 실패</string>
+    <string name="error_not_nascab_server">NasCab 서버가 아닙니다</string>
+    <string name="error_not_logged_in">먼저 로그인하세요</string>
+    <string name="error_server_unreachable">서버에 연결할 수 없습니다. 서버 상태를 확인하세요</string>
+    <string name="error_no_direct_url">사용 가능한 직접 URL이 없습니다</string>
+    <string name="error_no_pair_code">사용 가능한 페어 코드가 없습니다</string>
+
+    <string name="cancel_add_confirm_title">취소</string>
+    <string name="cancel_add_confirm_message">서버 추가를 취소하시겠습니까?</string>
+
+    <string name="common_no_data">데이터 없음</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d 항목</item>
+        <item quantity="other">%d 항목</item>
+    </plurals>
+</resources>

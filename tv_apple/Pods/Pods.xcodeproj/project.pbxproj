@@ -1,0 +1,673 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		0BAD53B4A3D10AF4C69C36853F976CD6 /* TVVLCKit */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = C519416E3C4B94836DF6EA300DAF0240 /* Build configuration list for PBXAggregateTarget "TVVLCKit" */;
+			buildPhases = (
+				8F8A06347CB3A1CA1A6F4B37EBA0FD29 /* [CP] Copy XCFrameworks */,
+			);
+			dependencies = (
+			);
+			name = TVVLCKit;
+		};
+		80B85C8942A3840904105B0503A8247F /* FSPlayer */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 73CF8E08C0A2F8EA841822F15A2A15CB /* Build configuration list for PBXAggregateTarget "FSPlayer" */;
+			buildPhases = (
+				D0FBB2F61E65CD1AEE5B4FE905AFD6CE /* [CP] Copy XCFrameworks */,
+			);
+			dependencies = (
+			);
+			name = FSPlayer;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		078B496531AD394315F86454C1AC95A8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDA515362E70C217FDD9C844BFEFE67C /* Foundation.framework */; };
+		27E0BC68698060D48F35A872602A8AE0 /* Pods-NasCabOS TV-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = D45CA42816BE23E89950F2E8081A929A /* Pods-NasCabOS TV-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		408610F81DC175D7569C20F0FDE0CB22 /* Pods-NasCabOS TV-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 36DBA858A7E186696FFEFC1BE36D83DE /* Pods-NasCabOS TV-dummy.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C319F030B5D8146E33EE90E0ABA25341 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFDFE7DC352907FC980B868725387E98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 80B85C8942A3840904105B0503A8247F;
+			remoteInfo = FSPlayer;
+		};
+		E792F24A1B561D5ACD1CECE30DF01214 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFDFE7DC352907FC980B868725387E98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0BAD53B4A3D10AF4C69C36853F976CD6;
+			remoteInfo = TVVLCKit;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00AD7201FE2EA02CCCC2BD6C4317B761 /* Pods-NasCabOS TV */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-NasCabOS TV"; path = Pods_NasCabOS_TV.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		119B59F10334A06964E4A91E45E98598 /* TVVLCKit.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; path = TVVLCKit.xcframework; sourceTree = "<group>"; };
+		36DBA858A7E186696FFEFC1BE36D83DE /* Pods-NasCabOS TV-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-NasCabOS TV-dummy.m"; sourceTree = "<group>"; };
+		53609A8B67E136C311AE847270EAA862 /* Pods-NasCabOS TV-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-NasCabOS TV-acknowledgements.markdown"; sourceTree = "<group>"; };
+		6A525A77BF4DF38E4A098D60CE0EB76F /* FSPlayer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = FSPlayer.release.xcconfig; sourceTree = "<group>"; };
+		7241B38E9C44394C3E24B9C592304A3B /* TVVLCKit.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = TVVLCKit.release.xcconfig; sourceTree = "<group>"; };
+		7356EA6625A82F956DC2E780EA3AA767 /* FSPlayer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = FSPlayer.debug.xcconfig; sourceTree = "<group>"; };
+		780138586850F5EA2D64AF8FA630669B /* Pods-NasCabOS TV.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-NasCabOS TV.modulemap"; sourceTree = "<group>"; };
+		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		A5EE5E4EE3E846569DB7C7CCB85B9B91 /* Pods-NasCabOS TV-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-NasCabOS TV-frameworks.sh"; sourceTree = "<group>"; };
+		A6627D27B39EC9CF8EF124D54D7BB2F5 /* Pods-NasCabOS TV.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-NasCabOS TV.debug.xcconfig"; sourceTree = "<group>"; };
+		BBA53664F373E4733E618D1D9FE921EB /* FSPlayer.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; path = FSPlayer.xcframework; sourceTree = "<group>"; };
+		CDA515362E70C217FDD9C844BFEFE67C /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		D45CA42816BE23E89950F2E8081A929A /* Pods-NasCabOS TV-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-NasCabOS TV-umbrella.h"; sourceTree = "<group>"; };
+		D726C2CB7C817BE7B0617AE5205F8047 /* Pods-NasCabOS TV-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-NasCabOS TV-acknowledgements.plist"; sourceTree = "<group>"; };
+		D8E4E6EDA4BC2708D4F3ACC67800BB91 /* Pods-NasCabOS TV.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-NasCabOS TV.release.xcconfig"; sourceTree = "<group>"; };
+		E9C7051F31A9BA572AEFCBCDF48C94E1 /* FSPlayer-xcframeworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "FSPlayer-xcframeworks.sh"; sourceTree = "<group>"; };
+		ECC0E99C4A56F2DD19B52BAFE6DB998A /* TVVLCKit.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = TVVLCKit.debug.xcconfig; sourceTree = "<group>"; };
+		ED29C07BD855758C43A1CA1F36E37D43 /* TVVLCKit-xcframeworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "TVVLCKit-xcframeworks.sh"; sourceTree = "<group>"; };
+		F9CEB665EE006A5A0E67AC77C9DBD968 /* Pods-NasCabOS TV-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-NasCabOS TV-Info.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B8E1B5A328377FC83196EA4D924BFF38 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				078B496531AD394315F86454C1AC95A8 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0057142BE8F41E4CB277578E518783B6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				119B59F10334A06964E4A91E45E98598 /* TVVLCKit.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		07807A34E365CBC8E973FC58B573837D /* TVVLCKit */ = {
+			isa = PBXGroup;
+			children = (
+				0057142BE8F41E4CB277578E518783B6 /* Frameworks */,
+				6EFA64055D93099F41EFCF97D18E4717 /* Support Files */,
+			);
+			name = TVVLCKit;
+			path = TVVLCKit;
+			sourceTree = "<group>";
+		};
+		1231CFF1303178115DAA47F7F238B83D /* FSPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				C872EAED719E0FEC223FD90B6DBAE470 /* Frameworks */,
+				DA56B5AF0BA91038DB2899F96439FA3B /* Support Files */,
+			);
+			name = FSPlayer;
+			path = FSPlayer;
+			sourceTree = "<group>";
+		};
+		1F9FCB3618DC551B524D67B669081319 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AC843B60E4FDC1C5397DB49843F4CB14 /* tvOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3C9C6695879C1510DED1473B84B8817F /* Pods-NasCabOS TV */ = {
+			isa = PBXGroup;
+			children = (
+				780138586850F5EA2D64AF8FA630669B /* Pods-NasCabOS TV.modulemap */,
+				53609A8B67E136C311AE847270EAA862 /* Pods-NasCabOS TV-acknowledgements.markdown */,
+				D726C2CB7C817BE7B0617AE5205F8047 /* Pods-NasCabOS TV-acknowledgements.plist */,
+				36DBA858A7E186696FFEFC1BE36D83DE /* Pods-NasCabOS TV-dummy.m */,
+				A5EE5E4EE3E846569DB7C7CCB85B9B91 /* Pods-NasCabOS TV-frameworks.sh */,
+				F9CEB665EE006A5A0E67AC77C9DBD968 /* Pods-NasCabOS TV-Info.plist */,
+				D45CA42816BE23E89950F2E8081A929A /* Pods-NasCabOS TV-umbrella.h */,
+				A6627D27B39EC9CF8EF124D54D7BB2F5 /* Pods-NasCabOS TV.debug.xcconfig */,
+				D8E4E6EDA4BC2708D4F3ACC67800BB91 /* Pods-NasCabOS TV.release.xcconfig */,
+			);
+			name = "Pods-NasCabOS TV";
+			path = "Target Support Files/Pods-NasCabOS TV";
+			sourceTree = "<group>";
+		};
+		6A18FC43EF8AD019EE99F08B59409E18 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				1231CFF1303178115DAA47F7F238B83D /* FSPlayer */,
+				07807A34E365CBC8E973FC58B573837D /* TVVLCKit */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
+		6EFA64055D93099F41EFCF97D18E4717 /* Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				ED29C07BD855758C43A1CA1F36E37D43 /* TVVLCKit-xcframeworks.sh */,
+				ECC0E99C4A56F2DD19B52BAFE6DB998A /* TVVLCKit.debug.xcconfig */,
+				7241B38E9C44394C3E24B9C592304A3B /* TVVLCKit.release.xcconfig */,
+			);
+			name = "Support Files";
+			path = "../Target Support Files/TVVLCKit";
+			sourceTree = "<group>";
+		};
+		8E5F39DB83F744F4E6B1A4CB2FC19E52 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00AD7201FE2EA02CCCC2BD6C4317B761 /* Pods-NasCabOS TV */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AC843B60E4FDC1C5397DB49843F4CB14 /* tvOS */ = {
+			isa = PBXGroup;
+			children = (
+				CDA515362E70C217FDD9C844BFEFE67C /* Foundation.framework */,
+			);
+			name = tvOS;
+			sourceTree = "<group>";
+		};
+		B98F2D92870CE4A554A6C6354587FE19 /* Targets Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				3C9C6695879C1510DED1473B84B8817F /* Pods-NasCabOS TV */,
+			);
+			name = "Targets Support Files";
+			sourceTree = "<group>";
+		};
+		C872EAED719E0FEC223FD90B6DBAE470 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				BBA53664F373E4733E618D1D9FE921EB /* FSPlayer.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CF1408CF629C7361332E53B88F7BD30C = {
+			isa = PBXGroup;
+			children = (
+				9D940727FF8FB9C785EB98E56350EF41 /* Podfile */,
+				1F9FCB3618DC551B524D67B669081319 /* Frameworks */,
+				6A18FC43EF8AD019EE99F08B59409E18 /* Pods */,
+				8E5F39DB83F744F4E6B1A4CB2FC19E52 /* Products */,
+				B98F2D92870CE4A554A6C6354587FE19 /* Targets Support Files */,
+			);
+			sourceTree = "<group>";
+		};
+		DA56B5AF0BA91038DB2899F96439FA3B /* Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				E9C7051F31A9BA572AEFCBCDF48C94E1 /* FSPlayer-xcframeworks.sh */,
+				7356EA6625A82F956DC2E780EA3AA767 /* FSPlayer.debug.xcconfig */,
+				6A525A77BF4DF38E4A098D60CE0EB76F /* FSPlayer.release.xcconfig */,
+			);
+			name = "Support Files";
+			path = "../Target Support Files/FSPlayer";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		75E80682145C8562DFCE8B76E678D316 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27E0BC68698060D48F35A872602A8AE0 /* Pods-NasCabOS TV-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		4AB4837F3ABE82C982819278E3AE5245 /* Pods-NasCabOS TV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4FB3D22D19E82BA0FF4C633C126EF91D /* Build configuration list for PBXNativeTarget "Pods-NasCabOS TV" */;
+			buildPhases = (
+				75E80682145C8562DFCE8B76E678D316 /* Headers */,
+				CFC7A01133EF66C2B85A7D2C2D74A0E6 /* Sources */,
+				B8E1B5A328377FC83196EA4D924BFF38 /* Frameworks */,
+				E0485DE833FC0AFD07C6765E547184BE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				257A9121A7B3EEA9A0C79D090B0C8FFD /* PBXTargetDependency */,
+				F27A324E026262DB17715FBCFAE86217 /* PBXTargetDependency */,
+			);
+			name = "Pods-NasCabOS TV";
+			productName = Pods_NasCabOS_TV;
+			productReference = 00AD7201FE2EA02CCCC2BD6C4317B761 /* Pods-NasCabOS TV */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BFDFE7DC352907FC980B868725387E98 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 4821239608C13582E20E6DA73FD5F1F9 /* Build configuration list for PBXProject "Pods" */;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = CF1408CF629C7361332E53B88F7BD30C;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8E5F39DB83F744F4E6B1A4CB2FC19E52 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				80B85C8942A3840904105B0503A8247F /* FSPlayer */,
+				4AB4837F3ABE82C982819278E3AE5245 /* Pods-NasCabOS TV */,
+				0BAD53B4A3D10AF4C69C36853F976CD6 /* TVVLCKit */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E0485DE833FC0AFD07C6765E547184BE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		8F8A06347CB3A1CA1A6F4B37EBA0FD29 /* [CP] Copy XCFrameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/TVVLCKit/TVVLCKit-xcframeworks-input-files.xcfilelist",
+			);
+			name = "[CP] Copy XCFrameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/TVVLCKit/TVVLCKit-xcframeworks-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/TVVLCKit/TVVLCKit-xcframeworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D0FBB2F61E65CD1AEE5B4FE905AFD6CE /* [CP] Copy XCFrameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/FSPlayer/FSPlayer-xcframeworks-input-files.xcfilelist",
+			);
+			name = "[CP] Copy XCFrameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/FSPlayer/FSPlayer-xcframeworks-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/FSPlayer/FSPlayer-xcframeworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CFC7A01133EF66C2B85A7D2C2D74A0E6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				408610F81DC175D7569C20F0FDE0CB22 /* Pods-NasCabOS TV-dummy.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		257A9121A7B3EEA9A0C79D090B0C8FFD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = FSPlayer;
+			target = 80B85C8942A3840904105B0503A8247F /* FSPlayer */;
+			targetProxy = C319F030B5D8146E33EE90E0ABA25341 /* PBXContainerItemProxy */;
+		};
+		F27A324E026262DB17715FBCFAE86217 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TVVLCKit;
+			target = 0BAD53B4A3D10AF4C69C36853F976CD6 /* TVVLCKit */;
+			targetProxy = E792F24A1B561D5ACD1CECE30DF01214 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		405C942B9CB832CA95CEAAA1E6E456B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6A525A77BF4DF38E4A098D60CE0EB76F /* FSPlayer.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 12.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		58466D94FAB30E3C549568FD7E31ACF9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6627D27B39EC9CF8EF124D54D7BB2F5 /* Pods-NasCabOS TV.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 13.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		7DC3FBD8D510F3C3BBBB06013A8422F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7356EA6625A82F956DC2E780EA3AA767 /* FSPlayer.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 12.0;
+			};
+			name = Debug;
+		};
+		9E215D218CC85D41BCD6A2B29907104D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_RELEASE=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				SYMROOT = "${SRCROOT}/../build";
+				TVOS_DEPLOYMENT_TARGET = 13.0;
+			};
+			name = Release;
+		};
+		A45B64CCBB0A435EC1FF2D051443587B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_DEBUG=1",
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				SYMROOT = "${SRCROOT}/../build";
+				TVOS_DEPLOYMENT_TARGET = 13.0;
+			};
+			name = Debug;
+		};
+		D0EF3DA5FFA58DAFACD5FAC1FA62D9EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7241B38E9C44394C3E24B9C592304A3B /* TVVLCKit.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 10.2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D9FCCC8AD48F4687B8F4058CD1E924D6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = ECC0E99C4A56F2DD19B52BAFE6DB998A /* TVVLCKit.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 10.2;
+			};
+			name = Debug;
+		};
+		F6337B12B2D64B913448958098589448 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D8E4E6EDA4BC2708D4F3ACC67800BB91 /* Pods-NasCabOS TV.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-NasCabOS TV/Pods-NasCabOS TV.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 13.0;
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4821239608C13582E20E6DA73FD5F1F9 /* Build configuration list for PBXProject "Pods" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A45B64CCBB0A435EC1FF2D051443587B /* Debug */,
+				9E215D218CC85D41BCD6A2B29907104D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4FB3D22D19E82BA0FF4C633C126EF91D /* Build configuration list for PBXNativeTarget "Pods-NasCabOS TV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				58466D94FAB30E3C549568FD7E31ACF9 /* Debug */,
+				F6337B12B2D64B913448958098589448 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		73CF8E08C0A2F8EA841822F15A2A15CB /* Build configuration list for PBXAggregateTarget "FSPlayer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7DC3FBD8D510F3C3BBBB06013A8422F2 /* Debug */,
+				405C942B9CB832CA95CEAAA1E6E456B2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C519416E3C4B94836DF6EA300DAF0240 /* Build configuration list for PBXAggregateTarget "TVVLCKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9FCCC8AD48F4687B8F4058CD1E924D6 /* Debug */,
+				D0EF3DA5FFA58DAFACD5FAC1FA62D9EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BFDFE7DC352907FC980B868725387E98 /* Project object */;
+}

@@ -1,0 +1,3 @@
+#include? "Pods/Target Support Files/Pods-NasCabOS/Pods-NasCabOS.release.xcconfig"
+#include "Generated.xcconfig"
+BUNDLE_ID_SUFFIX=.ios

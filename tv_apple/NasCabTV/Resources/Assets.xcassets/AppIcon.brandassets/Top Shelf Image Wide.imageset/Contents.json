@@ -1,0 +1,18 @@
+{
+  "images" : [
+    {
+      "filename" : "TOP_SHIELF_1X.png",
+      "idiom" : "tv",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "TOP_SHIELF_2X.png",
+      "idiom" : "tv",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

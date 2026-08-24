@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Docx</title>
+    <link rel="stylesheet" href="js-preview-lib/docx.css" />
+    <script src="js-preview-lib/docx.umd.js"></script>
+  </head>
+  <body>
+    <div id="docx"></div>
+
+    <script>
+      const myDocxPreviewer = jsPreviewDocx.init(document.getElementById('docx'));
+
+      function normalizeP2pUrl(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return s;
+        try {
+          const u = new URL(s, window.location.href);
+          if (u.hostname !== 'p2p.local') return s;
+          return `/__p2p__${u.pathname}${u.search}${u.hash}`;
+        } catch (_) {
+          return s;
+        }
+      }
+
+      function getGetParameter(paramName) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(paramName);
+      }
+
+      const loadUrl = normalizeP2pUrl(getGetParameter('fileUrl'));
+      console.log('loadUrl', loadUrl);
+      myDocxPreviewer
+        .preview(loadUrl)
+        .then(() => {
+          console.log('预览完成', loadUrl);
+        })
+        .catch(() => {
+          console.log('预览失败', loadUrl);
+        });
+    </script>
+  </body>
+</html>

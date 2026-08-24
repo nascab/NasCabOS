@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NasCabOS TV</string>
+    <string name="app_display_name">NasCabOS TV</string>
+
+    <string name="server_list_title">Serveurs</string>
+    <string name="server_discovered_section">Découverts</string>
+    <string name="server_saved_section">Enregistrés</string>
+    <string name="server_tag_auto_discovered">Découvert automatiquement</string>
+    <string name="server_add_direct">Ajouter un serveur</string>
+    <string name="server_add_by_pair_code">Ajouter par code d\'appairage</string>
+    <string name="server_add_direct_desc">URL directe</string>
+    <string name="server_add_by_pair_code_desc">Code d\'appairage</string>
+    <string name="action_language">Langue</string>
+    <string name="language_title">Langue</string>
+    <string name="language_system">Par défaut du système</string>
+    <string name="language_zh_cn">简体中文</string>
+    <string name="language_en">English</string>
+    <string name="language_es">Español</string>
+    <string name="language_pt">Português</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_fr">Français</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_ko">한국어</string>
+    <string name="language_in">Bahasa Indonesia</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_th">ไทย</string>
+    <string name="language_vi">Tiếng Việt</string>
+
+    <string name="home_settings_section">Paramètres</string>
+    <string name="home_menu_video">Médias</string>
+    <string name="home_menu_photo">Photos</string>
+    <string name="home_menu_music">Musique</string>
+    <string name="home_menu_files">Fichiers</string>
+
+    <string name="home_video_movies">Films</string>
+    <string name="home_video_tv_series">Séries TV</string>
+    <string name="home_video_recent">Lu récemment</string>
+    <string name="home_video_favorite">Favoris</string>
+    <string name="home_video_custom_albums">Albums personnalisés</string>
+    <string name="home_video_smart_albums">Albums intelligents</string>
+    <string name="home_video_collections">Collections</string>
+
+    <string name="video_media_type_movie">Film</string>
+    <string name="video_media_type_tv">TV</string>
+
+    <string name="video_list_options_title">Options</string>
+    <string name="video_list_action_search">Rechercher</string>
+    <string name="video_list_action_media_type">Type</string>
+    <string name="video_list_action_sort">Trier</string>
+    <string name="video_list_action_sources">Dossiers sources</string>
+    <string name="video_list_action_clear_filters">Effacer les filtres</string>
+    <string name="video_list_action_apply">Appliquer</string>
+    <string name="video_list_action_clear_search">Effacer la recherche</string>
+    <string name="video_list_search_field">Mot-clé</string>
+    <string name="video_list_search_hint">Rechercher par titre ou nom de fichier</string>
+    <string name="video_list_search_empty">Non défini</string>
+    <string name="video_list_sources_all">Tous</string>
+    <string name="video_list_media_type_all">Tous</string>
+    <string name="video_list_media_type_movie">Film</string>
+    <string name="video_list_media_type_tv">TV</string>
+    <string name="video_list_sources_hint">Sélectionner les dossiers sources</string>
+    <string name="video_list_sources_selected_count">Sélectionnés: %1$d</string>
+    <string name="video_list_sort_view_time_desc">Temps de visualisation (plus récent)</string>
+    <string name="video_list_sort_view_time_asc">Temps de visualisation (plus ancien)</string>
+    <string name="video_list_sort_create_time_desc">Temps de création (plus récent)</string>
+    <string name="video_list_sort_create_time_asc">Temps de création (plus ancien)</string>
+    <string name="video_list_sort_favorite_time_desc">Temps de favori (plus récent)</string>
+    <string name="video_list_sort_favorite_time_asc">Temps de favori (plus ancien)</string>
+    <string name="video_list_sort_year_desc">Année (plus récent)</string>
+    <string name="video_list_sort_year_asc">Année (plus ancien)</string>
+    <string name="video_list_sort_score_desc">Note (de haut en bas)</string>
+    <string name="video_list_sort_score_asc">Note (de bas en haut)</string>
+    <string name="video_list_sort_name_asc">Nom (A-Z)</string>
+    <string name="video_list_sort_name_desc">Nom (Z-A)</string>
+
+    <string name="video_library_tag_album">Album</string>
+    <string name="video_library_tag_smart_album">Intelligent</string>
+    <string name="video_library_tag_collection">Collection</string>
+    <string name="video_library_open_title">Ouvrir</string>
+    <string name="video_library_sort_create_time_desc">Temps de création (plus récent)</string>
+    <string name="video_library_sort_create_time_asc">Temps de création (plus ancien)</string>
+    <string name="video_library_sort_name_asc">Nom (A-Z)</string>
+    <string name="video_library_sort_name_desc">Nom (Z-A)</string>
+
+    <string name="video_detail_action_play">Lire</string>
+    <string name="video_detail_action_continue_play">Reprendre</string>
+    <string name="video_detail_action_favorite">Favori</string>
+    <string name="video_detail_action_unfavorite">Retirer des favoris</string>
+    <string name="video_detail_action_delete">Supprimer</string>
+    <string name="video_detail_action_scan">Scanner les changements</string>
+    <string name="video_detail_action_select_episodes">Épisodes</string>
+    <string name="video_detail_action_select_season">Choisir la saison</string>
+    <string name="video_detail_meta_seasons_count">%1$d saisons</string>
+    <string name="video_detail_meta_episodes_count">%1$d épisodes</string>
+    <string name="video_detail_delete_title">Supprimer</string>
+    <string name="video_detail_delete_message">Supprimer \"%1$s\" ?</string>
+    <string name="video_detail_delete_failed">Échec de la suppression</string>
+    <string name="video_detail_play_failed">Impossible d\'ouvrir le lecteur</string>
+    <string name="video_detail_scan_queued">Scan en file d\'attente</string>
+    <string name="video_detail_seasons">Saisons</string>
+    <string name="video_detail_episodes">Épisodes</string>
+    <string name="video_detail_people">Personnes</string>
+    <string name="video_detail_directors">Réalisateurs</string>
+    <string name="video_detail_actors">Acteurs</string>
+    <string name="video_detail_progress_format">Vu %1$s / %2$s (%3$s)</string>
+    <string name="video_detail_progress_short_format">Vu %1$s</string>
+    <string name="video_detail_season_label">Saison</string>
+    <string name="video_detail_episode_title_format">E%1$02d %2$s</string>
+    <string name="video_detail_select_episodes_title">Sélectionner des épisodes</string>
+
+    <string name="player_options_title">Options</string>
+    <string name="player_playlist_title">Playlist</string>
+    <string name="player_setting_quality">Qualité</string>
+    <string name="player_quality_original">Originale</string>
+    <string name="player_setting_speed">Vitesse</string>
+    <string name="player_setting_audio_track">Piste audio</string>
+    <string name="player_setting_subtitle_track">Sous-titres</string>
+    <string name="player_setting_subtitle_search">Rechercher des sous-titres</string>
+    <string name="player_subtitle_search_title">Recherche de sous-titres</string>
+    <string name="player_subtitle_searching">Recherche de sous-titres…</string>
+    <string name="player_subtitle_search_no_results">Aucun sous-titre trouvé</string>
+    <string name="player_subtitle_search_feature">Empreinte</string>
+    <string name="player_subtitle_search_keyword">Mot-clé</string>
+    <string name="player_subtitle_search_keyword_hint">Saisir un mot-clé</string>
+    <string name="player_subtitle_download_success">Sous-titre téléchargé</string>
+    <string name="player_subtitle_download_failed">Échec du téléchargement du sous-titre</string>
+    <string name="player_setting_subtitle_size">Taille des sous-titres</string>
+    <string name="player_setting_decoder">Decodeur</string>
+    <string name="player_no_subtitle">Pas de sous-titres</string>
+    <string name="player_setting_show_playlist">Afficher la playlist</string>
+    <string name="player_subtitle_external">Externe</string>
+    <string name="player_subtitle_size_small">Petit</string>
+    <string name="player_subtitle_size_medium">Moyen</string>
+    <string name="player_subtitle_size_large">Grand</string>
+    <string name="player_subtitle_size_xlarge">Tres grand</string>
+    <string name="player_decoder_auto">Automatique</string>
+    <string name="player_decoder_system">Priorite systeme</string>
+    <string name="player_decoder_extension">Priorite extension</string>
+    <string name="player_dolby_vision_decoder_fallback">Mode de compatibilite du decodeur video Dolby Vision active</string>
+    <string name="player_exit_title">Quitter le lecteur</string>
+    <string name="player_exit_message">Quitter et arrêter la lecture ?</string>
+    <string name="player_resume_title">Reprendre la lecture</string>
+    <string name="player_resume_message">Reprendre depuis %1$s ?</string>
+    <string name="player_resume_from_start">Depuis le début</string>
+    <string name="player_resume_auto_close"> (fermeture automatique dans %d s)</string>
+    <string name="player_play_failed">Échec de la lecture</string>
+    <string name="player_reconnect_title">Réseau déconnecté</string>
+    <string name="player_reconnect_message">Connexion perdue, se reconnecter ?</string>
+    <string name="player_reconnect_retry">Réessayer</string>
+    <string name="player_reconnect_exit">Quitter</string>
+    <string name="player_hint_controls">OK: Lecture/Pause · Gauche/Droite: Rechercher · Haut: Options · Bas: Playlist · Retour: Quitter</string>
+
+    <string name="home_photo_timeline">Chronologie</string>
+    <string name="home_photo_today">Ce jour-là</string>
+    <string name="home_photo_favorite">Favoris</string>
+    <string name="home_photo_custom_albums">Albums personnalisés</string>
+    <string name="home_photo_smart_albums">Albums intelligents</string>
+    <string name="home_photo_collections">Collections</string>
+
+    <string name="photo_library_tag_album">Album</string>
+    <string name="photo_library_tag_smart_album">Intelligent</string>
+    <string name="photo_library_tag_collection">Collection</string>
+    <string name="photo_library_prefix_album">Album personnalisé</string>
+    <string name="photo_library_prefix_smart_album">Album intelligent</string>
+    <string name="photo_library_prefix_collection">Collection</string>
+
+    <string name="video_library_prefix_album">Album personnalisé</string>
+    <string name="video_library_prefix_smart_album">Album intelligent</string>
+    <string name="video_library_prefix_collection">Collection</string>
+
+    <string name="photo_preview_auto_play">Lecture automatique</string>
+    <string name="photo_preview_auto_play_interval">Intervalle</string>
+    <string name="photo_preview_seconds_format">%1$d s</string>
+    <string name="photo_preview_action_favorite">Favori</string>
+    <string name="photo_preview_action_unfavorite">Retirer des favoris</string>
+    <string name="photo_preview_action_trash">Déplacer vers la corbeille</string>
+    <string name="photo_preview_toast_moved_to_trash">Déplacé vers la corbeille</string>
+
+    <string name="photo_timeline_options_title">Options de chronologie</string>
+    <string name="photo_timeline_action_sort">Trier</string>
+    <string name="photo_timeline_action_type">Type</string>
+    <string name="photo_timeline_action_sources">Dossiers sources</string>
+    <string name="photo_timeline_action_year">Année</string>
+    <string name="photo_timeline_action_month">Mois</string>
+    <string name="photo_timeline_action_refresh">Actualiser</string>
+    <string name="photo_timeline_action_clear_filters">Effacer les filtres</string>
+
+    <string name="photo_timeline_file_type_all">Tous</string>
+    <string name="photo_timeline_file_type_image">Images</string>
+    <string name="photo_timeline_file_type_video">Vidéos</string>
+
+    <string name="photo_timeline_sort_desc">Heure de prise de vue (plus récent)</string>
+    <string name="photo_timeline_sort_asc">Heure de prise de vue (plus ancien)</string>
+
+    <string name="photo_timeline_sources_all">Tous</string>
+    <string name="photo_timeline_sources_selected_count">Sélectionnés: %1$d</string>
+
+    <string name="photo_timeline_year_all">Toutes les années</string>
+    <string name="photo_timeline_month_all">Tous les mois</string>
+    <string name="photo_timeline_month_pick_year_first">Sélectionnez d\'abord l\'année</string>
+    <string name="photo_timeline_month_format">%1$02d</string>
+
+    <string name="home_music_tracks">Titres</string>
+    <string name="home_music_albums">Albums</string>
+    <string name="home_music_artists">Artistes</string>
+    <string name="home_music_playlists">Playlists</string>
+    <string name="home_music_favorite">Favoris</string>
+    <string name="home_music_now_playing">En cours de lecture</string>
+
+    <string name="music_item_type_folder">Dossier</string>
+    <string name="music_item_folder_count">%1$d titres</string>
+    <string name="music_group_count">%1$d titres</string>
+
+    <string name="music_list_action_search">Rechercher</string>
+    <string name="music_list_action_sort">Trier</string>
+    <string name="music_list_action_sources">Dossiers sources</string>
+    <string name="music_list_action_apply">Appliquer</string>
+    <string name="music_list_action_clear_search">Effacer la recherche</string>
+    <string name="music_list_action_clear_filters">Effacer les filtres</string>
+    <string name="music_list_sources_all">Tous</string>
+    <string name="music_list_sources_all_sources">Toutes les sources</string>
+    <string name="music_list_sources_selected_count">Sélectionnés: %1$d</string>
+    <string name="music_list_search_empty">Aucun</string>
+
+    <string name="music_sort_filename_asc">Nom de fichier (A–Z)</string>
+    <string name="music_sort_filename_desc">Nom de fichier (Z–A)</string>
+    <string name="music_sort_title_asc">Titre (A–Z)</string>
+    <string name="music_sort_title_desc">Titre (Z–A)</string>
+    <string name="music_sort_artist_asc">Artiste (A–Z)</string>
+    <string name="music_sort_artist_desc">Artiste (Z–A)</string>
+    <string name="music_sort_album_asc">Album (A–Z)</string>
+    <string name="music_sort_album_desc">Album (Z–A)</string>
+    <string name="music_sort_duration_asc">Durée (plus courte)</string>
+    <string name="music_sort_duration_desc">Durée (plus longue)</string>
+    <string name="music_sort_favorite_time_desc">Temps de favori (plus récent)</string>
+    <string name="music_sort_favorite_time_asc">Temps de favori (plus ancien)</string>
+    <string name="music_sort_create_time_desc">Temps de création (plus récent)</string>
+    <string name="music_sort_create_time_asc">Temps de création (plus ancien)</string>
+    <string name="music_sort_modify_time_desc">Temps de modification (plus récent)</string>
+    <string name="music_sort_modify_time_asc">Temps de modification (plus ancien)</string>
+    <string name="music_sort_year_desc">Année (plus récent)</string>
+    <string name="music_sort_year_asc">Année (plus ancien)</string>
+
+    <string name="music_group_sort_count_desc">Nombre (plus)</string>
+    <string name="music_group_sort_count_asc">Nombre (moins)</string>
+    <string name="music_group_sort_name_asc">Nom (A–Z)</string>
+    <string name="music_group_sort_name_desc">Nom (Z–A)</string>
+
+    <string name="music_playlist_sort_create_time_desc">Temps de création (plus récent)</string>
+    <string name="music_playlist_sort_create_time_asc">Temps de création (plus ancien)</string>
+    <string name="music_playlist_sort_name_asc">Nom (A–Z)</string>
+    <string name="music_playlist_sort_name_desc">Nom (Z–A)</string>
+
+    <string name="music_notification_channel_name">Lecture de musique</string>
+    <string name="music_notification_channel_desc">Lecture de musique en arrière-plan</string>
+    <string name="music_action_prev">Précédent</string>
+    <string name="music_action_play">Lire</string>
+    <string name="music_action_pause">Pause</string>
+    <string name="music_action_next">Suivant</string>
+    <string name="music_action_stop">Arrêter</string>
+
+    <string name="music_now_playing_hint">Gauche/Droite: avancer/reculer de 10s</string>
+    <string name="music_now_playing_empty">Rien en cours de lecture</string>
+    <string name="music_no_lyrics">Pas de paroles</string>
+    <string name="music_search_lyric">Rechercher des paroles</string>
+    <string name="music_match_high">Haute correspondance</string>
+    <string name="music_match_score">Correspondance %1$d%%</string>
+    <string name="music_favorite">Favori</string>
+    <string name="music_unfavorite">Retirer des favoris</string>
+    <string name="no_data">Pas de données</string>
+    <string name="operation_success">Succès</string>
+    <string name="operation_failed">Échec</string>
+
+    <string name="home_file_browse">Parcourir les fichiers</string>
+    <string name="home_language_settings">Langue</string>
+    <string name="home_video_playback_settings">Paramètres de lecture vidéo</string>
+    <string name="video_playback_default_quality">Qualité de lecture par défaut</string>
+    <string name="video_playback_default_quality_desc">Qualité par défaut lors de la lecture vidéo. Les résolutions autres que l\'original utilisent le transcodage et peuvent réduire la bande passante sur un réseau limité.</string>
+    <string name="feature_placeholder_video">Cette fonctionnalité est en développement</string>
+    <string name="feature_placeholder_photos">Cette fonctionnalité est en développement</string>
+    <string name="feature_placeholder_music">Cette fonctionnalité est en développement</string>
+    <string name="feature_placeholder_files">Cette fonctionnalité est en développement</string>
+
+    <string name="action_logout">Se déconnecter</string>
+    <string name="logout_title">Se déconnecter</string>
+    <string name="logout_confirm_message">Se déconnecter de %1$s ?</string>
+    <string name="logout_desc">Se déconnecter de %1$s</string>
+
+    <string name="dev_network_channel">Canal réseau</string>
+    <string name="dev_network_channel_desc">Forcer le changement de mode de connexion pour les tests</string>
+    <string name="dev_network_mode_auto">Automatique</string>
+    <string name="dev_network_mode_direct">Direct</string>
+    <string name="dev_network_mode_p2p_direct">P2P Direct</string>
+    <string name="dev_network_mode_p2p_relay">P2P Relay</string>
+    <string name="dev_network_switch_success">Passé à: %1$s</string>
+
+    <string name="pair_code_input_title">Entrer le code d\'appairage</string>
+
+    <string name="action_connect">Connecter</string>
+    <string name="status_connecting">Connexion en cours…</string>
+    <string name="action_edit">Modifier</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_search">Rechercher</string>
+    <string name="action_select">Sélectionner</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_ok">OK</string>
+    <string name="common_on">Activé</string>
+    <string name="common_off">Désactivé</string>
+    <string name="update_dialog_title_format">Nouvelle version: %1$s</string>
+    <string name="update_action_upgrade">Mettre à jour</string>
+    <string name="update_action_later">Plus tard</string>
+    <string name="update_action_ignore_this_version">Ignorer cette version</string>
+    <string name="update_action_downloading">Téléchargement…</string>
+    <string name="update_action_install">Installer</string>
+    <string name="update_action_retry">Réessayer</string>
+    <string name="update_status_ready">Prêt</string>
+    <string name="update_status_failed">Échec du téléchargement</string>
+    <string name="update_status_ready_to_install">Prêt à installer</string>
+    <string name="update_status_downloading_percent_format">Téléchargement: %1$d%%</string>
+    <string name="exit_confirm_title">Quitter</string>
+    <string name="exit_confirm_message">Êtes-vous sûr de vouloir quitter l\'application ?</string>
+
+    <string name="field_server_name">Nom du serveur</string>
+    <string name="field_protocol">Protocole</string>
+    <string name="field_server_url">Adresse du serveur (avec port)</string>
+    <string name="field_pair_code">Code d\'appairage</string>
+    <string name="field_username">Nom d\'utilisateur</string>
+    <string name="field_password">Mot de passe</string>
+    <string name="field_require_password_every_login">Demander le mot de passe à chaque connexion</string>
+    <string name="prompt_password_desc">Veuillez entrer le mot de passe pour vous connecter</string>
+    <string name="twofa_prompt_title">2FA</string>
+    <string name="twofa_prompt_desc">Veuillez entrer votre code 2FA</string>
+    <string name="field_twofa_code">Code 2FA</string>
+
+    <string name="hint_optional">Facultatif</string>
+
+    <string name="error_title">Erreur</string>
+    <string name="tip">Astuce</string>
+    <string name="server_version_too_low">La version de votre serveur est trop ancienne. Veuillez effectuer la mise à jour vers la dernière version, vous reconnecter, puis utiliser cette fonctionnalité.</string>
+    <string name="error_pair_code_empty">Le code d\'appairage est vide</string>
+    <string name="error_pair_code_invalid">Le code d\'appairage est invalide</string>
+    <string name="error_server_url_empty">L\'URL du serveur est vide</string>
+    <string name="error_username_empty">Le nom d\'utilisateur est vide</string>
+    <string name="error_password_empty">Le mot de passe est vide</string>
+    <string name="error_twofa_empty">Le code 2FA est vide</string>
+    <string name="error_twofa_invalid">Le code 2FA est invalide</string>
+    <string name="error_twofa_too_many_attempts">Trop de tentatives, réessayez plus tard</string>
+    <string name="error_twofa_invalid_token">Le jeton 2FA est invalide, veuillez vous reconnecter</string>
+    <string name="error_network_failed">Échec de la requête réseau</string>
+    <string name="error_not_nascab_server">Ce n\'est pas un serveur NasCab</string>
+    <string name="error_not_logged_in">Veuillez d\'abord vous connecter</string>
+    <string name="error_server_unreachable">Serveur injoignable, veuillez vérifier l\'état du serveur</string>
+    <string name="error_no_direct_url">Aucune URL directe disponible</string>
+    <string name="error_no_pair_code">Aucun code d\'appairage disponible</string>
+
+    <string name="cancel_add_confirm_title">Annuler</string>
+    <string name="cancel_add_confirm_message">Êtes-vous sûr de vouloir annuler l\'ajout du serveur ?</string>
+
+    <string name="common_no_data">Pas de données</string>
+
+    <plurals name="photo_timeline_day_count">
+        <item quantity="one">%d élément</item>
+        <item quantity="other">%d éléments</item>
+    </plurals>
+</resources>

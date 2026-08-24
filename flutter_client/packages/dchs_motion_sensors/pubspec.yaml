@@ -1,0 +1,12 @@
+name: dchs_motion_sensors
+description: Local no-op override for motion sensors on Android compliance builds.
+version: 2.0.1
+homepage: https://github.com/dariocavada/dchs_motion_sensors
+
+environment:
+  sdk: ">=3.5.3 <4.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
