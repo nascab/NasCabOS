@@ -1,5 +1,7 @@
 # NasCab OS
 
+> **简体中文** | [English](README.en.md)
+
 本项目是 NasCab OS 官方代码库，本项目官方网站：<https://nas.cab>
 
 ## 项目结构
@@ -17,7 +19,7 @@
 ## 运行方式
 
 服务端运行方式：
-先要将项目中releases中提供的依赖库和插件下载到本地，然后将对应平台的libs以及onnx_models解压缩后放到electron_server根目录下，libs中是第三方相关插件，onnx_models中是ocr相关模型文件，用于图像识别
+先要将项目中releases中提供的依赖库和插件（https://github.com/nascab/NasCabOS/releases）下载到本地，然后将对应平台的libs以及onnx_models解压缩后放到electron_server根目录下，libs中是第三方相关插件，onnx_models中是ocr相关模型文件，用于图像识别
 ```bash
 npm i;
 npm start;
@@ -29,3 +31,24 @@ npm start;
 flutter pub get;
 flutter run -d win/ios/android/mac
 ```
+
+如何把网页端编译后放到服务端下，实现静态网页端的访问：
+```bash
+将flutter打包web端后放入electron_server/web/main目录下
+```
+
+## 捐助支持
+
+如果 NasCab OS 对您有帮助，欢迎捐助支持我们：
+
+<div align="center">
+
+| 微信扫码捐助 | PayPal |
+| --- | --- |
+| <img src="qrcode-wx.png" width="200" alt="微信捐助二维码" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
+
+</div>
+
+商务合作/联系我们：ypptec@126.com / ypptec@gmail.com
+
+
