@@ -1,54 +1,57 @@
 # NasCab OS
 
-> **简体中文** | [English](README.en.md)
+> [简体中文](README.cn.md) | **English**
 
-本项目是 NasCab OS 官方代码库，本项目官方网站：<https://nas.cab>
+This is the official source repository of NasCab OS. Official website: <https://nas.cab>
 
-## 项目结构
+NasCabOS is a cross-platform NAS software that lets you remotely manage your photos, videos, music, books, and files. It also supports file sharing, Transmission downloads, Docker management, remote terminal, and more.
 
-本代码包含主要以下几个项目：
+## Project Structure
 
-| 项目 | 说明 |
+This repository contains the following projects:
+
+| Project | Description |
 | --- | --- |
-| electron_server | 后端，使用 electron + express 实现本地服务功能 |
-| flutter_client | Android + iOS + Windows + Mac 客户端，使用 flutter 实现跨平台客户端 |
-| tv_android | Android TV 端 |
-| tv_apple | Apple TV 端 |
-| harmony_client | 鸿蒙端，开发中 |
+| electron_server | Backend, uses electron + express to provide local services |
+| flutter_client | Android + iOS + Windows + Mac clients, built with flutter for cross-platform support |
+| tv_android | Android TV client |
+| tv_apple | Apple TV client |
+| harmony_client | HarmonyOS client, in development |
 
-## 运行方式
+## Running
 
-服务端运行方式：
-先要将项目中releases中提供的依赖库和插件（https://github.com/nascab/NasCabOS/releases）下载到本地，然后将对应平台的libs以及onnx_models解压缩后放到electron_server根目录下，libs中是第三方相关插件，onnx_models中是ocr相关模型文件，用于图像识别
+Server:
+
+First, download the dependency libraries and plugins provided in the releases (<https://github.com/nascab/NasCabOS/releases>), then extract the `libs` and `onnx_models` of the corresponding platform to the root directory of `electron_server`. `libs` contains third-party plugins, and `onnx_models` contains OCR model files used for image recognition.
+
 ```bash
 npm i;
 npm start;
 ```
 
-客户端运行方式：
+Client:
 
 ```bash
 flutter pub get;
 flutter run -d win/ios/android/mac
 ```
 
-如何把网页端编译后放到服务端下，实现静态网页端的访问：
+To serve the compiled web client from the server (static web access):
+
 ```bash
-将flutter打包web端后放入electron_server/web/main目录下
+Build the flutter web version and place it under the electron_server/web/main directory.
 ```
 
-## 捐助支持
+## Donations
 
-如果 NasCab OS 对您有帮助，欢迎捐助支持我们：
+If NasCab OS is helpful to you, we welcome your support:
 
 <div align="center">
 
-| 微信扫码捐助 | PayPal |
+| WeChat Scan to Donate | PayPal |
 | --- | --- |
-| <img src="qrcode-wx.webp" width="200" alt="微信捐助二维码" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
+| <img src="qrcode-wx.webp" width="200" alt="WeChat donation QR code" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
 
 </div>
 
-商务合作/联系我们：ypptec@126.com / ypptec@gmail.com
-
-
+Business cooperation / Contact us: ypptec@126.com / ypptec@gmail.com
