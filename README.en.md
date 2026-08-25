@@ -48,7 +48,7 @@ If NasCab OS is helpful to you, we welcome your support:
 
 | WeChat Scan to Donate | PayPal |
 | --- | --- |
-| <img src="qrcode-wx.png" width="200" alt="WeChat donation QR code" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
+| <img src="qrcode-wx.webp" width="200" alt="WeChat donation QR code" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
 
 </div>
 

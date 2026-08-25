@@ -45,7 +45,7 @@ flutter run -d win/ios/android/mac
 
 | 微信扫码捐助 | PayPal |
 | --- | --- |
-| <img src="qrcode-wx.png" width="200" alt="微信捐助二维码" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
+| <img src="qrcode-wx.webp" width="200" alt="微信捐助二维码" /> | [PayPal.Me/nascabos](https://paypal.me/nascabos) |
 
 </div>
 
