@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart'; 
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:xterm/ui.dart' as xterm_ui;
 import 'package:xterm/xterm.dart';
 
 import '../../../core/api/api_controller.dart';
@@ -134,6 +136,45 @@ class TerminalController extends GetxController {
   final String instanceId;
   final Terminal terminal = Terminal(maxLines: 10000);
 
+  /// xterm UI 层控制器，负责管理终端文本选区。
+  /// 与 GetX 的 [TerminalController] 同名，故命名为 uiController。
+  late final xterm_ui.TerminalController uiController =
+      xterm_ui.TerminalController();
+
+  /// 当前是否有文本选区
+  bool get hasSelection => uiController.selection != null;
+
+  /// 将当前选区文本复制到系统剪贴板
+  Future<void> copySelection() async {
+    final selection = uiController.selection;
+    if (selection == null) return;
+    final text = terminal.buffer.getText(selection);
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    uiController.clearSelection();
+    ToastUtil.show('quick_share_copied'.tr);
+  }
+
+  /// 读取系统剪贴板文本并粘贴到终端
+  Future<void> pasteClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text == null || text.isEmpty) return;
+    terminal.paste(text);
+  }
+
+  /// 全选终端缓冲区内容
+  void selectAll() {
+    final buffer = terminal.buffer;
+    final top = buffer.height - terminal.viewHeight;
+    if (top < 0) return;
+    uiController.setSelection(
+      buffer.createAnchor(0, top),
+      buffer.createAnchor(terminal.viewWidth, buffer.height - 1),
+      mode: xterm_ui.SelectionMode.line,
+    );
+  }
+
   final Rx<TerminalUiConfig> uiConfig = TerminalUiConfig.defaults().obs;
   final RxBool connecting = false.obs;
   final RxBool connected = false.obs;
@@ -179,6 +220,7 @@ class TerminalController extends GetxController {
     _disposeChannel();
     terminal.onOutput = null;
     terminal.onResize = null;
+    uiController.dispose();
     super.onClose();
   }
 

@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:get/get.dart';
 import 'package:xterm/ui.dart' hide TerminalController;
+import 'package:xterm/ui.dart' as xterm_ui;
 import 'package:xterm/xterm.dart' show Terminal, TerminalTheme, TerminalStyle;
 
 import '../../../core/api/api_controller.dart';
 import '../controllers/terminal_controller.dart';
 import '../../home/views/pc_components/pc_app_window.dart';
+import '../../../utils/context_menu_util.dart';
 import '../../../utils/device_utils.dart';
 
 class TerminalPage extends StatelessWidget {
@@ -93,6 +96,8 @@ class TerminalPage extends StatelessWidget {
                     child: Obx(() {
                       return _TerminalViewWrapper(
                         terminal: controller.terminal,
+                        uiController: controller.uiController,
+                        controller: controller,
                         theme: controller.terminalTheme,
                         textStyle: controller.terminalTextStyle,
                         cursorStyle: controller.uiConfig.value.cursorStyle,
@@ -101,6 +106,7 @@ class TerminalPage extends StatelessWidget {
                   ),
                   _TerminalBottomBar(
                     controller: controller,
+                    isMobile: isMobile,
                     isWin32:
                         (ApiController.instance.serverPlatform ?? '')
                             .toLowerCase() ==
@@ -138,12 +144,16 @@ TerminalCursorType _cursorTypeFromStyle(String raw) {
 /// 延迟一帧再挂载带 autofocus 的 TerminalView 可避免该问题。
 class _TerminalViewWrapper extends StatefulWidget {
   final Terminal terminal;
+  final xterm_ui.TerminalController uiController;
+  final TerminalController controller;
   final TerminalTheme theme;
   final TerminalStyle textStyle;
   final String cursorStyle;
 
   const _TerminalViewWrapper({
     required this.terminal,
+    required this.uiController,
+    required this.controller,
     required this.theme,
     required this.textStyle,
     required this.cursorStyle,
@@ -166,6 +176,57 @@ class _TerminalViewWrapperState extends State<_TerminalViewWrapper> {
     }
   }
 
+  /// 右键（桌面）弹出终端操作菜单：复制 / 粘贴 / 全选 / 中断
+  Future<void> _showContextMenu(Offset globalPosition) async {
+    if (!mounted) return;
+    final ctrl = widget.controller;
+    final entries = <ContextMenuEntry>[
+      MenuItem(
+        label: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 3, 0, 0),
+          child: Text('copy'.tr),
+        ),
+        icon: const Icon(Icons.copy_rounded, size: 18),
+        value: 'copy',
+        enabled: ctrl.hasSelection,
+        onSelected: (_) => ctrl.copySelection(),
+      ),
+      MenuItem(
+        label: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 3, 0, 0),
+          child: Text('file_paste'.tr),
+        ),
+        icon: const Icon(Icons.paste_rounded, size: 18),
+        value: 'paste',
+        onSelected: (_) => ctrl.pasteClipboard(),
+      ),
+      MenuItem(
+        label: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 3, 0, 0),
+          child: Text('timeline_select_all'.tr),
+        ),
+        icon: const Icon(Icons.select_all_rounded, size: 18),
+        value: 'select_all',
+        onSelected: (_) => ctrl.selectAll(),
+      ),
+      const MenuDivider(),
+      MenuItem(
+        label: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 3, 0, 0),
+          child: const Text('Ctrl+C'),
+        ),
+        icon: const Icon(Icons.cancel_outlined, size: 18),
+        value: 'interrupt',
+        onSelected: (_) => ctrl.interruptRunningCommand(),
+      ),
+    ];
+    await ContextMenuUtil.showAtPosition(
+      context,
+      entries: entries,
+      position: globalPosition,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isWindows = defaultTargetPlatform == TargetPlatform.windows;
@@ -177,10 +238,13 @@ class _TerminalViewWrapperState extends State<_TerminalViewWrapper> {
     return TerminalView(
       widget.terminal,
       autofocus: useAutofocus,
+      controller: widget.uiController,
       backgroundOpacity: 1.0,
       theme: widget.theme,
       textStyle: widget.textStyle,
       cursorType: _cursorTypeFromStyle(widget.cursorStyle),
+      onSecondaryTapDown: (details, _) =>
+          _showContextMenu(details.globalPosition),
       // Windows 下 xterm 的 TextInput 通道容易在失焦/重建时触发
       // "Set editing state... but no client is set"，终端场景改走物理键盘更稳定。
       hardwareKeyboardOnly: hardwareKeyboardOnly,
@@ -190,6 +254,7 @@ class _TerminalViewWrapperState extends State<_TerminalViewWrapper> {
 
 class _TerminalBottomBar extends StatelessWidget {
   final TerminalController controller;
+  final bool isMobile;
   final bool isWin32;
   final VoidCallback onInterrupt;
   final VoidCallback onReconnect;
@@ -197,6 +262,7 @@ class _TerminalBottomBar extends StatelessWidget {
 
   const _TerminalBottomBar({
     required this.controller,
+    required this.isMobile,
     required this.isWin32,
     required this.onInterrupt,
     required this.onReconnect,
@@ -246,6 +312,21 @@ class _TerminalBottomBar extends StatelessWidget {
                 alignment: WrapAlignment.end,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
+                  // 移动端无右键菜单，提供复制/粘贴按钮
+                  if (isMobile) ...[
+                    _barButton(
+                      context,
+                      icon: Icons.copy_rounded,
+                      tooltip: 'copy'.tr,
+                      onTap: () => controller.copySelection(),
+                    ),
+                    _barButton(
+                      context,
+                      icon: Icons.paste_rounded,
+                      tooltip: 'file_paste'.tr,
+                      onTap: () => controller.pasteClipboard(),
+                    ),
+                  ],
                   Obx(() {
                     final canInterrupt = controller.connected.value;
                     return _barButton(
