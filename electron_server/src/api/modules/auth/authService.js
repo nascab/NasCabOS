@@ -233,6 +233,8 @@ class AuthService {
           userId: user.id,
           username: user.username,
           type: user.type,
+          createTime: Date.now(),
+          tokenType: 'access', // 必须携带，authMiddleware 会校验 tokenType
         },
         process.env.JWT_SECRET,
         { expiresIn: config.jwt.accessTokenExpiresIn }

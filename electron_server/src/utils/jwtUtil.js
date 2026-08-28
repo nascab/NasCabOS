@@ -5,24 +5,6 @@ const Logger = require('./logger');
 
 class JwtUtil {
   /**
-   * 生成access token
-   * @param {Object} payload - token负载
-   * @returns {string} JWT token
-   */
-  generateAccessToken(secret, payload) {
-    return jwt.sign(payload, secret, { expiresIn: this.accessTokenExpiresIn });
-  }
-
-  /**
-   * 生成refresh token
-   * @param {Object} payload - token负载
-   * @returns {string} JWT refresh token
-   */
-  generateRefreshToken(secret, payload) {
-    return jwt.sign(payload, secret, { expiresIn: this.refreshTokenExpiresIn });
-  }
-
-  /**
    * 验证JWT token
    * @param {string} token - JWT token
    * @returns {Object} 解码后的token数据
