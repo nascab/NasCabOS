@@ -13,6 +13,18 @@ import '../../../../../utils/toast_util.dart';
 
 /// 剧集区：排序 + 视图切换 + 列表（简介/文件）。
 class VideoDetailEpisodeSection extends StatelessWidget {
+  /// 将秒数格式化为 h:mm:ss 或 m:ss。
+  static String formatEpisodeDuration(int seconds) {
+    final d = Duration(seconds: seconds < 0 ? 0 : seconds);
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
   final VideoDetailController ctrl;
 
   const VideoDetailEpisodeSection({super.key, required this.ctrl});
@@ -434,6 +446,7 @@ class _EpisodeIntroList extends StatelessWidget {
               alpha: 0.30,
             );
             final canPlay = _pickEpisodePath(e).isNotEmpty;
+            final durationSec = (e['duration'] as num?)?.toInt() ?? 0;
 
             return ClipRRect(
               borderRadius: BorderRadius.circular(14),
@@ -479,18 +492,40 @@ class _EpisodeIntroList extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (epNum > 0)
-                                Text(
-                                  'video_detail_episode_no'.trParams({
-                                    'num': epNum.toString(),
-                                  }),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              if (epNum > 0 || durationSec > 0)
+                                Row(
+                                  children: [
+                                    if (durationSec > 0) ...[
+                                      Text(
+                                        '[${VideoDetailEpisodeSection.formatEpisodeDuration(durationSec)}]',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurface
+                                                  .withValues(alpha: 0.6),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    if (epNum > 0)
+                                      Flexible(
+                                        child: Text(
+                                          'video_detail_episode_no'.trParams({
+                                            'num': epNum.toString(),
+                                          }),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withValues(alpha: 0.6),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               if (epNum > 0) const SizedBox(height: 2),
                               Text(
@@ -659,6 +694,7 @@ class _EpisodeFileList extends StatelessWidget {
               alpha: 0.30,
             );
             final canPlay = fp.isNotEmpty;
+            final durationSec = (e['duration'] as num?)?.toInt() ?? 0;
 
             return ClipRRect(
               borderRadius: BorderRadius.circular(14),
@@ -709,18 +745,40 @@ class _EpisodeFileList extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (epNum > 0)
-                                Text(
-                                  'video_detail_episode_no'.trParams({
-                                    'num': epNum.toString(),
-                                  }),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              if (epNum > 0 || durationSec > 0)
+                                Row(
+                                  children: [
+                                    if (durationSec > 0) ...[
+                                      Text(
+                                        '[${VideoDetailEpisodeSection.formatEpisodeDuration(durationSec)}]',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurface
+                                                  .withValues(alpha: 0.6),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    if (epNum > 0)
+                                      Flexible(
+                                        child: Text(
+                                          'video_detail_episode_no'.trParams({
+                                            'num': epNum.toString(),
+                                          }),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withValues(alpha: 0.6),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               if (epNum > 0) const SizedBox(height: 2),
                               Text(

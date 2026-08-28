@@ -1,6 +1,6 @@
 {
   "name": "nascab_os_server",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "NasCabOSServer",
   "main": "src/main_nascab_os.js",
   "isDocker": false,
