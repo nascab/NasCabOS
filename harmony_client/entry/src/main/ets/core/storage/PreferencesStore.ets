@@ -6,7 +6,6 @@ const PREFERENCES_NAME = 'nascab_harmony_prefs';
 export class PreferencesStore {
   private static instance: PreferencesStore | undefined = undefined;
   private prefs: preferences.Preferences | undefined = undefined;
-  private initPromise: Promise<void> | undefined = undefined;
 
   static getInstance(): PreferencesStore {
     if (!PreferencesStore.instance) {
@@ -19,13 +18,8 @@ export class PreferencesStore {
     if (this.prefs) {
       return;
     }
-    if (this.initPromise) {
-      return this.initPromise;
-    }
-    this.initPromise = (async () => {
-      this.prefs = await preferences.getPreferences(context, PREFERENCES_NAME);
-    })();
-    return this.initPromise;
+    // 同步初始化：返回时磁盘数据已加载完成，避免页面启动早于初始化完成导致读取/写入失败
+    this.prefs = preferences.getPreferencesSync(context, { name: PREFERENCES_NAME });
   }
 
   private ensurePrefs(): preferences.Preferences {

@@ -69,3 +69,25 @@ export class ServerStatusResponse {
     this.serverData = serverData;
   }
 }
+
+export class RecoverInfoResponse {
+  success: boolean = false;
+  message?: string;
+  question?: string;
+  username?: string;
+
+  static success(question?: string, username?: string): RecoverInfoResponse {
+    const r = new RecoverInfoResponse();
+    r.success = true;
+    r.question = question;
+    r.username = username;
+    return r;
+  }
+
+  static failure(message?: string): RecoverInfoResponse {
+    const r = new RecoverInfoResponse();
+    r.success = false;
+    r.message = message;
+    return r;
+  }
+}

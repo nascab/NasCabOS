@@ -12,14 +12,16 @@ export default class EntryAbility extends UIAbility {
     } catch (err) {
       hilog.error(DOMAIN, 'NasCab', 'Failed to set colorMode: %{public}s', JSON.stringify(err));
     }
-    AppBootstrap.init(this.context).then(() => {
-      hilog.info(DOMAIN, 'NasCab', 'App bootstrap completed');
-    }).catch((err: Object) => {
-      hilog.error(DOMAIN, 'NasCab', 'Bootstrap failed: %{public}s', JSON.stringify(err));
-    });
   }
 
-  onWindowStageCreate(windowStage: window.WindowStage): void {
+  async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
+    // 等待初始化完成后再加载页面，保证 preferences 就绪（服务器列表等本地数据可读取）
+    try {
+      await AppBootstrap.init(this.context);
+      hilog.info(DOMAIN, 'NasCab', 'App bootstrap completed');
+    } catch (err) {
+      hilog.error(DOMAIN, 'NasCab', 'Bootstrap failed: %{public}s', JSON.stringify(err));
+    }
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
         hilog.error(DOMAIN, 'NasCab', 'Failed to load content: %{public}s', JSON.stringify(err));

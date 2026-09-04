@@ -3,6 +3,82 @@
     {
       "name": "start_window_background",
       "value": "#000000"
+    },
+    {
+      "name": "auth_scaffold_bg",
+      "value": "#1A1A1A"
+    },
+    {
+      "name": "auth_card_bg",
+      "value": "#991A1A1A"
+    },
+    {
+      "name": "auth_surface",
+      "value": "#2A2A2A"
+    },
+    {
+      "name": "auth_question_bg",
+      "value": "#802A2A2A"
+    },
+    {
+      "name": "auth_nested_card",
+      "value": "#410073FF"
+    },
+    {
+      "name": "auth_primary",
+      "value": "#007AFF"
+    },
+    {
+      "name": "auth_primary_60",
+      "value": "#99007AFF"
+    },
+    {
+      "name": "auth_secondary",
+      "value": "#FF9800"
+    },
+    {
+      "name": "auth_button_bg",
+      "value": "#1565C0"
+    },
+    {
+      "name": "auth_button_disabled_bg",
+      "value": "#1F9E9E9E"
+    },
+    {
+      "name": "auth_button_disabled_text",
+      "value": "#61FFFFFF"
+    },
+    {
+      "name": "auth_text_main",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "auth_text_secondary",
+      "value": "#B3FFFFFF"
+    },
+    {
+      "name": "auth_text_hint",
+      "value": "#99FFFFFF"
+    },
+    {
+      "name": "auth_error",
+      "value": "#FF3B30"
+    },
+    {
+      "name": "auth_divider",
+      "value": "#4DFFFFFF"
+    },
+    {
+      "name": "auth_input_bg",
+      "value": "#424242"
+    },
+    {
+      "name": "auth_input_border",
+      "value": "#757575"
+    },
+    {
+      "name": "auth_mask",
+      "value": "#59000000"
     }
   ]
 }

@@ -1,5 +1,7 @@
 export class NetworkConfig {
   static readonly SIGNAL_API_BASE_URL: string = 'https://nas.cab';
+  /** 官网地址，对应 Flutter NasCabEndpoints.websiteBaseUrl */
+  static readonly WEBSITE_BASE_URL: string = 'https://nas.cab';
   static readonly P2P_BASE_URL: string = 'http://p2p.local';
   static readonly LOCALHOST_BASE_URL: string = 'http://127.0.0.1:9000';
   static readonly DEFAULT_TIMEOUT_MS: number = 10000;

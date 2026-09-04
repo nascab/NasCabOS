@@ -43,23 +43,30 @@ export class ServerInfo {
 
   get uniqueKey(): string {
     const user = (this.username ?? '').trim();
-    const sid = this.serverId.trim();
-    if (sid.length > 0) {
-      return `sid:${sid}|u:${user}`;
+    // 与 Flutter 端 _stableIdentity 优先级一致，保证编辑前后身份稳定：
+    // 手动输入地址 > 配对管理的 serverId > 服务器地址 > serverId > host:port
+    const input = (this.userInputUrl ?? '').trim();
+    if (input.length > 0) {
+      return `u:${user}|id:input:${input.toLowerCase()}`;
     }
+    const sid = this.serverId.trim();
     const code = (this.pairCode ?? '').trim();
-    if (code.length > 0) {
-      return `pair:${code}|u:${user}`;
+    if (code.length > 0 && sid.length > 0) {
+      return `u:${user}|id:pair-sid:${sid}`;
     }
     const url = this.serverUrl.trim();
     if (url.length > 0) {
-      return `url:${url}|u:${user}`;
+      return `u:${user}|id:url:${url.toLowerCase()}`;
     }
-    const input = (this.userInputUrl ?? '').trim();
-    if (input.length > 0) {
-      return `input:${input}|u:${user}`;
+    if (sid.length > 0) {
+      return `u:${user}|id:sid:${sid}`;
     }
-    return `empty|u:${user}`;
+    const host = this.serverHost.trim().toLowerCase();
+    const port = this.serverPortHttp.trim().length > 0 ? this.serverPortHttp.trim() : this.serverPortHttps.trim();
+    if (host.length > 0 && port.length > 0) {
+      return `u:${user}|id:host:${host}:${port}`;
+    }
+    return `u:${user}|id:empty`;
   }
 
   get platformFriendlyName(): string {

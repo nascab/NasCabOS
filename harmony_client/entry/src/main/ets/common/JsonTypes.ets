@@ -105,6 +105,17 @@ export class DeviceFingerprintJson {
 
 export class ServerStatusJson {
   isNasCabOSServer?: boolean;
+  hasSuperAdmin?: boolean;
+  serverId?: string;
+  hostname?: string;
+  platform?: string;
+  httpPort?: string | number;
+  httpsPort?: string | number;
+}
+
+export class RecoverInfoJson {
+  question?: string;
+  username?: string;
 }
 
 export class ServerInfoJson {
