@@ -89,13 +89,14 @@ const CONTROL_MAGIC: number[] = [0x4e, 0x50, 0x43, 0x01];
 
 export class P2pControlBinary {
   static encodeVarint(n: number): Uint8Array {
+    // 64 位安全：位运算会截断到 32 位，Date.now() 级别的时间戳会被破坏
     let v = n < 0 ? 0 : n;
     const out: number[] = [];
     while (v >= 0x80) {
-      out.push((v & 0x7f) | 0x80);
-      v >>>= 7;
+      out.push((v % 128) | 0x80);
+      v = Math.floor(v / 128);
     }
-    out.push(v & 0xff);
+    out.push(v % 128);
     return new Uint8Array(out);
   }
 
@@ -160,6 +161,12 @@ export class P2pControlBinary {
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
       return new Uint8Array(parts);
     }
+    if (type === P2pControlType.ACK) {
+      // 对齐 Flutter：ack = id + delta(varint)，用于响应体流控
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeVarint(payload.delta));
+      return new Uint8Array(parts);
+    }
     if (type === P2pControlType.REQ) {
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.method));
@@ -198,6 +205,78 @@ export class P2pBinaryFrame {
     header[1] = idLen;
     header.set(idBytes.subarray(0, idLen), 2);
     return header;
+  }
+}
+
+/**
+ * 控制帧二进制读取器，解码规则对齐 Flutter _tryDecodeControlBinary：
+ * varint / 长度前缀字符串 / 长度前缀 header map。
+ */
+export class P2pBinaryReader {
+  private data: Uint8Array;
+  private pos: number;
+  private decoder: util.TextDecoder = new util.TextDecoder();
+
+  constructor(data: Uint8Array, pos: number) {
+    this.data = data;
+    this.pos = pos;
+  }
+
+  readVarint(): number | undefined {
+    let out = 0;
+    let mult = 1;
+    while (true) {
+      if (this.pos >= this.data.length) {
+        return undefined;
+      }
+      const b = this.data[this.pos];
+      this.pos += 1;
+      // 用乘法避免位运算 32 位截断
+      out += (b & 0x7f) * mult;
+      if ((b & 0x80) === 0) {
+        return out;
+      }
+      mult *= 128;
+      if (mult > 9223372036854775807) {
+        return undefined;
+      }
+    }
+  }
+
+  readString(): string | undefined {
+    const len = this.readVarint();
+    if (len === undefined || len < 0) {
+      return undefined;
+    }
+    const end = this.pos + len;
+    if (end > this.data.length) {
+      return undefined;
+    }
+    if (len === 0) {
+      return '';
+    }
+    const s = this.decoder.decodeToString(this.data.subarray(this.pos, end));
+    this.pos = end;
+    return s;
+  }
+
+  readHeaderMap(): HeaderMap | undefined {
+    const n = this.readVarint();
+    if (n === undefined || n < 0) {
+      return undefined;
+    }
+    const out = new HeaderMap();
+    for (let i = 0; i < n; i++) {
+      const k = this.readString();
+      const v = this.readString();
+      if (k === undefined || v === undefined) {
+        return undefined;
+      }
+      if (k.length > 0) {
+        out.set(k, v);
+      }
+    }
+    return out;
   }
 }
 

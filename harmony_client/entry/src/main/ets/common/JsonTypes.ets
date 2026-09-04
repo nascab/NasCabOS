@@ -151,6 +151,7 @@ export class P2pControlPayload {
   method: string = '';
   path: string = '';
   length: number = 0;
+  delta: number = 0;
   headers: HeaderMap = new HeaderMap();
 }
 
@@ -160,6 +161,11 @@ export class TransportStats {
 
 export class JsonCodec {
   static parse<T>(obj: Object): T {
+    // 防 undefined：JSON.stringify(undefined) 返回 undefined，
+    // JSON.parse 会抛 "cannot read property length of undefined"
+    if (obj === undefined || obj === null) {
+      throw new Error('json_data_missing');
+    }
     return JSON.parse(JSON.stringify(obj)) as T;
   }
 

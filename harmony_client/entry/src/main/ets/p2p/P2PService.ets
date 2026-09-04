@@ -8,6 +8,8 @@ import { ApiEnvelope, JsonCodec, P2pSessionJson } from '../common/JsonTypes';
 import { HeaderMap } from '../common/HeaderMap';
 import { WebSocketSignaling, WebSocketSignalingDelegate } from './WebSocketSignaling';
 import { WebRTCClient } from './WebRTCClient';
+import { WebRTCNativeBridge } from './WebRTCNativeBridge';
+import { P2pSignalingBinary } from './P2pSignalingBinary';
 import { LocalPlaybackProxy } from './LocalPlaybackProxy';
 import {
   P2pApiResponse,
@@ -146,6 +148,7 @@ export class P2PService implements P2pRequestSender {
       const session = await this.createP2pSession(trimmed);
       const wsUrl = session.wsUrl ?? '';
       const sid = session.sessionId ?? '';
+      console.error(`[P2P] session created: wsUrl=${wsUrl}, sid=${sid}`);
       if (wsUrl.length === 0 || sid.length === 0) {
         throw P2PError.invalidSession();
       }
@@ -155,7 +158,9 @@ export class P2PService implements P2pRequestSender {
       this.allowReconnect = true;
 
       const iceServers = await this.connectSignaling(wsUrl);
+      console.error(`[P2P] signaling ready: iceServers=${JSON.stringify(iceServers)}`);
       await this.startWebRTC(sid, iceServers);
+      console.error('[P2P] webrtc channels ready');
 
       this.isConnected = true;
       this.connectionState = P2PConnectionState.CONNECTED;
@@ -201,6 +206,9 @@ export class P2PService implements P2pRequestSender {
     if (body && method !== 'GET') {
       const encoder = new util.TextEncoder();
       bodyBytes = encoder.encodeInto(JSON.stringify(body));
+      // 对齐 Flutter：JSON 序列化 body 时显式声明 Content-Type，
+      // 否则服务端不按 JSON 解析请求体，导致登录等接口收到空字段
+      headers.set('Content-Type', 'application/json');
     }
 
     const response = await this.sendOnChannel(
@@ -264,6 +272,10 @@ export class P2PService implements P2pRequestSender {
     if (json.success !== true && json.code !== 0) {
       throw P2PError.wsError(`${json.code ?? 'p2p_session_create_failed'}`);
     }
+    if (json.data === undefined || json.data === null) {
+      // 服务端返回成功但缺少会话数据，给出明确错误而非晦涩的运行时异常
+      throw P2PError.invalidSession();
+    }
     return JsonCodec.parse<P2pSessionJson>(json.data as Object);
   }
 
@@ -287,6 +299,11 @@ export class P2PService implements P2pRequestSender {
       ws.sendOffer(msg);
     });
     this.rtcClient = rtc;
+
+    // ICE 候选上行：对齐 Flutter 端 webrtc:candidate 信令
+    WebRTCNativeBridge.setOnIceCandidate((candidate: string, sdpMid: string, sdpMLineIndex: number) => {
+      ws.sendCandidate(P2pSignalingBinary.encodeCandidate(sessionId, candidate, sdpMid, sdpMLineIndex));
+    });
 
     const forwardHandler = new SignalingForwardHandler(rtc, () => {
       this.isConnected = false;

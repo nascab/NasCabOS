@@ -21,23 +21,28 @@ export class WebSocketSignaling {
       this.disconnect();
     }
     this.ws = webSocket.createWebSocket();
-    this.ws.on('open', () => {
+    this.ws.on('open', (err, value) => {
+      console.error(`[P2P] ws open: ${JSON.stringify(value ?? {})}`);
       this.connected = true;
       this.startHeartbeat();
     });
     this.ws.on('message', (err, value) => {
-      if (err || !value) {
+      if (err) {
+        console.error(`[P2P] ws message error: ${JSON.stringify(err)}`);
         return;
       }
       this.handleMessage(value);
     });
-    this.ws.on('close', () => {
+    this.ws.on('close', (err, value) => {
+      console.error(`[P2P] ws close: code=${JSON.stringify(value ?? {})}, err=${JSON.stringify(err ?? {})}`);
       this.handleDisconnect();
     });
-    this.ws.on('error', () => {
+    this.ws.on('error', (err) => {
+      console.error(`[P2P] ws error: ${JSON.stringify(err ?? {})}`);
       this.delegate?.onError('p2p_ws_error');
       this.handleDisconnect();
     });
+    console.error(`[P2P] ws connecting: ${urlString}`);
     this.ws.connect(urlString);
   }
 
@@ -54,6 +59,13 @@ export class WebSocketSignaling {
       return;
     }
     const data = P2pSignalingBinary.encodeOffer(msg);
+    this.ws.send(data.buffer);
+  }
+
+  sendCandidate(data: Uint8Array): void {
+    if (!this.ws || !this.connected) {
+      return;
+    }
     this.ws.send(data.buffer);
   }
 

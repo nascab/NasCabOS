@@ -73,7 +73,9 @@ class VarintResult {
 
 function encodeString(s: string): Uint8Array {
   const encoder = new util.TextEncoder();
-  const b = encoder.encodeInto(s);
+  // 防 undefined/null：encodeInto 内部访问 input.length，空值会抛
+  // "cannot read property length of undefined"
+  const b = encoder.encodeInto(s ?? '');
   const len = encodeVarint(b.length);
   const out = new Uint8Array(len.length + b.length);
   out.set(len, 0);
@@ -142,8 +144,18 @@ export class P2pSignalingBinary {
     return new Uint8Array(parts);
   }
 
+  static encodeCandidate(sessionId: string, candidate: string, sdpMid: string, sdpMLineIndex: number): Uint8Array {
+    const parts: number[] = [];
+    appendMagic(parts, TYPE_WEBRTC_CANDIDATE);
+    appendBytes(parts, encodeString(sessionId));
+    appendBytes(parts, encodeString(candidate));
+    appendBytes(parts, encodeString(sdpMid));
+    appendBytes(parts, encodeVarint(sdpMLineIndex));
+    return new Uint8Array(parts);
+  }
+
   static decodeSignaling(buf: Uint8Array): SignalingDecoded | undefined {
-    if (buf.length < 5 || !P2pSignalingBinary.isSignalingBinary(buf)) {
+    if (!buf || buf.length < 5 || !P2pSignalingBinary.isSignalingBinary(buf)) {
       return undefined;
     }
     const mt = buf[4] & 0xff;

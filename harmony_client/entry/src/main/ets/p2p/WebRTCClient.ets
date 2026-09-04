@@ -3,6 +3,7 @@ import { WebRTCNativeBridge } from './WebRTCNativeBridge';
 import {
   P2pApiResponse,
   P2pBinaryFrame,
+  P2pBinaryReader,
   P2pControlBinary,
   P2pControlType,
   P2pRequestId,
@@ -13,15 +14,25 @@ import { HeaderMap } from '../common/HeaderMap';
 import { IceCandidateJson, P2pControlPayload, SignalingDecoded } from '../common/JsonTypes';
 import { SignalingOfferMsg } from './P2pSignalingBinary';
 
+const BODY_CHUNK_SIZE = 64 * 1024; // 对齐 Flutter _bodyChunkSize(api)
+const ACK_IMMEDIATE_THRESHOLD = 32 * 1024; // 累积超过阈值立即回 ack
+const ACK_FLUSH_DELAY_MS = 15; // 对齐 Flutter api 通道 ack 定时刷新
+const HEARTBEAT_INTERVAL_MS = 15000; // 对齐 Flutter _apiHeartbeatTimer
+
 class PendingRequest {
   resolve: (value: P2pApiResponse) => void = () => {};
   reject: (reason: Error) => void = () => {};
+  method: string = '';
+  path: string = '';
 }
 
 class PendingChunk {
   status: number = 200;
   headers: HeaderMap = new HeaderMap();
   chunks: Uint8Array[] = [];
+  length: number = 0;
+  ackPendingBytes: number = 0;
+  ackTimerId: number = -1;
 }
 
 class ChannelState {
@@ -53,6 +64,7 @@ export class WebRTCClient {
   private pendingReadyCount: number = 0;
   private remoteDescriptionApplied: boolean = false;
   private pendingRemoteIce: IceCandidateJson[] = [];
+  private heartbeatTimerId: number = -1;
 
   constructor(sessionId: string, iceServers: Object[], sendOffer: SignalingSendCallback) {
     this.sessionId = sessionId;
@@ -65,7 +77,8 @@ export class WebRTCClient {
   }
 
   async start(requestedChannels: P2pRtcChannel[]): Promise<void> {
-    this.pcHandle = WebRTCNativeBridge.createPeerConnection();
+    console.error(`[P2P] start: channels=${requestedChannels.join(',')}, iceServers=${JSON.stringify(this.iceServers)}`);
+    this.pcHandle = WebRTCNativeBridge.createPeerConnection(this.iceServers);
     this.pendingReadyCount = requestedChannels.length;
     this.readyPromise = new Promise<void>((resolve, reject) => {
       this.readyResolve = resolve;
@@ -78,14 +91,17 @@ export class WebRTCClient {
       this.channels.set(ch, new ChannelState(ch, handle));
     }
 
-    const offer = WebRTCNativeBridge.createOffer();
+    // 先触发真实的 createOffer + setLocalDescription（异步），
+    // 再等待其完成拿到真实 SDP。此前直接调用 ensureLocalOffer 会因
+    // offerPending 未设置而返回空 SDP，导致服务端无法处理而断开。
+    WebRTCNativeBridge.createOffer();
+    const offer = await WebRTCNativeBridge.ensureLocalOffer();
+    console.error(`[P2P] offer ready: type=${offer.type}, sdpLen=${(offer.sdp ?? '').length}`);
     const offerMsg = new SignalingOfferMsg(this.sessionId, offer.type ?? 'offer', offer.sdp ?? '');
     this.sendOffer(offerMsg);
 
-    for (let i = 0; i < requestedChannels.length; i++) {
-      WebRTCNativeBridge.simulateChannelReady(requestedChannels[i]);
-    }
-
+    // 不再模拟通道就绪：等待 native 上报 data channel 真正打开（onChannelReady），
+    // 否则请求会发向未建立的通道而被丢弃，导致 checkServerStatus 失败。
     const timeout = setTimeout(() => {
       if (this.readyReject) {
         this.readyReject(P2PError.wsError('p2p_ready_timeout') as Error);
@@ -99,10 +115,12 @@ export class WebRTCClient {
     } finally {
       clearTimeout(timeout);
     }
+    this.startHeartbeat();
   }
 
   handleSignalingMessage(msg: SignalingDecoded): void {
     const msgType = msg.type ?? '';
+    console.error(`[P2P] signaling msg: ${msgType}`);
     if (msgType === 'webrtc:answer') {
       const answer = msg.answer;
       if (answer) {
@@ -151,6 +169,39 @@ export class WebRTCClient {
     });
   }
 
+  private startHeartbeat(): void {
+    if (this.heartbeatTimerId !== -1) {
+      return;
+    }
+    this.heartbeatTimerId = setInterval(() => {
+      // 对齐 Flutter：每 15s 在所有通道上发 ping 保活
+      const ts = Date.now();
+      this.channels.forEach((state: ChannelState) => {
+        const payload = new P2pControlPayload();
+        payload.ts = ts;
+        const ping = P2pControlBinary.encodeControl(state.prefix, P2pControlType.PING, payload);
+        if (ping) {
+          WebRTCNativeBridge.sendBinary(state.handle, ping.buffer as ArrayBuffer);
+        }
+      });
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimerId !== -1) {
+      clearInterval(this.heartbeatTimerId);
+      this.heartbeatTimerId = -1;
+    }
+  }
+
+  private sendControl(state: ChannelState, type: P2pControlType, payload: P2pControlPayload): boolean {
+    const ctrl = P2pControlBinary.encodeControl(state.prefix, type, payload);
+    if (!ctrl) {
+      return false;
+    }
+    return WebRTCNativeBridge.sendBinary(state.handle, ctrl.buffer as ArrayBuffer);
+  }
+
   private onBinaryMessage(channelHandle: number, data: ArrayBuffer): void {
     const bytes = new Uint8Array(data);
     let state: ChannelState | undefined = undefined;
@@ -163,58 +214,162 @@ export class WebRTCClient {
       return;
     }
     if (P2pControlBinary.isControl(bytes)) {
-      this.handleControlMessage(state, bytes);
+      this.handleControlMessage(state!, bytes);
     } else {
-      this.handleBinaryFrame(state, bytes);
+      this.handleBinaryFrame(state!, bytes);
     }
   }
 
+  /**
+   * 控制帧解析，对齐 Flutter _tryDecodeControlBinary / _onChannelMessage。
+   * 帧结构：magic(4) + type(1) + payload。
+   */
   private handleControlMessage(state: ChannelState, data: Uint8Array): void {
     const mt = data[4];
+    const reader = new P2pBinaryReader(data, 5);
+
     if (mt === P2pControlType.READY) {
+      const cbv2 = reader.readVarint() ?? 0;
       state.isReady = true;
+      console.error(`[P2P] ${state.prefix} ready: chunkBinaryV2=${cbv2 !== 0}`);
+      return;
+    }
+    if (mt === P2pControlType.PING) {
+      // 收到服务端 ping 必须回 pong，否则服务端可能判定通道失活
+      const ts = reader.readVarint() ?? 0;
+      const payload = new P2pControlPayload();
+      payload.ts = ts;
+      this.sendControl(state, P2pControlType.PONG, payload);
+      return;
+    }
+    if (mt === P2pControlType.PONG) {
       return;
     }
     if (mt === P2pControlType.RES_BEGIN) {
-      const decoder = new util.TextDecoder();
-      const text = decoder.decodeToString(data);
-      const idMatch = text.match(/req_\d+/);
-      const id = idMatch ? idMatch[0] : P2pRequestId.generate();
+      // payload: id, status(varint), headers(map), length(varint)
+      const id = reader.readString() ?? '';
+      if (id.length === 0) {
+        console.error(`[P2P] ${state.prefix} res:begin invalid id`);
+        return;
+      }
       const chunk = new PendingChunk();
+      chunk.status = reader.readVarint() ?? 500;
+      chunk.headers = reader.readHeaderMap() ?? new HeaderMap();
+      chunk.length = reader.readVarint() ?? 0;
       state.pendingChunks.set(id, chunk);
+      console.error(`[P2P] ${state.prefix} res:begin id=${id} status=${chunk.status} len=${chunk.length}`);
+      return;
     }
     if (mt === P2pControlType.RES_END) {
-      state.pendingChunks.forEach((chunk: PendingChunk, id: string) => {
-        let totalLen = 0;
-        for (let i = 0; i < chunk.chunks.length; i++) {
-          totalLen += chunk.chunks[i].length;
-        }
-        const body = new Uint8Array(totalLen);
-        let offset = 0;
-        for (let i = 0; i < chunk.chunks.length; i++) {
-          body.set(chunk.chunks[i], offset);
-          offset += chunk.chunks[i].length;
-        }
-        const pending = state.pending.get(id);
-        if (pending) {
-          pending.resolve(new P2pApiResponse(chunk.status, chunk.headers, body));
-          state.pending.delete(id);
-        }
+      const id = reader.readString() ?? '';
+      const chunk = state.pendingChunks.get(id);
+      if (!chunk) {
+        return;
+      }
+      state.pendingChunks.delete(id);
+      this.clearChunkAckTimer(chunk);
+      this.flushChunkAck(state, id, chunk);
+      let totalLen = 0;
+      for (let i = 0; i < chunk.chunks.length; i++) {
+        totalLen += chunk.chunks[i].length;
+      }
+      const body = new Uint8Array(totalLen);
+      let offset = 0;
+      for (let i = 0; i < chunk.chunks.length; i++) {
+        body.set(chunk.chunks[i], offset);
+        offset += chunk.chunks[i].length;
+      }
+      const pending = state.pending.get(id);
+      if (pending) {
+        state.pending.delete(id);
+        console.error(`[P2P] ${state.prefix} res done: id=${id} status=${chunk.status} bodyLen=${body.length}`);
+        pending.resolve(new P2pApiResponse(chunk.status, chunk.headers, body));
+      }
+      return;
+    }
+    if (mt === P2pControlType.ACK) {
+      // 服务端对我们发出的请求体回 ack：当前请求体较小，无需流控处理
+      return;
+    }
+    if (mt === P2pControlType.FLOW) {
+      return;
+    }
+    if (mt === P2pControlType.CANCEL) {
+      const id = reader.readString() ?? '';
+      const chunk = state.pendingChunks.get(id);
+      if (chunk) {
+        this.clearChunkAckTimer(chunk);
         state.pendingChunks.delete(id);
-      });
+      }
+      const pending = state.pending.get(id);
+      if (pending) {
+        state.pending.delete(id);
+        pending.reject(P2PError.wsError('p2p_req_canceled') as Error);
+      }
+      return;
     }
   }
 
+  /**
+   * 响应体二进制分块帧：[version][idLen][id][payload]，对齐 Flutter _handleBinaryChunk。
+   */
   private handleBinaryFrame(state: ChannelState, data: Uint8Array): void {
-    if (data.length < 2) return;
+    if (data.length < 2) {
+      return;
+    }
+    const version = data[0];
+    if (version !== P2pBinaryFrame.VERSION_V1 && version !== 0x02) {
+      return;
+    }
     const idLen = data[1];
-    if (data.length < 2 + idLen) return;
+    if (idLen <= 0 || data.length < 2 + idLen) {
+      return;
+    }
     const decoder = new util.TextDecoder();
     const requestId = decoder.decodeToString(data.subarray(2, 2 + idLen));
     const payload = data.subarray(2 + idLen);
     const chunk = state.pendingChunks.get(requestId);
-    if (chunk) {
+    if (!chunk) {
+      return;
+    }
+    if (payload.length > 0) {
       chunk.chunks.push(payload);
+      this.scheduleChunkAck(state, requestId, chunk, payload.length);
+    }
+  }
+
+  private scheduleChunkAck(state: ChannelState, id: string, chunk: PendingChunk, delta: number): void {
+    chunk.ackPendingBytes += delta;
+    if (chunk.ackPendingBytes >= ACK_IMMEDIATE_THRESHOLD) {
+      this.flushChunkAck(state, id, chunk);
+      return;
+    }
+    if (chunk.ackTimerId === -1) {
+      chunk.ackTimerId = setTimeout(() => {
+        chunk.ackTimerId = -1;
+        if (state.pendingChunks.get(id) === chunk) {
+          this.flushChunkAck(state, id, chunk);
+        }
+      }, ACK_FLUSH_DELAY_MS);
+    }
+  }
+
+  private flushChunkAck(state: ChannelState, id: string, chunk: PendingChunk): void {
+    const delta = chunk.ackPendingBytes;
+    if (delta <= 0) {
+      return;
+    }
+    chunk.ackPendingBytes = 0;
+    const payload = new P2pControlPayload();
+    payload.id = id;
+    payload.delta = delta;
+    this.sendControl(state, P2pControlType.ACK, payload);
+  }
+
+  private clearChunkAckTimer(chunk: PendingChunk): void {
+    if (chunk.ackTimerId !== -1) {
+      clearTimeout(chunk.ackTimerId);
+      chunk.ackTimerId = -1;
     }
   }
 
@@ -238,48 +393,67 @@ export class WebRTCClient {
       const pending = new PendingRequest();
       pending.resolve = resolve;
       pending.reject = reject;
+      pending.method = method;
+      pending.path = path;
       state.pending.set(id, pending);
 
+      const sendCtrl = (payload: P2pControlPayload, type: P2pControlType): boolean => {
+        const ctrl = P2pControlBinary.encodeControl(state.prefix, type, payload);
+        if (!ctrl) {
+          return false;
+        }
+        return WebRTCNativeBridge.sendBinary(state.handle, ctrl.buffer as ArrayBuffer);
+      };
+
       if (bodyBytes.length === 0) {
+        // 空请求体：单帧 req（对齐 Flutter sendRequest 空体分支）
         const payload = new P2pControlPayload();
         payload.id = id;
         payload.method = method;
         payload.path = path;
         payload.headers = safeHeaders;
-        const ctrl = P2pControlBinary.encodeControl(state.prefix, P2pControlType.REQ, payload);
-        if (ctrl) {
-          WebRTCNativeBridge.sendBinary(state.handle, ctrl.buffer as ArrayBuffer);
-        }
+        sendCtrl(payload, P2pControlType.REQ);
+        console.error(`[P2P] req: ${method} ${path} id=${id}`);
       } else {
+        // 有请求体：req:begin + 二进制分块 + req:end（对齐 Flutter）
         const beginPayload = new P2pControlPayload();
         beginPayload.id = id;
         beginPayload.method = method;
         beginPayload.path = path;
         beginPayload.headers = safeHeaders;
         beginPayload.length = bodyBytes.length;
-        const begin = P2pControlBinary.encodeControl(state.prefix, P2pControlType.REQ_BEGIN, beginPayload);
-        if (begin) {
-          WebRTCNativeBridge.sendBinary(state.handle, begin.buffer as ArrayBuffer);
-        }
+        sendCtrl(beginPayload, P2pControlType.REQ_BEGIN);
+
         const header = P2pBinaryFrame.buildHeader(P2pBinaryFrame.VERSION_V1, id);
-        const packet = new Uint8Array(header.length + bodyBytes.length);
-        packet.set(header, 0);
-        packet.set(bodyBytes, header.length);
-        WebRTCNativeBridge.sendBinary(state.handle, packet.buffer as ArrayBuffer);
+        for (let offset = 0; offset < bodyBytes.length; offset += BODY_CHUNK_SIZE) {
+          const end = Math.min(offset + BODY_CHUNK_SIZE, bodyBytes.length);
+          const piece = bodyBytes.subarray(offset, end);
+          const packet = new Uint8Array(header.length + piece.length);
+          packet.set(header, 0);
+          packet.set(piece, header.length);
+          WebRTCNativeBridge.sendBinary(state.handle, packet.buffer as ArrayBuffer);
+        }
 
         const endPayload = new P2pControlPayload();
         endPayload.id = id;
-        const end = P2pControlBinary.encodeControl(state.prefix, P2pControlType.REQ_END, endPayload);
-        if (end) {
-          WebRTCNativeBridge.sendBinary(state.handle, end.buffer as ArrayBuffer);
-        }
+        sendCtrl(endPayload, P2pControlType.REQ_END);
+        console.error(`[P2P] req(body=${bodyBytes.length}): ${method} ${path} id=${id}`);
       }
 
       setTimeout(() => {
         const p = state.pending.get(id);
         if (p) {
           state.pending.delete(id);
-          state.pendingChunks.delete(id);
+          const chunk = state.pendingChunks.get(id);
+          if (chunk) {
+            this.clearChunkAckTimer(chunk);
+            state.pendingChunks.delete(id);
+          }
+          // 超时后通知服务端取消（对齐 Flutter abortLocal）
+          const cancelPayload = new P2pControlPayload();
+          cancelPayload.id = id;
+          sendCtrl(cancelPayload, P2pControlType.REQ_CANCEL);
+          console.error(`[P2P] req timeout: ${p.method} ${p.path} id=${id}`);
           p.reject(P2PError.wsError('p2p_timeout') as Error);
         }
       }, timeoutMs);
@@ -303,6 +477,7 @@ export class WebRTCClient {
   }
 
   close(): void {
+    this.stopHeartbeat();
     if (this.pcHandle >= 0) {
       WebRTCNativeBridge.closePeerConnection(this.pcHandle);
       this.pcHandle = -1;
@@ -312,6 +487,9 @@ export class WebRTCClient {
         p.reject(P2PError.wsError('p2p_closed') as Error);
       });
       state.pending.clear();
+      state.pendingChunks.forEach((chunk: PendingChunk) => {
+        this.clearChunkAckTimer(chunk);
+      });
       state.pendingChunks.clear();
     });
     this.channels.clear();
