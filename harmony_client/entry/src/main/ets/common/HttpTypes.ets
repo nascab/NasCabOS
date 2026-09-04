@@ -48,3 +48,31 @@ export class HideAppsBody {
     this.hide_app = hideApps;
   }
 }
+
+export class SetAppsOrderBody {
+  uid: number = 0;
+  order_app: string[] = [];
+
+  constructor(uid: number, orderApp: string[]) {
+    this.uid = uid;
+    this.order_app = orderApp;
+  }
+}
+
+export class SetWallpaperBody {
+  mode: string = 'fixed';
+  name?: string;
+
+  constructor(mode: string, name?: string) {
+    this.mode = mode;
+    this.name = name;
+  }
+}
+
+export class DeleteWallpaperBody {
+  name: string = '';
+
+  constructor(name: string) {
+    this.name = name;
+  }
+}

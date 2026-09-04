@@ -598,6 +598,8 @@ export class ServerListViewModel {
         this.showError(`${loginResult.message ?? ''}`);
       }
     } catch (e) {
+      const stack = e instanceof Error ? (e.stack ?? '') : `${e}`;
+      console.error(`[LOGIN] loginToServer error: ${ServerListViewModel.errorMessage(e)}\n${stack}`);
       this.showError(`${L10n.authLoginFailure}: ${ServerListViewModel.errorMessage(e)}`);
     }
   }

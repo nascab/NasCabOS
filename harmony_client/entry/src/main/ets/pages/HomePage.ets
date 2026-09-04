@@ -1,35 +1,89 @@
-import { promptAction } from '@kit.ArkUI';
+import { image } from '@kit.ImageKit';
 import { L10n } from '../core/localization/L10n';
 import { APIClient } from '../core/network/APIClient';
 import { CurrentUserStore } from '../core/user/CurrentUserStore';
 import { AppEventBus } from '../common/AppEventBus';
 import { HomeViewModel } from '../home/HomeViewModel';
-import { AppIconMap } from '../home/AppIconMap';
+import { WallpaperLoader } from '../home/WallpaperLoader';
+import { HomeServerInfoCard } from '../home/views/HomeServerInfoCard';
+import { HomeMonitorCard } from '../home/views/HomeMonitorCard';
+import { HomeAppsGrid } from '../home/views/HomeAppsGrid';
+import { HomeUserInfoDialog } from '../home/views/HomeUserInfoDialog';
+import { HomeWallpaperPicker } from '../home/views/HomeWallpaperPicker';
+
+/** 首页：对应 Flutter AppHomePage */
 @ComponentV2
 export struct HomePage {
   @Local vm: HomeViewModel = new HomeViewModel();
   @Local userStore: CurrentUserStore = CurrentUserStore.getInstance();
-  @Param onNavigateServerList: () => void = () => {};
+  @Local wallpaperPixelMap: image.PixelMap | undefined = undefined;
+  @Local showUserInfo: boolean = false;
+  @Local showWallpaperPicker: boolean = false;
+  @Param onNavigateServerList: () => void = () => {
+  };
+  private lastWallpaperUrl: string = '';
 
   aboutToAppear(): void {
     this.vm.init();
+    void this.refreshWallpaper();
+  }
+
+  aboutToDisappear(): void {
+    void this.wallpaperPixelMap?.release();
+    this.wallpaperPixelMap = undefined;
+  }
+
+  /** 加载会话壁纸（对应 Flutter SessionWallpaperBackground） */
+  private async refreshWallpaper(): Promise<void> {
+    const url = WallpaperLoader.resolveUrl(this.userStore.wallpaperUrl ?? '');
+    if (url.length === 0) {
+      this.lastWallpaperUrl = '';
+      this.wallpaperPixelMap = undefined;
+      return;
+    }
+    if (url === this.lastWallpaperUrl && this.wallpaperPixelMap) {
+      return;
+    }
+    this.lastWallpaperUrl = url;
+    try {
+      const pm = await WallpaperLoader.loadPixelMap(url);
+      const old = this.wallpaperPixelMap;
+      this.wallpaperPixelMap = pm;
+      void old?.release();
+    } catch (_e) {
+      // 加载失败保持占位背景
+    }
+  }
+
+  private openApp(app: string): void {
+    if (!this.vm.openApp(app)) {
+      this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+    }
   }
 
   build() {
-    if (!APIClient.getInstance().isAuthenticated || !this.userStore.isLoggedIn) {
-      this.SessionExpiredView();
-    } else {
-      this.MainHomeView();
+    // navDestination builder 分支的组件必须以 NavDestination 为根，否则内容无法挂载（空白页）
+    NavDestination() {
+      if (!APIClient.getInstance().isAuthenticated || !this.userStore.isLoggedIn) {
+        this.SessionExpiredView();
+      } else {
+        this.MainHomeView();
+      }
     }
+    .hideTitleBar(true)
+    .mode(NavDestinationMode.STANDARD)
   }
 
   @Builder
   SessionExpiredView() {
     Column() {
+      SymbolGlyph($r('sys.symbol.exclamationmark_circle'))
+        .fontSize(48)
+        .fontColor(['#3D5AFE'])
       Text(L10n.serviceSessionExpired)
         .fontSize(16)
         .textAlign(TextAlign.Center)
-        .margin({ bottom: 24 })
+        .margin({ top: 16, bottom: 24 })
       Button(L10n.ok)
         .onClick(() => {
           CurrentUserStore.getInstance().clear();
@@ -46,133 +100,77 @@ export struct HomePage {
 
   @Builder
   MainHomeView() {
-    Stack({ alignContent: Alignment.TopStart }) {
-      if (this.userStore.wallpaperUrl) {
-        Image(this.userStore.wallpaperUrl)
+    Stack() {
+      // 壁纸背景（上下延伸到系统安全区外，对齐 Flutter 首页沉浸效果）
+      if (this.wallpaperPixelMap) {
+        Image(this.wallpaperPixelMap)
           .width('100%')
           .height('100%')
           .objectFit(ImageFit.Cover)
-          .opacity(0.6)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       } else {
         Column()
           .width('100%')
           .height('100%')
           .backgroundColor('#2d3436')
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       }
 
       Column() {
-        this.TopArea()
-        this.SearchBar()
-        this.MonitorCard()
-        this.AppsGrid()
+        HomeServerInfoCard({
+          vm: this.vm,
+          onOpenUserInfo: () => {
+            this.showUserInfo = true;
+          },
+          onOpenWallpaper: () => {
+            this.showWallpaperPicker = true;
+          }
+        })
+
+        HomeMonitorCard({
+          onTapAction: (_action: string) => {
+            // 上传/下载/相册备份模块迁移后接入路由
+            this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+          }
+        })
+
+        HomeAppsGrid({
+          vm: this.vm,
+          onTapApp: (app: string) => {
+            this.openApp(app);
+          }
+        })
       }
       .width('100%')
       .height('100%')
+      .padding({ top: 8, bottom: 24 })
+
+      if (this.showUserInfo) {
+        HomeUserInfoDialog({
+          onDismiss: () => {
+            this.showUserInfo = false;
+          },
+          onLoggedOut: () => {
+            this.showUserInfo = false;
+            AppEventBus.emitAuthSessionExpired();
+            this.onNavigateServerList();
+          }
+        })
+      }
+
+      if (this.showWallpaperPicker) {
+        HomeWallpaperPicker({
+          onDismiss: () => {
+            this.showWallpaperPicker = false;
+          },
+          onApplied: () => {
+            void this.refreshWallpaper();
+          }
+        })
+      }
     }
     .width('100%')
     .height('100%')
+    .alignContent(Alignment.TopStart)
   }
-
-  @Builder
-  TopArea() {
-    Column() {
-      if (this.vm.currentServer) {
-        Text(this.vm.currentServer.serverName || this.vm.currentServer.displayHostName)
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(Color.White)
-        Text(this.vm.currentServer.platformFriendlyName)
-          .fontSize(13)
-          .fontColor('#DDDDDD')
-          .margin({ top: 4 })
-      }
-      if (this.vm.serverMessage.length > 0) {
-        Text(this.vm.serverMessage)
-          .fontSize(12)
-          .fontColor('#CCCCCC')
-          .margin({ top: 8 })
-      }
-    }
-    .width('100%')
-    .padding({ top: 48, left: 16, right: 16, bottom: 12 })
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  @Builder
-  SearchBar() {
-    TextInput({ placeholder: L10n.searchApps, text: this.vm.searchQuery })
-      .width('92%')
-      .height(40)
-      .margin({ bottom: 12 })
-      .backgroundColor('#33FFFFFF')
-      .borderRadius(20)
-      .onChange((v) => { this.vm.searchQuery = v; })
-  }
-
-  @Builder
-  MonitorCard() {
-    Row({ space: 12 }) {
-      this.QuickAction(L10n.homeQuickUpload, $r('sys.symbol.arrow_up_circle'))
-      this.QuickAction(L10n.homeDownloadCenter, $r('sys.symbol.arrow_down_circle'))
-      this.QuickAction(L10n.homePhotoBackup, $r('sys.symbol.camera'))
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, bottom: 12 })
-  }
-
-  @Builder
-  QuickAction(title: string, icon: Resource) {
-    Column() {
-      SymbolGlyph(icon)
-        .fontSize(32)
-        .fontColor([Color.White])
-      Text(title)
-        .fontSize(11)
-        .fontColor(Color.White)
-        .margin({ top: 6 })
-        .maxLines(1)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-    }
-    .layoutWeight(1)
-    .padding(12)
-    .backgroundColor('#44000000')
-    .borderRadius(12)
-    .onClick(() => {
-      promptAction.showToast({ message: L10n.featureComingSoon });
-    })
-  }
-
-  @Builder
-  AppsGrid() {
-    Scroll() {
-      Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-        ForEach(this.vm.filteredApps(), (appId: string) => {
-          Column() {
-            SymbolGlyph(AppIconMap.getSymbol(appId))
-              .fontSize(36)
-              .fontColor([Color.White])
-            Text(this.vm.getAppDisplayName(appId))
-              .fontSize(11)
-              .fontColor(Color.White)
-              .margin({ top: 6 })
-              .maxLines(1)
-          }
-          .width('25%')
-          .padding(10)
-          .onClick(() => {
-            promptAction.showToast({ message: L10n.featureComingSoon });
-          })
-        }, (appId: string) => appId)
-      }
-      .width('100%')
-      .padding({ left: 8, right: 8, bottom: 24 })
-    }
-    .layoutWeight(1)
-    .scrollBar(BarState.Off)
-  }
-}
-
-@Builder
-export function HomePageBuilder(onNavigateServerList: () => void) {
-  HomePage({ onNavigateServerList: onNavigateServerList })
 }

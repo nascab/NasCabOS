@@ -5,7 +5,7 @@ import { ServerListViewModel } from '../auth/views/server_list/ServerListViewMod
 import { LoginPage } from '../auth/views/login/LoginPage';
 import { RecoverPasswordView } from '../auth/views/recover_password/RecoverPasswordView';
 import { ServerAddPage } from '../auth/views/server_add/ServerAddPage';
-import { HomePageBuilder } from './HomePage';
+import { HomePage } from './HomePage';
 
 @Entry
 @Component
@@ -46,7 +46,7 @@ struct Index {
     Navigation(this.pageStack) {
       ServerListPage({
         onNavigateHome: () => {
-          this.pageStack.pushPathByName(AppRouter.HOME, null);
+          this.pageStack.pushPathByName(AppRouter.HOME, new Object());
         },
         pageStack: this.pageStack
       })
@@ -57,6 +57,11 @@ struct Index {
     .width('100%')
     .height('100%')
   }
+}
+
+@Builder
+function HomePageBuilder(onNavigateServerList: () => void) {
+  HomePage({ onNavigateServerList: onNavigateServerList })
 }
 
 @Builder

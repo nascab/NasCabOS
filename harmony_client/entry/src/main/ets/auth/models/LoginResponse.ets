@@ -23,26 +23,34 @@ export class LoginResponse {
   shellSupported?: boolean;
   serverVersion?: string;
 
+  /** 服务端 JSON 字段类型不稳定（数字/字符串/null 混合），对齐 Flutter fromJson 做归一化（null/undefined 归为 undefined） */
+  private static toStr(v: string | number | boolean | null | undefined): string | undefined {
+    if (v === undefined || v === null) {
+      return undefined;
+    }
+    return `${v}`;
+  }
+
   static fromJson(raw: Object, httpCode: number): LoginResponse {
     const json = JsonCodec.parse<LoginDataJson>(raw);
     const r = new LoginResponse();
     r.code = httpCode;
     r.success = true;
-    r.accessToken = json.accessToken;
-    r.refreshToken = json.refreshToken;
+    r.accessToken = LoginResponse.toStr(json.accessToken);
+    r.refreshToken = LoginResponse.toStr(json.refreshToken);
     if (json.user) {
       r.user = JsonCodec.parse<UserJson>(json.user);
     }
     r.twoFactorRequired = json.twoFactorRequired === true;
-    r.tempToken = json.tempToken;
-    r.platform = json.platform;
-    r.hostname = json.hostname;
-    r.customHostname = json.customHostname;
-    r.serverId = json.serverId;
+    r.tempToken = LoginResponse.toStr(json.tempToken);
+    r.platform = LoginResponse.toStr(json.platform);
+    r.hostname = LoginResponse.toStr(json.hostname);
+    r.customHostname = LoginResponse.toStr(json.customHostname);
+    r.serverId = LoginResponse.toStr(json.serverId);
     r.httpPort = `${json.httpPort ?? ''}`;
     r.httpsPort = `${json.httpsPort ?? ''}`;
-    r.lanIpv4 = json.lanIpv4;
-    r.pairCode = json.pairCode;
+    r.lanIpv4 = LoginResponse.toStr(json.lanIpv4);
+    r.pairCode = LoginResponse.toStr(json.pairCode);
     r.expiresIn = json.expiresIn ?? 0;
     if (json.apps) {
       r.apps = JsonCodec.parse<AppsJson>(json.apps);
@@ -50,8 +58,9 @@ export class LoginResponse {
     if (json.wallpaper) {
       r.wallpaper = JsonCodec.parse<WallpaperJson>(json.wallpaper);
     }
-    r.shellSupported = json.shellSupported === true;
-    r.serverVersion = json.serverVersion;
+    const shell = json.shellSupported;
+    r.shellSupported = shell === true || shell === 1 || shell === '1';
+    r.serverVersion = LoginResponse.toStr(json.serverVersion);
     return r;
   }
 }

@@ -27,6 +27,95 @@ export class L10n {
   static readonly searchApps: string = '搜索应用';
   static readonly requirePasswordEveryLogin: string = '每次登录输入密码';
 
+  // ===== home 模块（与 Flutter 端翻译 key 对应） =====
+  static readonly homeUnknown: string = '未知';
+  static readonly homeServerDefault: string = '服务器';
+  static readonly homeNoMessage: string = '暂无最新消息';
+  static readonly homeStatusLogout: string = '退出登录';
+  static readonly homeChangeWallpaper: string = '更换壁纸';
+  static readonly serverNameLabel: string = '服务器名称';
+  static readonly serverPlatformLabel: string = '服务器平台';
+  static readonly serverConnectChannel: string = '连接通道';
+  static readonly serverIdLabel: string = '服务器ID';
+  static readonly homeWallpaperTitle: string = '选择壁纸';
+  static readonly homeWallpaperRandom: string = '随机';
+  static readonly homeWallpaperFixed: string = '固定';
+  static readonly homeWallpaperApply: string = '应用';
+  static readonly homeWallpaperCancel: string = '取消';
+  static readonly homeWallpaperSaveSuccess: string = '壁纸已更新';
+  static readonly homeWallpaperSaveFailed: string = '壁纸更新失败';
+  static readonly homeWallpaperUpload: string = '上传壁纸';
+  static readonly homeWallpaperUploading: string = '正在上传壁纸';
+  static readonly homeWallpaperUploadSuccess: string = '壁纸上传成功';
+  static readonly homeWallpaperUploadFailed: string = '壁纸上传失败';
+  static readonly homeWallpaperDeleteTitle: string = '删除壁纸';
+  static readonly homeWallpaperDeleteFailed: string = '删除失败';
+  static readonly homeWallpaperDeleteSuccess: string = '删除成功';
+  static readonly cancelled: string = '已取消';
+  static readonly loading: string = '加载中...';
+
+  static homeWallpaperDeleteConfirm(name: string): string {
+    return `确定删除壁纸“${name}”吗？`;
+  }
+
+  /** 应用显示名，对应 Flutter 'app_$app'.tr */
+  static appDisplayName(appId: string): string {
+    switch (appId) {
+      case 'folder':
+        return '文件管理';
+      case 'photo':
+        return '照片管理';
+      case 'movie':
+        return '影视库';
+      case 'music':
+        return '音乐库';
+      case 'book':
+        return '图书馆';
+      case 'note':
+        return '笔记';
+      case 'notes':
+        return '笔记';
+      case 'backup':
+        return '备份';
+      case 'monitor':
+        return '系统监控';
+      case 'docker':
+        return 'Docker';
+      case 'process':
+        return '进程';
+      case 'nascab_service':
+        return '服务';
+      case 'security':
+        return '安全中心';
+      case 'user':
+        return '用户管理';
+      case 'task_center':
+        return '任务中心';
+      case 'setting':
+        return '配置中心';
+      case 'terminal':
+        return '终端';
+      case 'media_tool':
+        return '媒体工具';
+      case 'encrypted':
+        return '加密空间';
+      case 'mounts':
+        return '远程挂载';
+      case 'share':
+        return '分享管理';
+      case 'file_share_server':
+        return '文件分享';
+      case 'image_view':
+        return '图片浏览';
+      case 'transmission':
+        return 'Transmission';
+      case 'editor':
+        return '编辑器';
+      default:
+        return appId;
+    }
+  }
+
   // ===== auth 模块（与 Flutter 端翻译 key 对应） =====
   static readonly edit: string = '编辑';
   static readonly delete: string = '删除';

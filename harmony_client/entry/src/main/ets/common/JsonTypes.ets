@@ -26,7 +26,7 @@ export class LoginDataJson {
   expiresIn?: number;
   apps?: Object;
   wallpaper?: Object;
-  shellSupported?: boolean;
+  shellSupported?: boolean | number | string;
   serverVersion?: string;
 }
 
@@ -44,10 +44,25 @@ export class AppsJson {
 
 export class WallpaperJson {
   url?: string;
+  mode?: string;
+}
+
+/** GET /api/appearance/wallpapers 列表项 */
+export class WallpaperItemJson {
+  name?: string;
+  url?: string;
+  previewUrl?: string;
+  source?: string;
+}
+
+/** POST /api/appearance/deleteWallpaper 响应 */
+export class DeleteWallpaperRespJson {
+  fallback?: WallpaperJson;
 }
 
 export class HomeConfigJson {
   message?: string;
+  newMessage?: string;
 }
 
 export class P2pSessionJson {

@@ -60,14 +60,15 @@ export class APIClient {
     shellSupported: boolean = false,
     serverVersion?: string
   ): void {
-    this.state.serverId = serverId;
+    // JSON 边界字段类型不稳定（数字/字符串混合），统一字符串化后再用
+    this.state.serverId = `${serverId}`;
     this.state.accessToken = accessToken;
     this.state.refreshToken = refreshToken;
     this.state.isAuthenticated = true;
     this.state.expiresAtMs = Date.now() + expiresInSec * 1000;
     this.state.shellSupported = shellSupported;
-    if (serverVersion && serverVersion.trim().length > 0) {
-      this.state.serverVersion = serverVersion.trim();
+    if (serverVersion !== undefined && `${serverVersion}`.trim().length > 0) {
+      this.state.serverVersion = `${serverVersion}`.trim();
     }
     this.saveTokensToStorage();
     this.startTokenRefreshTimer();
@@ -141,7 +142,7 @@ export class APIClient {
       const req = http.createHttp();
       const response = await req.request(fullUrl, {
         method: http.RequestMethod.GET,
-        header: headers,
+        header: APIClient.toHeaderRecord(headers),
         connectTimeout: timeoutMs,
         readTimeout: timeoutMs,
         expectDataType: http.HttpDataType.STRING,
@@ -245,7 +246,7 @@ export class APIClient {
     const timeout = timeoutMs ?? NetworkConfig.DEFAULT_TIMEOUT_MS;
     const response = await req.request(fullUrl, {
       method: APIClient.toHttpMethod(method),
-      header: headers.toMap(),
+      header: APIClient.toHeaderRecord(headers),
       extraData: method !== 'GET' && body ? JSON.stringify(body) : undefined,
       connectTimeout: timeout,
       readTimeout: timeout,
@@ -356,6 +357,16 @@ export class APIClient {
   private handleAuthSessionExpiredAfterRefreshJwt401(): void {
     this.clearAuthInfo();
     AppEventBus.emitAuthSessionExpired();
+  }
+
+  /** NetworkKit header 需要标准 Record 结构（传类实例/Map 会被静默丢弃） */
+  private static toHeaderRecord(headers: HttpHeaders): Record<string, string> {
+    const record: Record<string, string> = {};
+    const map = headers.toMap();
+    map.forEach((value: string, key: string) => {
+      record[key] = value;
+    });
+    return record;
   }
 
   private buildHeaders(): HttpHeaders {

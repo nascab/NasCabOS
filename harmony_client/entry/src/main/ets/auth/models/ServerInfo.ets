@@ -118,6 +118,18 @@ export class ServerInfo {
     return out;
   }
 
+  /** 历史坏数据兼容：主机名为 'null'/'undefined' 字符串或纯空白时视为空 */
+  private static cleanHost(v: string | undefined): string | undefined {
+    if (v === undefined) {
+      return undefined;
+    }
+    const t = v.trim();
+    if (t.length === 0 || t === 'null' || t === 'undefined') {
+      return undefined;
+    }
+    return v;
+  }
+
   static fromJson(obj: Object): ServerInfo {
     const m = JsonCodec.parse<ServerInfoJson>(obj);
     const s = new ServerInfo();
@@ -131,8 +143,8 @@ export class ServerInfo {
     s.serverHost = m.serverHost ?? '';
     s.serverPortHttp = m.serverPortHttp ?? '';
     s.serverPortHttps = m.serverPortHttps ?? '';
-    s.serverHostName = m.serverHostName ?? '';
-    s.customHostname = m.customHostname;
+    s.serverHostName = ServerInfo.cleanHost(m.serverHostName) ?? '';
+    s.customHostname = ServerInfo.cleanHost(m.customHostname);
     s.serverPlatform = m.serverPlatform ?? '';
     s.isAutoScanned = m.isAutoScanned === true;
     s.isLocalServer = m.isLocalServer === true;
