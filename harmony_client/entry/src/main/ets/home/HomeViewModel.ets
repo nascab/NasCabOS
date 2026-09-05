@@ -147,6 +147,9 @@ export class HomeViewModel {
     if (app === 'setting') {
       return true; // 配置中心已迁移，由页面接线路由
     }
+    if (app === 'folder') {
+      return true; // 文件管理已迁移（Flutter 端 app id 为 folder），由页面接线路由
+    }
     return false;
   }
 

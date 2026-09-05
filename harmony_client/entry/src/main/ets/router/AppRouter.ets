@@ -7,4 +7,5 @@ export class AppRouter {
   static readonly HOME: string = 'HomePage';
   static readonly SETTINGS: string = 'SettingsPage';
   static readonly LEGAL: string = 'LegalPage';
+  static readonly FILES: string = 'FileBrowserPage';
 }

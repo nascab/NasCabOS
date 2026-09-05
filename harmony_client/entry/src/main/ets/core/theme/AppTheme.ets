@@ -115,4 +115,12 @@ export class AppTheme {
   static isDark(): boolean {
     return ThemeManager.getInstance().isDark();
   }
+
+  /** 十六进制颜色附加透明度：#RRGGBB → #AARRGGBB */
+  static withAlpha(color: string, alpha: number): string {
+    const c = color.replace('#', '');
+    const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
+    const aa = a < 16 ? `0${a.toString(16)}` : a.toString(16);
+    return `#${aa}${c.toUpperCase()}`;
+  }
 }

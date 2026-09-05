@@ -34,6 +34,8 @@ export class UserJson {
   id?: number;
   username?: string;
   role?: string;
+  /** 用户类型（对齐 Flutter CurrentUser.type：'super_admin' / 'admin' / 其它） */
+  type?: string;
   isAdmin?: boolean;
 }
 

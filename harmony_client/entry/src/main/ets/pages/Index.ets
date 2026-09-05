@@ -1,6 +1,7 @@
 import { AppRouter } from '../router/AppRouter';
 import { AppEventBus } from '../common/AppEventBus';
 import { DialogUtil } from '../common/DialogUtil';
+import { SheetUtil } from '../common/SheetUtil';
 import { ServerListPage } from '../auth/views/ServerListPage';
 import { ServerListViewModel } from '../auth/views/server_list/ServerListViewModel';
 import { LoginPage } from '../auth/views/login/LoginPage';
@@ -9,6 +10,7 @@ import { ServerAddPage } from '../auth/views/server_add/ServerAddPage';
 import { HomePage } from './HomePage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { LegalPage, LegalPageParam } from './LegalPage';
+import { FileBrowserPage, FileBrowserParam } from '../files/views/FileBrowserPage';
 
 @Entry
 @Component
@@ -18,6 +20,7 @@ struct Index {
   aboutToAppear(): void {
     // 初始化全局弹窗工具（DialogUtil 依赖 UIContext）
     DialogUtil.init(this.getUIContext());
+    SheetUtil.init(this.getUIContext());
     AppEventBus.onAuthSessionExpired(() => {
       this.pageStack.clear();
     });
@@ -56,6 +59,16 @@ struct Index {
         },
         (legalParam: LegalPageParam) => {
           this.pageStack.pushPathByName(AppRouter.LEGAL, legalParam);
+        }
+      )
+    } else if (name === AppRouter.FILES) {
+      FileBrowserPageBuilder(
+        param instanceof FileBrowserParam ? param : new FileBrowserParam(),
+        (n: string, p?: object): void => {
+          this.pageStack.pushPathByName(n, p ?? new Object());
+        },
+        (): void => {
+          this.pageStack.pop();
         }
       )
     } else if (name === AppRouter.LEGAL) {
@@ -113,4 +126,10 @@ function SettingsPageBuilder(onBack: () => void, pushLegal: (param: LegalPagePar
 @Builder
 function LegalPageBuilder(param: LegalPageParam, onBack: () => void) {
   LegalPage({ param: param, onBack: onBack })
+}
+
+@Builder
+function FileBrowserPageBuilder(param: FileBrowserParam, pushPage: (name: string, param?: object) => void,
+  popPage: () => void) {
+  FileBrowserPage({ param: param, pushPage: pushPage, popPage: popPage })
 }

@@ -17,6 +17,8 @@ function PageScaffoldEmptyActions() {
 export struct PageScaffold {
   @Param title: string = '';
   @Param showBack: boolean = true;
+  /** 自定义状态栏背景色（默认取 appBarBg；文件页等内容型页面可传入内容区背景色） */
+  @Param statusBarBg: string = '';
   @Param onBack: () => void = () => {
   };
   /** 自定义返回拦截：返回 true 表示已消费（用于 Web 页回退历史等） */
@@ -47,7 +49,8 @@ export struct PageScaffold {
 
   private applyStatusBar(): void {
     const p = AppTheme.current();
-    PageScaffold.setStatusBar(getContext(this), p.statusBarContent, p.appBarBg);
+    const bg = this.statusBarBg.length > 0 ? this.statusBarBg : p.appBarBg;
+    PageScaffold.setStatusBar(getContext(this), p.statusBarContent, bg);
   }
 
   private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {

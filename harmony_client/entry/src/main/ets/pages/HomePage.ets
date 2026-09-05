@@ -70,6 +70,8 @@ export struct HomePage {
     if (this.vm.openApp(app)) {
       if (app === 'setting') {
         this.pushPage(AppRouter.SETTINGS);
+      } else if (app === 'folder') {
+        this.pushPage(AppRouter.FILES);
       }
       return;
     }

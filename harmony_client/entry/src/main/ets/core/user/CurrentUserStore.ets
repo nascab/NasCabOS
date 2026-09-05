@@ -6,6 +6,8 @@ export class CurrentUser {
   id: number = 0;
   username: string = '';
   role: string = '';
+  /** 用户类型，对齐 Flutter CurrentUser.type（'super_admin' / 'admin' / 其它） */
+  type: string = '';
   isAdmin: boolean = false;
 }
 
@@ -30,7 +32,8 @@ export class CurrentUserStore {
   }
 
   get isAdmin(): boolean {
-    return this.current?.isAdmin === true || this.current?.role === 'admin';
+    // 对齐 Flutter CurrentUserController.isAdmin：按用户 type 字段判定
+    return this.current?.type === 'super_admin' || this.current?.type === 'admin';
   }
 
   loadFromCache(): void {
@@ -53,7 +56,10 @@ export class CurrentUserStore {
     user.id = map.id ?? 0;
     user.username = map.username ?? '';
     user.role = map.role ?? '';
-    user.isAdmin = map.isAdmin === true || user.role === 'admin';
+    user.type = map.type ?? '';
+    // 兼容旧缓存：无 type 时回退 role/isAdmin
+    user.isAdmin = user.type === 'super_admin' || user.type === 'admin'
+      || (user.type.length === 0 && (map.isAdmin === true || user.role === 'admin'));
     this.current = user;
     void PreferencesStore.getInstance().setString(CacheKeys.USER_INFO, JSON.stringify(map));
   }
