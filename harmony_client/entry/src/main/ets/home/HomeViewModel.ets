@@ -14,6 +14,8 @@ export class HomeViewModel {
   @Trace serverMessage: string = '';
   @Trace allApps: string[] = [];
   @Trace hideApps: string[] = [];
+  /** 语言版本号：切换语言后自增，驱动各卡片刷新 L10n 文案 */
+  @Trace localeVersion: number = 0;
 
   private userStore: CurrentUserStore = CurrentUserStore.getInstance();
   private appsService: AppsService = AppsService.getInstance();
@@ -142,8 +144,16 @@ export class HomeViewModel {
     if (app === 'task_center') {
       return false; // 移动端不开放任务中心
     }
-    // TODO: setting/folder/monitor 等模块迁移后接入对应路由
+    if (app === 'setting') {
+      return true; // 配置中心已迁移，由页面接线路由
+    }
     return false;
+  }
+
+  /** 切换语言后调用：刷新文案并重载服务器消息 */
+  notifyLocaleChanged(): void {
+    this.localeVersion++;
+    this.init();
   }
 
   getAppDisplayName(appId: string): string {

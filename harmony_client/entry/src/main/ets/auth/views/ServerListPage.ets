@@ -137,9 +137,10 @@ export struct ServerListPage {
   }
 
   @Builder
-  SheetInfoRow(label: string, value: string) {
+  SheetInfoRow(labelKey: string, value: string) {
     Row({ space: 12 }) {
-      Text(label)
+      // 绑定内解析语言key：切换语言后自动刷新（@Builder 按值传参不会随状态更新）
+      Text(L10n.t(labelKey))
         .fontSize(13)
         .fontColor(AuthTheme.textSecondary)
         .width(80)
@@ -165,12 +166,12 @@ export struct ServerListPage {
         .width('100%')
 
       Column() {
-        this.SheetInfoRow(L10n.serverAddProtocol,
+        this.SheetInfoRow('server_add_protocol',
           this.vm.sheetServer?.isP2p === true ? 'P2P'
             : (this.vm.sheetServer?.serverUrl ?? '').startsWith('https') ? 'HTTPS' : 'HTTP')
-        this.SheetInfoRow(L10n.serverAddAddressLabel,
+        this.SheetInfoRow('server_add_address_label',
           this.vm.sheetServer?.isP2p === true ? (this.vm.sheetServer?.pairCode ?? '') : (this.vm.sheetServer?.serverUrl ?? ''))
-        this.SheetInfoRow(L10n.username, this.vm.sheetServer?.username ?? '')
+        this.SheetInfoRow('username', this.vm.sheetServer?.username ?? '')
       }
       .margin({ top: 16 })
       .width('100%')
@@ -261,10 +262,10 @@ export struct ServerListPage {
         Scroll() {
           Column() {
             // 已保存的服务器区域
-            this.ServerSection(L10n.serverSaved, true)
+            this.ServerSection('server_saved', true)
             // 自动发现的服务器区域
             if (this.vm.discoveredServers.length > 0) {
-              this.ServerSection(L10n.serverScanned, false)
+              this.ServerSection('server_scanned', false)
             }
           }
           .width('100%')
@@ -292,10 +293,10 @@ export struct ServerListPage {
   }
 
   @Builder
-  ServerSection(title: string, isSaved: boolean) {
+  ServerSection(titleKey: string, isSaved: boolean) {
     // 已保存服务器为空时不显示区域标题（添加入口仍保留）
     if (!isSaved || this.vm.savedServers.length > 0) {
-      Text(title)
+      Text(L10n.t(titleKey))
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
         .fontColor(AuthTheme.textSecondary)
@@ -315,7 +316,7 @@ export struct ServerListPage {
 
       // 添加服务器按钮
       Column() {
-        this.AddServerItem($r('sys.symbol.plus'), L10n.addServer, (): void => {
+        this.AddServerItem($r('sys.symbol.plus'), 'server_add', (): void => {
           this.vm.goToAddServerView(undefined);
         })
       }
@@ -325,7 +326,7 @@ export struct ServerListPage {
 
       // 使用配对码添加服务器
       Column() {
-        this.AddServerItem($r('sys.symbol.qrcode'), L10n.serverAddByPairCodeTitle, (): void => {
+        this.AddServerItem($r('sys.symbol.qrcode'), 'server_add_by_pair_code_title', (): void => {
           this.vm.openPairCodeDialog();
         })
       }
@@ -447,7 +448,7 @@ export struct ServerListPage {
   }
 
   @Builder
-  AddServerItem(icon: Resource, title: string, onTap: () => void) {
+  AddServerItem(icon: Resource, titleKey: string, onTap: () => void) {
     Row() {
       // 图标容器：主题主色 60% 透明，对应 Flutter AddServerItemView
       Column() {
@@ -462,7 +463,8 @@ export struct ServerListPage {
       .backgroundColor(AuthTheme.primary60)
       .borderRadius(8)
 
-      Text(title)
+      // 绑定内解析语言key：切换语言后自动刷新（@Builder 按值传参不会随状态更新）
+      Text(L10n.t(titleKey))
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
         .fontColor(AuthTheme.textMain)

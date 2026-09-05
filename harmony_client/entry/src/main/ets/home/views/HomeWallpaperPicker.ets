@@ -295,8 +295,9 @@ export struct HomeWallpaperPicker {
   }
 
   @Builder
-  private ModeChip(label: string, value: string) {
-    Text(label)
+  private ModeChip(labelKey: string, value: string) {
+    // 绑定内解析语言key：切换语言后自动刷新（@Builder 按值传参不会随状态更新）
+    Text(L10n.t(labelKey))
       .fontSize(13)
       .fontColor(this.mode === value ? Color.White : '#CCFFFFFF')
       .padding({ left: 14, right: 14, top: 6, bottom: 6 })
@@ -405,8 +406,8 @@ export struct HomeWallpaperPicker {
         .width('100%')
 
       Row({ space: 12 }) {
-        this.ModeChip(L10n.homeWallpaperRandom, 'random')
-        this.ModeChip(L10n.homeWallpaperFixed, 'fixed')
+        this.ModeChip('home_wallpaper_random', 'random')
+        this.ModeChip('home_wallpaper_fixed', 'fixed')
       }
       .width('100%')
       .padding({ left: 16, bottom: 12 })

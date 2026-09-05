@@ -42,7 +42,8 @@ export struct HomeAppsGrid {
               .fontSize(12)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
-              .shadow({ color: '#B3000000', offsetX: 0, offsetY: 1, radius: 4 })
+              // 轻微文字阴影（仅作用于文字笔画，提升壁纸上的可读性）
+              .textShadow({ radius: 2, color: 'rgba(0,0,0,0.35)', offsetX: 0, offsetY: 1 })
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .textAlign(TextAlign.Center)
@@ -65,6 +66,8 @@ export struct HomeAppsGrid {
     .padding({ left: 10, right: 10, bottom: 10 })
     .scrollBar(BarState.Off)
     .editMode(true)
+    // 依赖 localeVersion：切换语言后触发应用名刷新
+    .opacity(this.vm.localeVersion >= 0 ? 1 : 1)
     .onAreaChange((_old: Area, newVal: Area) => {
       this.updateCrossCount(newVal.width as number);
     })

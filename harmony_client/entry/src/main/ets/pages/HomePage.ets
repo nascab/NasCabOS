@@ -10,6 +10,8 @@ import { HomeMonitorCard } from '../home/views/HomeMonitorCard';
 import { HomeAppsGrid } from '../home/views/HomeAppsGrid';
 import { HomeUserInfoDialog } from '../home/views/HomeUserInfoDialog';
 import { HomeWallpaperPicker } from '../home/views/HomeWallpaperPicker';
+import { AppRouter } from '../router/AppRouter';
+import { LanguageService } from '../core/localization/LanguageService';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -21,14 +23,23 @@ export struct HomePage {
   @Local showWallpaperPicker: boolean = false;
   @Param onNavigateServerList: () => void = () => {
   };
+  @Param pushPage: (name: string, param?: object) => void = (_name: string, _param?: object) => {
+  };
   private lastWallpaperUrl: string = '';
+  @Local localeBump: number = 0;
+  private localeListener: (data: string) => void = (_data: string) => {
+    this.vm.notifyLocaleChanged();
+    this.localeBump++;
+  };
 
   aboutToAppear(): void {
     this.vm.init();
     void this.refreshWallpaper();
+    AppEventBus.on(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
   }
 
   aboutToDisappear(): void {
+    AppEventBus.off(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
     void this.wallpaperPixelMap?.release();
     this.wallpaperPixelMap = undefined;
   }
@@ -56,9 +67,13 @@ export struct HomePage {
   }
 
   private openApp(app: string): void {
-    if (!this.vm.openApp(app)) {
-      this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+    if (this.vm.openApp(app)) {
+      if (app === 'setting') {
+        this.pushPage(AppRouter.SETTINGS);
+      }
+      return;
     }
+    this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
   }
 
   build() {
@@ -72,6 +87,8 @@ export struct HomePage {
     }
     .hideTitleBar(true)
     .mode(NavDestinationMode.STANDARD)
+    // 依赖 localeBump：切换语言后触发首页整体刷新
+    .opacity(this.localeBump >= 0 ? 1 : 1)
   }
 
   @Builder
@@ -128,6 +145,7 @@ export struct HomePage {
         })
 
         HomeMonitorCard({
+          vm: this.vm,
           onTapAction: (_action: string) => {
             // 上传/下载/相册备份模块迁移后接入路由
             this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });

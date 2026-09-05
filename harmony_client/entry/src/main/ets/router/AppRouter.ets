@@ -5,4 +5,6 @@ export class AppRouter {
   static readonly ADMIN_CREATE: string = 'AdminCreatePage';
   static readonly RECOVER: string = 'RecoverPasswordPage';
   static readonly HOME: string = 'HomePage';
+  static readonly SETTINGS: string = 'SettingsPage';
+  static readonly LEGAL: string = 'LegalPage';
 }

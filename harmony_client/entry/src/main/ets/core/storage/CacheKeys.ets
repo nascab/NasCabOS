@@ -17,4 +17,6 @@ export class CacheKeys {
   static readonly AUTH_SHELL_SUPPORTED: string = 'auth_shellSupported';
   static readonly AUTH_SERVER_VERSION: string = 'auth_serverVersion';
   static readonly PRIVACY_CONSENT_ACCEPTED: string = 'privacy_consent_accepted';
+  static readonly SELECTED_LANGUAGE: string = 'selected_language';
+  static readonly THEME_MODE: string = 'theme_mode';
 }

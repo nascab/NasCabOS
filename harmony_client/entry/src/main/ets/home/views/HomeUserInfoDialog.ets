@@ -126,9 +126,10 @@ export struct HomeUserInfoDialog {
   }
 
   @Builder
-  private InfoRow(label: string, value: string, icon?: Resource) {
+  private InfoRow(labelKey: string, value: string, icon?: Resource) {
     Row() {
-      Text(label)
+      // 绑定内解析语言key：切换语言后自动刷新（@Builder 按值传参不会随状态更新）
+      Text(L10n.t(labelKey))
         .width(90)
         .fontSize(14)
         .fontColor('#99FFFFFF')
@@ -190,13 +191,13 @@ export struct HomeUserInfoDialog {
           .margin({ top: 20, bottom: 20 })
 
         Column({ space: 16 }) {
-          this.InfoRow(L10n.serverNameLabel, this.serverDisplayName(this.resolveCurrentServer()))
-          this.InfoRow(L10n.serverPlatformLabel,
-            this.resolveCurrentServer()?.platformFriendlyName ?? L10n.homeUnknown,
+          this.InfoRow('server_name', this.serverDisplayName(this.resolveCurrentServer()))
+          this.InfoRow('server_platform',
+            this.resolveCurrentServer()?.platformFriendlyName ?? '',
             AppIconMap.getServerPlatformIcon(this.resolveCurrentServer()?.serverPlatform ?? ''))
-          this.InfoRow(L10n.serverConnectChannel, this.channelDisplayValue())
+          this.InfoRow('server_connect_channel', this.channelDisplayValue())
           this.InfoRow('IP', this.resolveServerIpv4(this.resolveCurrentServer()))
-          this.InfoRow(L10n.serverIdLabel, APIClient.getInstance().state.serverId)
+          this.InfoRow('server_id', APIClient.getInstance().state.serverId)
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)

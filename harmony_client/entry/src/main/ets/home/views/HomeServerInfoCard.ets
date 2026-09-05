@@ -149,6 +149,8 @@ export struct HomeServerInfoCard {
     }
     .width('100%')
     .padding({ left: 10, right: 10, bottom: 10 })
+    // 依赖 localeVersion：切换语言后触发整卡文案刷新
+    .opacity(this.vm.localeVersion >= 0 ? 1 : 1)
   }
 }
 
