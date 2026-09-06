@@ -12,6 +12,7 @@ import { HomeUserInfoDialog } from '../home/views/HomeUserInfoDialog';
 import { HomeWallpaperPicker } from '../home/views/HomeWallpaperPicker';
 import { AppRouter } from '../router/AppRouter';
 import { LanguageService } from '../core/localization/LanguageService';
+import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -72,6 +73,8 @@ export struct HomePage {
         this.pushPage(AppRouter.SETTINGS);
       } else if (app === 'folder') {
         this.pushPage(AppRouter.FILES);
+      } else if (app === 'upload') {
+        this.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam());
       }
       return;
     }
@@ -148,8 +151,12 @@ export struct HomePage {
 
         HomeMonitorCard({
           vm: this.vm,
-          onTapAction: (_action: string) => {
-            // 上传/下载/相册备份模块迁移后接入路由
+          onTapAction: (action: string) => {
+            if (action === 'upload') {
+              this.openApp('upload');
+              return;
+            }
+            // 下载/相册备份模块迁移后接入路由
             this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
           }
         })

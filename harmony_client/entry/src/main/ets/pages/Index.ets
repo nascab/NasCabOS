@@ -11,6 +11,7 @@ import { HomePage } from './HomePage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { LegalPage, LegalPageParam } from './LegalPage';
 import { FileBrowserPage, FileBrowserParam } from '../files/views/FileBrowserPage';
+import { UploadCenterPage, UploadCenterParam } from '../transfer/views/UploadCenterPage';
 
 @Entry
 @Component
@@ -64,6 +65,16 @@ struct Index {
     } else if (name === AppRouter.FILES) {
       FileBrowserPageBuilder(
         param instanceof FileBrowserParam ? param : new FileBrowserParam(),
+        (n: string, p?: object): void => {
+          this.pageStack.pushPathByName(n, p ?? new Object());
+        },
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.UPLOAD_CENTER) {
+      UploadCenterPageBuilder(
+        param instanceof UploadCenterParam ? param : new UploadCenterParam(),
         (n: string, p?: object): void => {
           this.pageStack.pushPathByName(n, p ?? new Object());
         },
@@ -132,4 +143,10 @@ function LegalPageBuilder(param: LegalPageParam, onBack: () => void) {
 function FileBrowserPageBuilder(param: FileBrowserParam, pushPage: (name: string, param?: object) => void,
   popPage: () => void) {
   FileBrowserPage({ param: param, pushPage: pushPage, popPage: popPage })
+}
+
+@Builder
+function UploadCenterPageBuilder(param: UploadCenterParam, pushPage: (name: string, param?: object) => void,
+  popPage: () => void) {
+  UploadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
 }

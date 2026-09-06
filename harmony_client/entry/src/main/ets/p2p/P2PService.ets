@@ -316,7 +316,8 @@ export class P2PService implements P2pRequestSender {
     });
     ws.delegate = forwardHandler;
 
-    const channels: P2pRtcChannel[] = [P2pRtcChannel.API, P2pRtcChannel.FILE, P2pRtcChannel.VIDEO];
+    // UPLOAD 通道供分块上传使用（对齐 Flutter P2pRtcChannel.upload）
+    const channels: P2pRtcChannel[] = [P2pRtcChannel.API, P2pRtcChannel.FILE, P2pRtcChannel.UPLOAD, P2pRtcChannel.VIDEO];
     await rtc.start(channels);
   }
 

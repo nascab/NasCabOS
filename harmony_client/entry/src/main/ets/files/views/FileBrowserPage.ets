@@ -273,7 +273,9 @@ export struct FileBrowserPage {
       BorderedIconButton({
         icon: $r('sys.symbol.plus'),
         onTap: (): void => {
-          showFileCreateSheet(this.ctrl);
+          showFileCreateSheet(this.ctrl, (n: string, p?: object): void => {
+            this.pushPage(n, p);
+          });
         }
       })
         .margin({ left: 10 })

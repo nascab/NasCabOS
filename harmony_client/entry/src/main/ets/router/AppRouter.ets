@@ -8,4 +8,5 @@ export class AppRouter {
   static readonly SETTINGS: string = 'SettingsPage';
   static readonly LEGAL: string = 'LegalPage';
   static readonly FILES: string = 'FileBrowserPage';
+  static readonly UPLOAD_CENTER: string = 'UploadCenterPage';
 }

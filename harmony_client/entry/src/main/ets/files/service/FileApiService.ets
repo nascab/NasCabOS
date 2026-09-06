@@ -174,4 +174,58 @@ export class FileApiService {
     return this.api().apiPost<Object>('/api/file/customPath/remove', body, undefined, undefined,
       undefined, (d: Object, _c: number) => d);
   }
+
+  /** 目录访问检查（对齐 Flutter checkServerDirAccess → /api/file/fs-access） */
+  async checkServerDirAccess(dir: string): Promise<ServerDirAccessStatus> {
+    const path = dir.trim();
+    if (path.length === 0) {
+      return ServerDirAccessStatus.FAILED;
+    }
+    const q = new Map<string, string>();
+    q.set('path', path);
+    const res = await this.api().apiGet<Object>('/api/file/fs-access', q, 15000, 0,
+      (d: Object, _c: number) => JsonCodec.parse<Record<string, Object>>(d) as Object);
+    const data = res.data as Record<string, Object> | undefined;
+    if (!res.success || data === undefined) {
+      return ServerDirAccessStatus.FAILED;
+    }
+    if (`${data['exists']}` !== 'true') {
+      return ServerDirAccessStatus.NOT_EXISTS;
+    }
+    if (`${data['isDirectory']}` !== 'true') {
+      return ServerDirAccessStatus.NOT_DIRECTORY;
+    }
+    if (`${data['canWrite']}` !== 'true') {
+      return ServerDirAccessStatus.NO_WRITE_ACCESS;
+    }
+    return ServerDirAccessStatus.OK;
+  }
+
+  /** 同名文件检查（对齐 Flutter existsResolved → /api/file/exists） */
+  async existsResolved(targetDir: string, relativePath: string): Promise<boolean> {
+    const target = targetDir.trim();
+    const rel = relativePath.trim();
+    if (target.length === 0 || rel.length === 0) {
+      return false;
+    }
+    const q = new Map<string, string>();
+    q.set('targetDir', target);
+    q.set('relativePath', rel);
+    const res = await this.api().apiGet<Object>('/api/file/exists', q, undefined, 0,
+      (d: Object, _c: number) => JsonCodec.parse<Record<string, Object>>(d) as Object);
+    const data = res.data as Record<string, Object> | undefined;
+    if (!res.success || data === undefined) {
+      return false;
+    }
+    return `${data['exists']}` === 'true';
+  }
+}
+
+/** 目录访问状态（对齐 Flutter ServerDirAccessStatus） */
+export enum ServerDirAccessStatus {
+  OK = 0,
+  NOT_EXISTS = 1,
+  NOT_DIRECTORY = 2,
+  NO_WRITE_ACCESS = 3,
+  FAILED = 4
 }

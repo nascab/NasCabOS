@@ -7,6 +7,8 @@ import { ToastUtil } from '../../common/ToastUtil';
 import { FileController } from '../controllers/FileController';
 import { FileFormat, FileItem, FileModelAccess, FileStats } from '../models/FileModels';
 import { FileStatsService } from '../service/FileStatsService';
+import { AppRouter } from '../../router/AppRouter';
+import { UploadCenterParam } from '../../transfer/views/UploadCenterPage';
 
 /** 筛选类型选项（对齐 Flutter _appFileFilterOptions） */
 const FILTER_OPTIONS: string[][] = [
@@ -42,6 +44,8 @@ const VIEW_OPTIONS: string[][] = [
 
 class FileCreateSheetParams extends SheetParamsBase {
   ctrl: FileController = new FileController(false);
+  pushPage: (name: string, param?: object) => void = (_n: string, _p?: object): void => {
+  };
 }
 
 @Builder
@@ -53,13 +57,18 @@ function FileCreateSheetContent(p: FileCreateSheetParams) {
 struct FileCreateSheetInner {
   @Param p: FileCreateSheetParams = new FileCreateSheetParams();
 
+  /** 上传文件（对齐 Flutter app_file_sheets.dart：跳转上传中心并携带当前目录） */
   private async ensureUpload(): Promise<void> {
+    const currentDir = this.p.ctrl.currentPath.trim();
     const supported = await this.p.ctrl.ensureUploadSupported();
     if (!supported) {
       return;
     }
-    // 上传中心依赖传输模块（未迁移）
-    ToastUtil.show(L10n.featureComingSoon);
+    if (currentDir.length === 0) {
+      this.p.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam());
+      return;
+    }
+    this.p.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam(currentDir));
   }
 
   private async createFolder(): Promise<void> {
@@ -144,9 +153,11 @@ struct FileCreateSheetInner {
 }
 
 /** 显示“新建”底部弹层（对齐 Flutter showAppFileCreateSheet） */
-export function showFileCreateSheet(ctrl: FileController): void {
+export function showFileCreateSheet(ctrl: FileController,
+  pushPage: (name: string, param?: object) => void): void {
   const p = new FileCreateSheetParams();
   p.ctrl = ctrl;
+  p.pushPage = pushPage;
   SheetUtil.present(p, wrapBuilder(FileCreateSheetContent));
 }
 
