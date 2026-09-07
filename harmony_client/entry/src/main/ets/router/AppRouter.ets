@@ -19,4 +19,13 @@ export class AppRouter {
   static readonly PHOTO_AI_SCENES: string = 'PhotoAiScenesPage';
   static readonly PHOTO_AI_SIMILAR: string = 'PhotoAiSimilarPage';
   static readonly PHOTO_SETTINGS: string = 'PhotoSettingsPage';
+  static readonly VIDEO_MAIN: string = 'VideoMainPage';
+  static readonly VIDEO_DETAIL: string = 'VideoDetailPage';
+  static readonly VIDEO_LIST: string = 'VideoListPage';
+  static readonly VIDEO_HISTORY: string = 'VideoHistoryPage';
+  static readonly VIDEO_ALBUM_LIST: string = 'VideoAlbumListPage';
+  static readonly VIDEO_ALBUM_VIDEOS: string = 'VideoAlbumVideosPage';
+  static readonly VIDEO_SMART_ALBUM_LIST: string = 'VideoSmartAlbumListPage';
+  static readonly VIDEO_COLLECTION_LIST: string = 'VideoCollectionListPage';
+  static readonly VIDEO_SETTINGS: string = 'VideoSettingsPage';
 }

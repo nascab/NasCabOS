@@ -161,7 +161,6 @@ struct YearCard {
           .fontColor('#FFFFFF')
           .width('100%')
           .maxLines(1)
-          .shadow({ radius: 10, offsetX: 0, offsetY: 2, color: '#000000' })
         Text(this.countText())
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
@@ -169,7 +168,6 @@ struct YearCard {
           .width('100%')
           .maxLines(1)
           .margin({ top: 6 })
-          .shadow({ radius: 10, offsetX: 0, offsetY: 2, color: '#000000' })
       }
       .width('100%')
       .height('100%')

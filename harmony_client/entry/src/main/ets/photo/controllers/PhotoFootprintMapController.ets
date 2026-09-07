@@ -35,6 +35,9 @@ export class PhotoFootprintMapController {
   @Trace items: PhotoMapIndexItem[] = [];
   @Trace center: LatLang = new LatLang(34.0, 108.0);
   @Trace zoom: number = 5.0;
+  /** 视口尺寸（vp），由视图 onAreaChange 回写，供瓦片/标注组件响应式定位 */
+  @Trace viewWidth: number = 0;
+  @Trace viewHeight: number = 0;
   /** 瓦片服务器切换种子（URL 携带，切服后强制刷新瓦片） */
   @Trace mapRebuildSeed: number = 0;
 

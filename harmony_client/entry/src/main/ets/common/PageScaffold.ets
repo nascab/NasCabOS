@@ -25,6 +25,8 @@ export struct PageScaffold {
   @Param customBack: () => boolean = () => false;
   @BuilderParam actions: () => void = PageScaffoldEmptyActions;
   @BuilderParam content: () => void;
+  /** 全屏浮层（如相册编辑弹窗）：渲染在 NavDestination 内部顶层，保证随页面挂载显示 */
+  @BuilderParam overlayContent: () => void = PageScaffoldEmptyActions;
   /** 主题变化刷新计数（依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
   private themeListener: (data: string) => void = (_data: string) => {
@@ -89,6 +91,9 @@ export struct PageScaffold {
         }
         .width('100%')
         .height('100%')
+
+        // 全屏浮层：置于内容层之上（仍在 NavDestination 内，随页面正常挂载）
+        this.overlayContent()
       }
       .width('100%')
       .height('100%')

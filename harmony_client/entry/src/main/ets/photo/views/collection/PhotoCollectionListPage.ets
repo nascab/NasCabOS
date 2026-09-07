@@ -167,48 +167,52 @@ export struct PhotoCollectionListPage {
   // ===== UI =====
 
   build() {
-    Stack() {
-      PageScaffold({
-        title: L10n.t('photo_menu_album_collection', '照片合集'),
-        showBack: true,
-        onBack: (): void => {
-          this.popPage();
+    PageScaffold({
+      title: L10n.t('photo_menu_album_collection', '照片合集'),
+      showBack: true,
+      onBack: (): void => {
+        this.popPage();
+      },
+      actions: (): void => {
+        this.TitleActions()
+      },
+      content: (): void => {
+        this.PageContent()
+      },
+      // 弹窗必须在 NavDestination 内部挂载；组件实例化只能放在 @Builder 方法中
+      overlayContent: (): void => {
+        this.EditDialogOverlay()
+      }
+    })
+  }
+
+  /** 新建/编辑合集弹窗浮层 */
+  @Builder
+  EditDialogOverlay() {
+    // 新建合集弹窗
+    if (this.showCreateDialog) {
+      PhotoCollectionEditDialog({
+        collection: undefined,
+        onSubmit: (name: string, pathList: string[]): Promise<boolean> => {
+          return this.ctrl.createCollection(name, pathList);
         },
-        actions: (): void => {
-          this.TitleActions()
-        },
-        content: (): void => {
-          this.PageContent()
+        onDismiss: (): void => {
+          this.showCreateDialog = false;
         }
       })
-
-      // 新建合集弹窗
-      if (this.showCreateDialog) {
-        PhotoCollectionEditDialog({
-          collection: undefined,
-          onSubmit: (name: string, pathList: string[]): Promise<boolean> => {
-            return this.ctrl.createCollection(name, pathList);
-          },
-          onDismiss: (): void => {
-            this.showCreateDialog = false;
-          }
-        })
-      }
-      // 编辑合集弹窗
-      if (this.editCollection !== undefined) {
-        PhotoCollectionEditDialog({
-          collection: this.editCollection,
-          onSubmit: (name: string, pathList: string[]): Promise<boolean> => {
-            return this.ctrl.updateCollection(this.editCollection!.id, name, pathList);
-          },
-          onDismiss: (): void => {
-            this.editCollection = undefined;
-          }
-        })
-      }
     }
-    .width('100%')
-    .height('100%')
+    // 编辑合集弹窗
+    if (this.editCollection !== undefined) {
+      PhotoCollectionEditDialog({
+        collection: this.editCollection,
+        onSubmit: (name: string, pathList: string[]): Promise<boolean> => {
+          return this.ctrl.updateCollection(this.editCollection!.id, name, pathList);
+        },
+        onDismiss: (): void => {
+          this.editCollection = undefined;
+        }
+      })
+    }
   }
 
   /** 标题栏右侧操作：搜索 / 新建 */

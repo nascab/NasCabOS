@@ -358,48 +358,53 @@ export struct PhotoAlbumListPage {
   // ===== UI =====
 
   build() {
-    Stack() {
-      PageScaffold({
-        title: L10n.t('photo_menu_album_normal', '自建相册'),
-        showBack: true,
-        onBack: (): void => {
-          this.popPage();
+    PageScaffold({
+      title: L10n.t('photo_menu_album_normal', '自建相册'),
+      showBack: true,
+      onBack: (): void => {
+        this.popPage();
+      },
+      actions: (): void => {
+        this.TitleActions()
+      },
+      content: (): void => {
+        this.PageContent()
+      },
+      // 弹窗必须在 NavDestination 内部挂载（外层兄弟节点不会随路由显示）；
+      // 组件实例化只能放在 @Builder 方法中，箭头函数内联会编译异常导致崩溃
+      overlayContent: (): void => {
+        this.EditDialogOverlay()
+      }
+    })
+  }
+
+  /** 新建/编辑相册弹窗浮层 */
+  @Builder
+  EditDialogOverlay() {
+    // 新建相册弹窗
+    if (this.showCreateDialog) {
+      PhotoAlbumEditDialog({
+        album: undefined,
+        onDismiss: (): void => {
+          this.showCreateDialog = false;
         },
-        actions: (): void => {
-          this.TitleActions()
-        },
-        content: (): void => {
-          this.PageContent()
+        onSaved: (): void => {
+          void this.ctrl.refresh();
         }
       })
-
-      // 新建相册弹窗
-      if (this.showCreateDialog) {
-        PhotoAlbumEditDialog({
-          album: undefined,
-          onDismiss: (): void => {
-            this.showCreateDialog = false;
-          },
-          onSaved: (): void => {
-            void this.ctrl.refresh();
-          }
-        })
-      }
-      // 编辑相册弹窗
-      if (this.editAlbum !== undefined) {
-        PhotoAlbumEditDialog({
-          album: this.editAlbum,
-          onDismiss: (): void => {
-            this.editAlbum = undefined;
-          },
-          onSaved: (): void => {
-            void this.ctrl.refresh();
-          }
-        })
-      }
     }
-    .width('100%')
-    .height('100%')
+    // 编辑相册弹窗
+    if (this.editAlbum !== undefined) {
+      PhotoAlbumEditDialog({
+        album: this.editAlbum,
+        onDismiss: (): void => {
+          this.editAlbum = undefined;
+        },
+        onSaved: (): void => {
+          void this.ctrl.refresh();
+        }
+      })
+    }
   }
 
   /** 标题栏右侧操作：搜索 / 筛选排序 / 新建或确认选择 */

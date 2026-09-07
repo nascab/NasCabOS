@@ -26,6 +26,18 @@ import { PhotoAiFacesPage, PhotoAiFacesPageParam } from '../photo/views/ai/Photo
 import { PhotoAiScenesPage, PhotoAiScenesPageParam } from '../photo/views/ai/PhotoAiScenesPage';
 import { PhotoAiSimilarPage, PhotoAiSimilarPageParam } from '../photo/views/ai/PhotoAiSimilarPage';
 import { PhotoSettingsPage, PhotoSettingsPageParam } from '../photo/views/settings/PhotoSettingsPage';
+import { VideoMainPage, VideoMainPageParam } from '../video/views/VideoMainPage';
+import { VideoListPage } from '../video/views/VideoListPage';
+import { VideoAlbumVideosPage } from '../video/views/VideoAlbumVideosPage';
+import { VideoSettingsPage } from '../video/views/VideoSettingsPage';
+import { VideoDetailPage } from '../video/views/VideoDetailPage';
+import { VideoAlbumListPage } from '../video/views/VideoAlbumListPage';
+import { VideoSmartAlbumListPage } from '../video/views/VideoSmartAlbumListPage';
+import { VideoCollectionListPage } from '../video/views/VideoCollectionListPage';
+import {
+  VideoAlbumVideosPageParam, VideoDetailPageParam, VideoListPageParam,
+  VideoAlbumListPageParam, VideoSmartAlbumListPageParam, VideoCollectionListPageParam
+} from '../video/router/VideoRoutes';
 import { NavUtil } from '../common/NavUtil';
 
 @Entry
@@ -176,6 +188,59 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.VIDEO_MAIN) {
+      VideoMainPageBuilder(
+        param instanceof VideoMainPageParam ? param : new VideoMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_LIST) {
+      VideoListPageBuilder(
+        param instanceof VideoListPageParam ? param : new VideoListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_DETAIL) {
+      VideoDetailPageBuilder(
+        param instanceof VideoDetailPageParam ? param : new VideoDetailPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_ALBUM_VIDEOS) {
+      VideoAlbumVideosPageBuilder(
+        param instanceof VideoAlbumVideosPageParam ? param : new VideoAlbumVideosPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_ALBUM_LIST) {
+      VideoAlbumListPageBuilder(
+        param instanceof VideoAlbumListPageParam ? param : new VideoAlbumListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_SMART_ALBUM_LIST) {
+      VideoSmartAlbumListPageBuilder(
+        param instanceof VideoSmartAlbumListPageParam ? param : new VideoSmartAlbumListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_COLLECTION_LIST) {
+      VideoCollectionListPageBuilder(
+        param instanceof VideoCollectionListPageParam ? param : new VideoCollectionListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.VIDEO_SETTINGS) {
+      VideoSettingsPageBuilder((): void => {
+        this.pageStack.pop();
+      })
     }
   }
 
@@ -286,4 +351,44 @@ function PhotoAiSimilarPageBuilder(param: PhotoAiSimilarPageParam, popPage: () =
 @Builder
 function PhotoSettingsPageBuilder(param: PhotoSettingsPageParam, popPage: () => void) {
   PhotoSettingsPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoMainPageBuilder(param: VideoMainPageParam, popPage: () => void) {
+  VideoMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoListPageBuilder(param: VideoListPageParam, popPage: () => void) {
+  VideoListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoDetailPageBuilder(param: VideoDetailPageParam, popPage: () => void) {
+  VideoDetailPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoAlbumVideosPageBuilder(param: VideoAlbumVideosPageParam, popPage: () => void) {
+  VideoAlbumVideosPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoAlbumListPageBuilder(param: VideoAlbumListPageParam, popPage: () => void) {
+  VideoAlbumListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoSmartAlbumListPageBuilder(param: VideoSmartAlbumListPageParam, popPage: () => void) {
+  VideoSmartAlbumListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoCollectionListPageBuilder(param: VideoCollectionListPageParam, popPage: () => void) {
+  VideoCollectionListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function VideoSettingsPageBuilder(popPage: () => void) {
+  VideoSettingsPage({ popPage: popPage })
 }

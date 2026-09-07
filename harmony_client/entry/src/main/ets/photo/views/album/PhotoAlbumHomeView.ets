@@ -146,7 +146,7 @@ export struct PhotoAlbumCardView {
         .backgroundColor(AppTheme.current().inputFill)
       }
 
-      // 内容层：顶部按钮区 + 底部渐变 + 左下信息行
+      // 内容层：顶部按钮区 + 底部渐变（渐变作为信息行背景，紧贴卡片最下方）+ 左下信息行
       Column() {
         Row({ space: 6 }) {
           if (this.showSelection) {
@@ -172,14 +172,6 @@ export struct PhotoAlbumCardView {
 
         Blank()
 
-        Column()
-          .width('100%')
-          .height(64)
-          .linearGradient({
-            direction: GradientDirection.Bottom,
-            colors: [['#00000000', 0.0], ['#CC000000', 1.0]]
-          })
-
         Row({ space: 6 }) {
           SymbolGlyph(this.icon)
             .fontSize(16)
@@ -199,7 +191,12 @@ export struct PhotoAlbumCardView {
           }
         }
         .width('100%')
-        .padding({ left: 10, right: 10, bottom: 10 })
+        // 顶部 44 内边距容纳上方渐变过渡，渐变背景直达卡片底部（对齐 Flutter Positioned bottom:0 渐变）
+        .padding({ left: 10, right: 10, top: 44, bottom: 10 })
+        .linearGradient({
+          direction: GradientDirection.Bottom,
+          colors: [['#00000000', 0.0], ['#CC000000', 1.0]]
+        })
       }
       .width('100%')
       .height('100%')
@@ -573,6 +570,8 @@ export struct PhotoAlbumHomeView {
       }
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
+      // 内容不足一屏时靠左排列（Scroll 默认居中）
+      .align(Alignment.Start)
       .width('100%')
       .height(160)
     }
@@ -610,6 +609,8 @@ export struct PhotoAlbumHomeView {
       }
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
+      // 内容不足一屏时靠左排列（Scroll 默认居中）
+      .align(Alignment.Start)
       .width('100%')
       .height(160)
     }
@@ -648,6 +649,8 @@ export struct PhotoAlbumHomeView {
       }
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
+      // 内容不足一屏时靠左排列（Scroll 默认居中）
+      .align(Alignment.Start)
       .width('100%')
       .height(160)
     }

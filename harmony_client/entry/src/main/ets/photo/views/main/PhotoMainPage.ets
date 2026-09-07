@@ -9,6 +9,7 @@ import { BorderedIconButton } from '../../../common/components/BorderedIconButto
 import { SearchInputBar } from '../../../common/components/SearchInputBar';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
+import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
 import { TimelineController } from '../../controllers/TimelineController';
 import { PhotoTimelineView } from '../timeline/PhotoTimelineView';
 import { PhotoTimelineYearView } from '../timeline/PhotoTimelineYearView';
@@ -19,7 +20,54 @@ import { PhotoAlbumHomeView } from '../album/PhotoAlbumHomeView';
 import { PhotoAiHomeView } from '../ai/PhotoAiHomeView';
 import { PhotoSettingsPageParam } from '../settings/PhotoSettingsPage';
 import { PhotoAlbumListPageParam } from '../album/PhotoAlbumListPage';
+import { PhotoSmartAlbumListPageParam } from '../smartalbum/PhotoSmartAlbumListPage';
+import { PhotoCollectionListPageParam } from '../collection/PhotoCollectionListPage';
 import { PhotoTrashPageParam } from '../trash/PhotoTrashPage';
+
+/** 相册创建入口弹层参数（对齐 Flutter _showAlbumCreateSheet 三个 ListTile） */
+class AlbumCreateSheetParams extends SheetParamsBase {
+  onCreateAlbum: () => void = (): void => {
+  };
+  onCreateSmartAlbum: () => void = (): void => {
+  };
+  onCreateCollection: () => void = (): void => {
+  };
+}
+
+@Builder
+function AlbumCreateSheetContent(p: AlbumCreateSheetParams) {
+  Column() {
+    SheetHandle()
+    SheetListItem({
+      icon: $r('sys.symbol.rectangle_stack'),
+      title: L10n.t('app_photo_album_create_album', '创建自建相册'),
+      onSelect: (): void => {
+        p.close();
+        p.onCreateAlbum();
+      }
+    })
+    SheetListItem({
+      icon: $r('sys.symbol.wand_and_stars'),
+      title: L10n.t('app_photo_album_create_smart', '创建智能相册'),
+      onSelect: (): void => {
+        p.close();
+        p.onCreateSmartAlbum();
+      }
+    })
+    SheetListItem({
+      icon: $r('sys.symbol.folder'),
+      title: L10n.t('app_photo_album_create_collection', '创建照片合集'),
+      onSelect: (): void => {
+        p.close();
+        p.onCreateCollection();
+      }
+    })
+    Blank().height(24)
+  }
+  .width('100%')
+  .borderRadius({ topLeft: 16, topRight: 16 })
+  .backgroundColor(AppTheme.current().surfaceBg)
+}
 
 /** 照片主页路由参数（对齐 Flutter AppPhotoMainRoutePage） */
 export class PhotoMainPageParam {
@@ -100,82 +148,115 @@ export struct PhotoMainPage {
     }
   }
 
+  /** 相册创建入口弹层（对齐 Flutter _showAlbumCreateSheet：自建相册/智能相册/照片合集） */
+  private showAlbumCreateSheet(): void {
+    const p = new AlbumCreateSheetParams();
+    p.onCreateAlbum = (): void => {
+      const param = new PhotoAlbumListPageParam();
+      param.autoOpenCreate = true;
+      NavUtil.push(AppRouter.PHOTO_ALBUM_LIST, param);
+    };
+    p.onCreateSmartAlbum = (): void => {
+      const param = new PhotoSmartAlbumListPageParam();
+      param.autoOpenCreate = true;
+      NavUtil.push(AppRouter.PHOTO_SMART_ALBUM_LIST, param);
+    };
+    p.onCreateCollection = (): void => {
+      const param = new PhotoCollectionListPageParam();
+      param.autoOpenCreate = true;
+      NavUtil.push(AppRouter.PHOTO_COLLECTION_LIST, param);
+    };
+    SheetUtil.present(p, wrapBuilder(AlbumCreateSheetContent));
+  }
+
   build() {
     NavDestination() {
-      Column() {
-        if (this.currentTab !== 4) {
-          this.Header()
-        }
-        Stack({ alignContent: Alignment.Bottom }) {
-          Column() {
-            if (this.currentTab === 0) {
-              if (this.yearMode) {
-                PhotoTimelineYearView({
-                  ctrl: this.ctrl,
-                  onYearPicked: (_y: number): void => {
-                    this.yearMode = false;
-                  }
-                })
+      Stack() {
+        // 底部安全区背景层：与底部 tab 栏同底色（surfaceBg），延伸到底部导航条安全区
+        // （对齐 PageScaffold/HomePage 的沉浸式背景层模式，保证安全区与 tab 栏背景一致）
+        Column()
+          .width('100%')
+          .height('100%')
+          .backgroundColor(AppTheme.current().surfaceBg)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
+
+        Column() {
+          if (this.currentTab !== 4) {
+            this.Header()
+          }
+          Stack({ alignContent: Alignment.Bottom }) {
+            Column() {
+              if (this.currentTab === 0) {
+                if (this.yearMode) {
+                  PhotoTimelineYearView({
+                    ctrl: this.ctrl,
+                    onYearPicked: (_y: number): void => {
+                      this.yearMode = false;
+                    }
+                  })
+                } else {
+                  PhotoTimelineView({ ctrl: this.ctrl, showSearchAction: false })
+                }
+              } else if (this.currentTab === 1) {
+                PhotoFootprintMapView()
+              } else if (this.currentTab === 2) {
+                PhotoAlbumHomeView()
+              } else if (this.currentTab === 3) {
+                PhotoAiHomeView()
               } else {
-                PhotoTimelineView({ ctrl: this.ctrl, showSearchAction: false })
+                // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入
+                Column() {
+                  EmptyState({ message: L10n.t('feature_coming_soon', '敬请期待') })
+                }
+                .width('100%')
+                .height('100%')
               }
-            } else if (this.currentTab === 1) {
-              PhotoFootprintMapView()
-            } else if (this.currentTab === 2) {
-              PhotoAlbumHomeView()
-            } else if (this.currentTab === 3) {
-              PhotoAiHomeView()
-            } else {
-              // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入
-              Column() {
-                EmptyState({ message: L10n.t('feature_coming_soon', '敬请期待') })
-              }
-              .width('100%')
-              .height('100%')
+            }
+            .width('100%')
+            .height('100%')
+            // 浮动模式条仅照片 tab + 非多选时显示
+            if (this.currentTab === 0 && !this.ctrl.isMultiSelectMode) {
+              PhotoModeBar({
+                ctrl: this.ctrl,
+                yearMode: this.yearMode,
+                onModeSelected: (listType: string, loadTheDay: boolean): void => {
+                  this.applyTimelineMode(listType, loadTheDay);
+                },
+                onYearSelected: (): void => {
+                  this.yearMode = true;
+                }
+              })
             }
           }
           .width('100%')
-          .height('100%')
-          // 浮动模式条仅照片 tab + 非多选时显示
-          if (this.currentTab === 0 && !this.ctrl.isMultiSelectMode) {
-            PhotoModeBar({
-              ctrl: this.ctrl,
-              yearMode: this.yearMode,
-              onModeSelected: (listType: string, loadTheDay: boolean): void => {
-                this.applyTimelineMode(listType, loadTheDay);
-              },
-              onYearSelected: (): void => {
-                this.yearMode = true;
+          .layoutWeight(1)
+
+          if (this.currentTab === 0 && this.ctrl.isMultiSelectMode) {
+            PhotoMultiSelectBar({ ctrl: this.ctrl })
+          } else {
+            BottomTabBar({
+              items: this.tabItems(),
+              selectedIndex: this.currentTab,
+              onSelect: (index: number): void => {
+                if (this.ctrl.isMultiSelectMode) {
+                  this.ctrl.exitMultiSelectMode();
+                }
+                if (index !== 0 && this.yearMode) {
+                  this.yearMode = false;
+                }
+                this.currentTab = index;
               }
             })
           }
         }
         .width('100%')
-        .layoutWeight(1)
-
-        if (this.currentTab === 0 && this.ctrl.isMultiSelectMode) {
-          PhotoMultiSelectBar({ ctrl: this.ctrl })
-        } else {
-          BottomTabBar({
-            items: this.tabItems(),
-            selectedIndex: this.currentTab,
-            onSelect: (index: number): void => {
-              if (this.ctrl.isMultiSelectMode) {
-                this.ctrl.exitMultiSelectMode();
-              }
-              if (index !== 0 && this.yearMode) {
-                this.yearMode = false;
-              }
-              this.currentTab = index;
-            }
-          })
-        }
+        .height('100%')
+        .backgroundColor(AppTheme.current().pageBg)
+        // 依赖 themeTick：主题切换后触发整页刷新（含配色与文案）
+        .opacity(this.themeTick >= 0 ? 1 : 1)
       }
       .width('100%')
       .height('100%')
-      .backgroundColor(AppTheme.current().pageBg)
-      // 依赖 themeTick：主题切换后触发整页刷新（含配色与文案）
-      .opacity(this.themeTick >= 0 ? 1 : 1)
     }
     .hideTitleBar(true)
     .onBackPressed((): boolean => {
@@ -241,10 +322,8 @@ export struct PhotoMainPage {
           BorderedIconButton({
             icon: $r('sys.symbol.plus'),
             onTap: (): void => {
-              // 打开相册列表页并自动弹出创建相册（对齐 Flutter AppPhotoMainView autoOpenCreate: true）
-              const p = new PhotoAlbumListPageParam();
-              p.autoOpenCreate = true;
-              NavUtil.push(AppRouter.PHOTO_ALBUM_LIST, p);
+              // 相册创建入口弹层（对齐 Flutter _showAlbumCreateSheet）
+              this.showAlbumCreateSheet();
             }
           })
         } else if (this.currentTab === 0) {

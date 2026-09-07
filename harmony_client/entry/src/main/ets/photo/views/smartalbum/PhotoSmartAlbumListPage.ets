@@ -163,48 +163,52 @@ export struct PhotoSmartAlbumListPage {
   // ===== UI =====
 
   build() {
-    Stack() {
-      PageScaffold({
-        title: L10n.t('photo_menu_album_smart', '智能相册'),
-        showBack: true,
-        onBack: (): void => {
-          this.popPage();
+    PageScaffold({
+      title: L10n.t('photo_menu_album_smart', '智能相册'),
+      showBack: true,
+      onBack: (): void => {
+        this.popPage();
+      },
+      actions: (): void => {
+        this.TitleActions()
+      },
+      content: (): void => {
+        this.PageContent()
+      },
+      // 弹窗必须在 NavDestination 内部挂载；组件实例化只能放在 @Builder 方法中
+      overlayContent: (): void => {
+        this.EditDialogOverlay()
+      }
+    })
+  }
+
+  /** 新建/编辑智能相册弹窗浮层 */
+  @Builder
+  EditDialogOverlay() {
+    // 新建智能相册弹窗
+    if (this.showCreateDialog) {
+      PhotoSmartAlbumEditDialog({
+        album: undefined,
+        onSubmit: (name: string, type: string, filterContent: Record<string, Object>): Promise<boolean> => {
+          return this.ctrl.createSmartAlbum(name, type, filterContent);
         },
-        actions: (): void => {
-          this.TitleActions()
-        },
-        content: (): void => {
-          this.PageContent()
+        onDismiss: (): void => {
+          this.showCreateDialog = false;
         }
       })
-
-      // 新建智能相册弹窗
-      if (this.showCreateDialog) {
-        PhotoSmartAlbumEditDialog({
-          album: undefined,
-          onSubmit: (name: string, type: string, filterContent: Record<string, Object>): Promise<boolean> => {
-            return this.ctrl.createSmartAlbum(name, type, filterContent);
-          },
-          onDismiss: (): void => {
-            this.showCreateDialog = false;
-          }
-        })
-      }
-      // 编辑智能相册弹窗
-      if (this.editAlbum !== undefined) {
-        PhotoSmartAlbumEditDialog({
-          album: this.editAlbum,
-          onSubmit: (name: string, type: string, filterContent: Record<string, Object>): Promise<boolean> => {
-            return this.ctrl.updateSmartAlbum(this.editAlbum!.id, name, type, filterContent);
-          },
-          onDismiss: (): void => {
-            this.editAlbum = undefined;
-          }
-        })
-      }
     }
-    .width('100%')
-    .height('100%')
+    // 编辑智能相册弹窗
+    if (this.editAlbum !== undefined) {
+      PhotoSmartAlbumEditDialog({
+        album: this.editAlbum,
+        onSubmit: (name: string, type: string, filterContent: Record<string, Object>): Promise<boolean> => {
+          return this.ctrl.updateSmartAlbum(this.editAlbum!.id, name, type, filterContent);
+        },
+        onDismiss: (): void => {
+          this.editAlbum = undefined;
+        }
+      })
+    }
   }
 
   /** 标题栏右侧操作：搜索 / 新建 */

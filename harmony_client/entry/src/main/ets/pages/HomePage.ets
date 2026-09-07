@@ -14,6 +14,7 @@ import { AppRouter } from '../router/AppRouter';
 import { LanguageService } from '../core/localization/LanguageService';
 import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
 import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
+import { VideoMainPageParam } from '../video/views/VideoMainPage';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -80,6 +81,8 @@ export struct HomePage {
         const param = new PhotoMainPageParam();
         param.title = L10n.t('app_photo', '照片管理');
         this.pushPage(AppRouter.PHOTO_MAIN, param);
+      } else if (app === 'video') {
+        this.pushPage(AppRouter.VIDEO_MAIN, new VideoMainPageParam());
       }
       return;
     }

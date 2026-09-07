@@ -476,6 +476,21 @@ export class DialogUtil {
   }
 
   /**
+   * 打开自定义内容弹窗（通用入口）：业务方传入参数类与 @Builder 内容构建器，
+   * params.onResult(result) 关闭弹窗并回传结果；遮罩/返回键关闭时以 undefined 结束。
+   */
+  static openCustom<T extends DialogParamsBase>(params: T,
+    builderFn: WrappedBuilder<[T]>, barrierDismissible: boolean = true,
+    onResult?: (r: DialogResult | undefined) => void): void {
+    DialogUtil.present(params, builderFn, barrierDismissible,
+      (r: DialogResult | undefined): void => {
+        if (onResult) {
+          onResult(r);
+        }
+      });
+  }
+
+  /**
    * 打开弹窗通用流程：绑定 params.onResult → 关闭弹窗 → resolve → 业务回调。
    * barrier 关闭（点遮罩/返回键）时以 undefined 结束。
    */

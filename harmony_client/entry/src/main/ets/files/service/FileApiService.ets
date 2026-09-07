@@ -85,9 +85,13 @@ export class FileApiService {
       (d: Object, _c: number) => JsonCodec.parse<Record<string, Object>>(d) as Object);
   }
 
-  /** 删除多个文件或文件夹 */
-  async deleteEntries(paths: string[], recycle: boolean): Promise<APIResponse<Object>> {
+  /** 删除多个文件或文件夹（deleteScrapeFiles：影片删除时同时删除刮削文件，对齐 Flutter） */
+  async deleteEntries(paths: string[], recycle: boolean, deleteScrapeFiles: boolean = false):
+    Promise<APIResponse<Object>> {
     const body: Record<string, Object> = { 'paths': paths, 'recycle': recycle };
+    if (deleteScrapeFiles) {
+      body['deleteScrapeFiles'] = true;
+    }
     return this.api().apiPost<Object>('/api/file/delete', body, undefined, undefined, undefined,
       (d: Object, _c: number) => d);
   }

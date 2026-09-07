@@ -47,7 +47,10 @@ class MapProjection {
 
 /** 可渲染瓦片信息 */
 class TileRenderInfo {
+  /** 瓦片列索引（经度环绕后，用于 URL） */
   x: number = 0;
+  /** 原始列号（未环绕，用于屏幕定位） */
+  rawX: number = 0;
   y: number = 0;
   zoomInt: number = 0;
   left: number = 0;
@@ -59,13 +62,22 @@ class TileRenderInfo {
   }
 }
 
-/** 可渲染标注信息 */
-class MarkerRenderInfo {
-  item: PhotoMapIndexItem = new PhotoMapIndexItem();
-  position: LatLang = new LatLang(0, 0);
-  left: number = 0;
-  top: number = 0;
-  size: number = 0;
+/** 单瓦片屏幕矩形（供 computeVisibleTiles 与 MapTile 响应式复算共用同一套投影） */
+function tileScreenRect(rawX: number, y: number, zoomInt: number, center: LatLang, zoom: number,
+  viewWidth: number, viewHeight: number): TileRenderInfo {
+  const scale = Math.pow(2, zoom - zoomInt);
+  const cx = MapProjection.lngToWorldX(center.longitude, zoomInt);
+  const cy = MapProjection.latToWorldY(center.latitude, zoomInt);
+  const topLeftX = cx - viewWidth / 2 / scale;
+  const topLeftY = cy - viewHeight / 2 / scale;
+  const info = new TileRenderInfo();
+  info.rawX = rawX;
+  info.y = y;
+  info.zoomInt = zoomInt;
+  info.left = (rawX * TILE_SIZE - topLeftX) * scale;
+  info.top = (y * TILE_SIZE - topLeftY) * scale;
+  info.size = TILE_SIZE * scale;
+  return info;
 }
 
 /** 可视范围内瓦片（对齐 Flutter TileLayer 的 urlTemplate 逐瓦片加载） */
@@ -75,33 +87,23 @@ function computeVisibleTiles(center: LatLang, zoom: number, viewWidth: number, v
     return tiles;
   }
   const zoomInt = Math.floor(zoom);
-  const scale = Math.pow(2, zoom - zoomInt);
   const maxIndex = Math.pow(2, zoomInt);
-  // 中心在 zoomInt 级的世界像素
-  const cx = MapProjection.lngToWorldX(center.longitude, zoomInt);
-  const cy = MapProjection.latToWorldY(center.latitude, zoomInt);
   // 视口左上角（zoomInt 像素）
-  const topLeftX = cx - viewWidth / 2 / scale;
-  const topLeftY = cy - viewHeight / 2 / scale;
-  const tileScreen = TILE_SIZE * scale;
+  const topLeftX = MapProjection.lngToWorldX(center.longitude, zoomInt) - viewWidth / 2 / Math.pow(2, zoom - zoomInt);
+  const topLeftY = MapProjection.latToWorldY(center.latitude, zoomInt) - viewHeight / 2 / Math.pow(2, zoom - zoomInt);
   const xStart = Math.floor(topLeftX / TILE_SIZE);
   const yStart = Math.floor(topLeftY / TILE_SIZE);
-  const xEnd = Math.floor((topLeftX + viewWidth / scale) / TILE_SIZE);
-  const yEnd = Math.floor((topLeftY + viewHeight / scale) / TILE_SIZE);
+  const xEnd = Math.floor((topLeftX + viewWidth / Math.pow(2, zoom - zoomInt)) / TILE_SIZE);
+  const yEnd = Math.floor((topLeftY + viewHeight / Math.pow(2, zoom - zoomInt)) / TILE_SIZE);
   for (let x = xStart; x <= xEnd; x++) {
     for (let y = yStart; y <= yEnd; y++) {
-      // 越界经度环绕（对齐地图服务行为），纬度越界跳过
-      const wrappedX = ((x % maxIndex) + maxIndex) % maxIndex;
+      // 纬度越界跳过
       if (y < 0 || y >= maxIndex) {
         continue;
       }
-      const info = new TileRenderInfo();
-      info.x = wrappedX;
-      info.y = y;
-      info.zoomInt = zoomInt;
-      info.left = (x * TILE_SIZE - topLeftX) * scale;
-      info.top = (y * TILE_SIZE - topLeftY) * scale;
-      info.size = tileScreen;
+      const info = tileScreenRect(x, y, zoomInt, center, zoom, viewWidth, viewHeight);
+      // 越界经度环绕（对齐地图服务行为）
+      info.x = ((x % maxIndex) + maxIndex) % maxIndex;
       tiles.push(info);
     }
   }
@@ -148,17 +150,17 @@ function markerSizeForCount(count: number, zoom: number): number {
   return Math.min(Math.max(size, minSize), maxSize);
 }
 
-/** 可渲染标注（屏幕坐标 + 尺寸，超出视口的剔除） */
-function computeMarkers(ctrl: PhotoFootprintMapController, viewWidth: number, viewHeight: number): MarkerRenderInfo[] {
-  const result: MarkerRenderInfo[] = [];
+/** 可视范围内的标注 item（超出视口剔除；屏幕位置由 MapMarkerView 响应式计算） */
+function computeVisibleMarkers(ctrl: PhotoFootprintMapController, viewWidth: number, viewHeight: number): PhotoMapIndexItem[] {
+  const result: PhotoMapIndexItem[] = [];
   if (viewWidth <= 0 || viewHeight <= 0) {
     return result;
   }
   const zoom = ctrl.zoom;
-  const cx = MapProjection.lngToWorldX(ctrl.center.longitude, zoom);
-  const cy = MapProjection.latToWorldY(ctrl.center.latitude, zoom);
   const size = markerSizeForCount(ctrl.items.length, zoom);
   const margin = size + 8;
+  const cx = MapProjection.lngToWorldX(ctrl.center.longitude, zoom);
+  const cy = MapProjection.latToWorldY(ctrl.center.latitude, zoom);
   for (const item of ctrl.items) {
     const p = ctrl.markerPosition(item);
     const px = MapProjection.lngToWorldX(p.longitude, zoom);
@@ -168,13 +170,7 @@ function computeMarkers(ctrl: PhotoFootprintMapController, viewWidth: number, vi
     if (left < -margin || left > viewWidth + margin || top < -margin || top > viewHeight + margin) {
       continue;
     }
-    const info = new MarkerRenderInfo();
-    info.item = item;
-    info.position = p;
-    info.left = left;
-    info.top = top;
-    info.size = size;
-    result.push(info);
+    result.push(item);
   }
   return result;
 }
@@ -369,13 +365,88 @@ struct MapMarker {
 
 /** 缩略图 URL 解析见 MapMarker.resolve（复用 ApiUrls.getTinyUrl） */
 
+/** 单个瓦片：屏幕位置/尺寸从 ctrl 响应式计算（ForEach 同键复用时仍能跟随平移/缩放移动） */
+@ComponentV2
+struct MapTile {
+  @Param ctrl: PhotoFootprintMapController = new PhotoFootprintMapController();
+  @Param tileBaseUrl: string = '';
+  /** 瓦片列索引（经度环绕后，用于 URL） */
+  @Param tileX: number = 0;
+  @Param tileY: number = 0;
+  @Param tileZoomInt: number = 0;
+  /** 原始列号（未环绕，用于屏幕定位） */
+  @Param rawX: number = 0;
+
+  private rect(): TileRenderInfo {
+    return tileScreenRect(this.rawX, this.tileY, this.tileZoomInt,
+      this.ctrl.center, this.ctrl.zoom, this.ctrl.viewWidth, this.ctrl.viewHeight);
+  }
+
+  private tileUrl(): string {
+    const token = APIClient.getInstance().state.accessToken ?? '';
+    let url = `${this.tileBaseUrl}/api/mapApi/tile?zoom=${this.tileZoomInt}&x=${this.tileX}&y=${this.tileY}&seed=${this.ctrl.mapRebuildSeed}`;
+    if (token.length > 0) {
+      url += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  build() {
+    Image(this.tileUrl())
+      .width(this.rect().size)
+      .height(this.rect().size)
+      .position({ x: this.rect().left, y: this.rect().top })
+      .backgroundColor('#D9D9D9')
+      .draggable(false)
+      .interpolation(ImageInterpolation.Medium)
+  }
+}
+
+/** 标注容器：屏幕位置/尺寸从 ctrl 响应式计算（键仅含 id，拖动地图时组件复用不重建） */
+@ComponentV2
+struct MapMarkerView {
+  @Param ctrl: PhotoFootprintMapController = new PhotoFootprintMapController();
+  @Param item: PhotoMapIndexItem = new PhotoMapIndexItem();
+  @Param onTap: (item: PhotoMapIndexItem) => void = (_i: PhotoMapIndexItem): void => {
+  };
+
+  private markerSize(): number {
+    return markerSizeForCount(this.ctrl.items.length, this.ctrl.zoom);
+  }
+
+  private screenLeft(): number {
+    const zoom = this.ctrl.zoom;
+    const p = this.ctrl.markerPosition(this.item);
+    const px = MapProjection.lngToWorldX(p.longitude, zoom);
+    const cx = MapProjection.lngToWorldX(this.ctrl.center.longitude, zoom);
+    return this.ctrl.viewWidth / 2 + (px - cx);
+  }
+
+  private screenTop(): number {
+    const zoom = this.ctrl.zoom;
+    const p = this.ctrl.markerPosition(this.item);
+    const py = MapProjection.latToWorldY(p.latitude, zoom);
+    const cy = MapProjection.latToWorldY(this.ctrl.center.latitude, zoom);
+    return this.ctrl.viewHeight / 2 + (py - cy);
+  }
+
+  build() {
+    Column() {
+      MapMarker({
+        item: this.item,
+        markerSize: this.markerSize(),
+        onTap: this.onTap
+      })
+    }
+    .position({ x: this.screenLeft(), y: this.screenTop() })
+  }
+}
+
 // ===== 足迹地图视图（对齐 Flutter PhotoFootprintMapView） =====
 
 @ComponentV2
 export struct PhotoFootprintMapView {
   ctrl: PhotoFootprintMapController = new PhotoFootprintMapController();
-  @Local viewWidth: number = 0;
-  @Local viewHeight: number = 0;
   /** 瓦片请求基地址（P2P 模式走本地代理，对齐 Flutter LocalWebAssetServer） */
   @Local tileBaseUrl: string = '';
   private initialFetchDone: boolean = false;
@@ -414,19 +485,10 @@ export struct PhotoFootprintMapView {
   /** 视角变化上报（对齐 Flutter onPositionChanged 回调路径） */
   private notifyMapChanged(): void {
     this.ctrl.onMapChanged(
-      computeVisibleBounds(this.ctrl.center, this.ctrl.zoom, this.viewWidth, this.viewHeight),
+      computeVisibleBounds(this.ctrl.center, this.ctrl.zoom, this.ctrl.viewWidth, this.ctrl.viewHeight),
       this.ctrl.zoom,
       this.ctrl.center
     );
-  }
-
-  private tileUrl(info: TileRenderInfo): string {
-    const token = APIClient.getInstance().state.accessToken ?? '';
-    let url = `${this.tileBaseUrl}/api/mapApi/tile?zoom=${info.zoomInt}&x=${info.x}&y=${info.y}&seed=${this.ctrl.mapRebuildSeed}`;
-    if (token.length > 0) {
-      url += `&accessToken=${encodeURIComponent(token)}`;
-    }
-    return url;
   }
 
   /** 打开附近时间线（对齐 Flutter _openMarkerDetail：移动端 push 页面） */
@@ -462,39 +524,37 @@ export struct PhotoFootprintMapView {
 
   build() {
     Stack() {
-      // 地图层（瓦片 + 标注）
+      // 地图层（瓦片 + 标注）：位置均由子组件从 ctrl 响应式计算，拖动/缩放整体跟随
       Stack() {
         ForEach(this.visibleTiles(), (info: TileRenderInfo) => {
-          Image(this.tileUrl(info))
-            .width(info.size)
-            .height(info.size)
-            .position({ x: info.left, y: info.top })
-            .backgroundColor('#D9D9D9')
-            .draggable(false)
-            .interpolation(ImageInterpolation.Medium)
-        }, (info: TileRenderInfo) => `${this.ctrl.mapRebuildSeed}_${info.key()}`)
+          MapTile({
+            ctrl: this.ctrl,
+            tileBaseUrl: this.tileBaseUrl,
+            tileX: info.x,
+            tileY: info.y,
+            tileZoomInt: info.zoomInt,
+            rawX: info.rawX
+          })
+        }, (info: TileRenderInfo) => `t_${this.ctrl.mapRebuildSeed}_${this.tileBaseUrl}_${info.key()}`)
 
-        ForEach(this.visibleMarkers(), (info: MarkerRenderInfo) => {
-          Column() {
-            MapMarker({
-              item: info.item,
-              markerSize: info.size,
-              onTap: (item: PhotoMapIndexItem): void => {
-                this.openNearbyTimeline(item);
-              }
-            })
-          }
-          .position({ x: info.left - info.size / 2, y: info.top - info.size / 2 })
-        }, (info: MarkerRenderInfo) => `m_${info.item.id}_${Math.round(info.left)}_${Math.round(info.top)}`)
+        ForEach(this.visibleMarkers(), (item: PhotoMapIndexItem) => {
+          MapMarkerView({
+            ctrl: this.ctrl,
+            item: item,
+            onTap: (i: PhotoMapIndexItem): void => {
+              this.openNearbyTimeline(i);
+            }
+          })
+        }, (item: PhotoMapIndexItem) => `m_${item.id}`)
       }
       .width('100%')
       .height('100%')
       .clip(true)
       .backgroundColor(AppTheme.current().pageBg)
       .onAreaChange((_o: Area, n: Area) => {
-        this.viewWidth = Number(n.width);
-        this.viewHeight = Number(n.height);
-        if (!this.initialFetchDone && this.viewWidth > 0) {
+        this.ctrl.viewWidth = Number(n.width);
+        this.ctrl.viewHeight = Number(n.height);
+        if (!this.initialFetchDone && this.ctrl.viewWidth > 0) {
           // 首次布局完成后触发初始拉取（对齐 Flutter _scheduleInitialFetch）
           this.initialFetchDone = true;
           this.notifyMapChanged();
@@ -531,17 +591,6 @@ export struct PhotoFootprintMapView {
           })
       ))
 
-      // 顶部渐变遮罩（对齐 Flutter 顶部 40 高黑色渐变）
-      Column()
-        .width('100%')
-        .height(40)
-        .linearGradient({
-          angle: 180,
-          colors: [['#73000000', 0], ['#00000000', 1]]
-        })
-        .hitTestBehavior(HitTestMode.None)
-        .align(Alignment.Top)
-
       // 切换地图按钮（对齐 Flutter _FloatingSwitchMapButton）
       Row({ space: 6 }) {
         SymbolGlyph($r('sys.symbol.rectangle_stack'))
@@ -557,7 +606,7 @@ export struct PhotoFootprintMapView {
       .onClick(() => {
         this.openSwitchMapSheet();
       })
-      .position({ x: this.viewWidth - this.switchButtonWidth(), y: 10 })
+      .position({ x: this.ctrl.viewWidth - this.switchButtonWidth(), y: 10 })
 
       // 缩放级别徽标（对齐 Flutter _InfoBadge 左下）
       Text(`${L10n.t('zoom_level', '缩放级别')}: ${this.ctrl.zoom.toFixed(1)}`)
@@ -567,7 +616,7 @@ export struct PhotoFootprintMapView {
         .borderRadius(10)
         .backgroundColor(AppTheme.withAlpha(AppTheme.current().surfaceBg, 0.92))
         .border({ width: 1, color: AppTheme.current().divider })
-        .position({ x: 12, y: this.viewHeight - 50 })
+        .position({ x: 12, y: this.ctrl.viewHeight - 50 })
 
       // 缩放按钮（对齐 Flutter _MapZoomButtons 右下）
       Row() {
@@ -595,7 +644,7 @@ export struct PhotoFootprintMapView {
       .borderRadius(10)
       .backgroundColor(AppTheme.withAlpha(AppTheme.current().surfaceBg, 0.92))
       .border({ width: 1, color: AppTheme.current().divider })
-      .position({ x: this.viewWidth - this.zoomButtonsWidth(), y: this.viewHeight - 56 })
+      .position({ x: this.ctrl.viewWidth - this.zoomButtonsWidth(), y: this.ctrl.viewHeight - 56 })
 
       // 加载中（对齐 Flutter Positioned.fill CircularProgressIndicator）
       if (this.ctrl.loading) {
@@ -623,9 +672,9 @@ export struct PhotoFootprintMapView {
           .border({ width: 1, color: AppTheme.current().divider })
           .position({
             x: 12,
-            y: this.viewHeight - 96
+            y: this.ctrl.viewHeight - 96
           })
-          .constraintSize({ maxWidth: this.viewWidth - 24 })
+          .constraintSize({ maxWidth: this.ctrl.viewWidth - 24 })
       }
     }
     .width('100%')
@@ -634,11 +683,11 @@ export struct PhotoFootprintMapView {
   }
 
   private visibleTiles(): TileRenderInfo[] {
-    return computeVisibleTiles(this.ctrl.center, this.ctrl.zoom, this.viewWidth, this.viewHeight);
+    return computeVisibleTiles(this.ctrl.center, this.ctrl.zoom, this.ctrl.viewWidth, this.ctrl.viewHeight);
   }
 
-  private visibleMarkers(): MarkerRenderInfo[] {
-    return computeMarkers(this.ctrl, this.viewWidth, this.viewHeight);
+  private visibleMarkers(): PhotoMapIndexItem[] {
+    return computeVisibleMarkers(this.ctrl, this.ctrl.viewWidth, this.ctrl.viewHeight);
   }
 
   private switchButtonWidth(): number {

@@ -443,36 +443,39 @@ export struct PhotoTrashPage {
   // ===== UI =====
 
   build() {
-    Stack() {
-      PageScaffold({
-        title: L10n.t('recycle_bin', '回收站'),
-        showBack: true,
-        onBack: (): void => {
-          this.popPage();
-        },
-        customBack: (): boolean => {
-          // 多选模式下返回先退出多选（对齐 Flutter PopScope 习惯）
-          if (this.ctrl.isMultiSelectMode) {
-            this.ctrl.exitMultiSelectMode();
-            return true;
-          }
-          return false;
-        },
-        actions: (): void => {
-          this.TitleActions()
-        },
-        content: (): void => {
-          this.PageContent()
+    PageScaffold({
+      title: L10n.t('recycle_bin', '回收站'),
+      showBack: true,
+      onBack: (): void => {
+        this.popPage();
+      },
+      customBack: (): boolean => {
+        // 多选模式下返回先退出多选（对齐 Flutter PopScope 习惯）
+        if (this.ctrl.isMultiSelectMode) {
+          this.ctrl.exitMultiSelectMode();
+          return true;
         }
-      })
-
-      // 删除/清空确认弹窗
-      if (this.showDeleteDialog) {
-        TrashDeleteDialog({ info: this.deleteDialogInfo })
+        return false;
+      },
+      actions: (): void => {
+        this.TitleActions()
+      },
+      content: (): void => {
+        this.PageContent()
+      },
+      // 弹窗必须在 NavDestination 内部挂载；组件实例化只能放在 @Builder 方法中
+      overlayContent: (): void => {
+        this.DeleteDialogOverlay()
       }
+    })
+  }
+
+  /** 删除/清空确认弹窗浮层 */
+  @Builder
+  DeleteDialogOverlay() {
+    if (this.showDeleteDialog) {
+      TrashDeleteDialog({ info: this.deleteDialogInfo })
     }
-    .width('100%')
-    .height('100%')
   }
 
   /** 标题栏右侧操作：多选模式下显示全选切换（Flutter 移动端无此入口，HarmonyOS 补充在标题栏） */

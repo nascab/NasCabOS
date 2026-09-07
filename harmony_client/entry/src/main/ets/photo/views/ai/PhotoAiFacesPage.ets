@@ -632,27 +632,31 @@ export struct PhotoAiFacesPage {
   // ===== UI =====
 
   build() {
-    Stack() {
-      PageScaffold({
-        title: L10n.t('photo_menu_ai_face', '人脸识别'),
-        showBack: true,
-        onBack: (): void => {
-          this.popPage();
-        },
-        actions: (): void => {
-          this.TitleActions()
-        },
-        content: (): void => {
-          this.PageContent()
-        }
-      })
-
-      if (this.showAutoHideDialog) {
-        FaceAutoHideDialog({ info: this.autoHideInfo })
+    PageScaffold({
+      title: L10n.t('photo_menu_ai_face', '人脸识别'),
+      showBack: true,
+      onBack: (): void => {
+        this.popPage();
+      },
+      actions: (): void => {
+        this.TitleActions()
+      },
+      content: (): void => {
+        this.PageContent()
+      },
+      // 弹窗必须在 NavDestination 内部挂载；组件实例化只能放在 @Builder 方法中
+      overlayContent: (): void => {
+        this.AutoHideDialogOverlay()
       }
+    })
+  }
+
+  /** 人脸自动隐藏设置弹窗浮层 */
+  @Builder
+  AutoHideDialogOverlay() {
+    if (this.showAutoHideDialog) {
+      FaceAutoHideDialog({ info: this.autoHideInfo })
     }
-    .width('100%')
-    .height('100%')
   }
 
   /** 标题栏右侧操作：过滤/搜索/刷新/管理设置（对齐 Flutter AppBar actions） */

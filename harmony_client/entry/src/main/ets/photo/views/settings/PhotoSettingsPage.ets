@@ -297,7 +297,7 @@ struct PhotoAiSettingsView {
           })
       }
       .width('100%')
-      .padding({ top: 12, bottom: 10 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 10 })
 
       Scroll() {
         Column() {
