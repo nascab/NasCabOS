@@ -13,6 +13,7 @@ import { HomeWallpaperPicker } from '../home/views/HomeWallpaperPicker';
 import { AppRouter } from '../router/AppRouter';
 import { LanguageService } from '../core/localization/LanguageService';
 import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
+import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -75,6 +76,10 @@ export struct HomePage {
         this.pushPage(AppRouter.FILES);
       } else if (app === 'upload') {
         this.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam());
+      } else if (app === 'photo') {
+        const param = new PhotoMainPageParam();
+        param.title = L10n.t('app_photo', '照片管理');
+        this.pushPage(AppRouter.PHOTO_MAIN, param);
       }
       return;
     }

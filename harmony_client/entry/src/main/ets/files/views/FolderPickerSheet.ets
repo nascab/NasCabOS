@@ -1,20 +1,24 @@
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { SheetHandle, SheetParamsBase, SheetUtil } from '../../common/SheetUtil';
+import { CircleCheckbox } from '../../common/components/CircleCheckbox';
 import { FileController } from '../controllers/FileController';
 import { FileItem, FileModelAccess, fileItemIsDotHidden } from '../models/FileModels';
 import { FILE_HIDDEN_LIST_OPACITY } from '../models/FileModels';
 
 /**
  * 目标文件夹选择弹层（对齐 Flutter FolderPickerDialog 的文件系统浏览能力）：
- * 仅列出目录，点击进入子目录，支持返回上级，底部确认选择当前目录。
+ * 仅列出目录，点击进入子目录，支持返回上级，底部确认选择当前目录；
+ * 多选模式（对齐 Flutter multiSelect: true）行首勾选框选择多个目录。
  */
 class FolderPickerSheetParams extends SheetParamsBase {
-  /** 确认选择时回调，返回所选目录路径 */
-  onPicked: (path: string) => void = (_p: string): void => {
+  /** 确认选择时回调，返回所选目录路径数组 */
+  onPicked: (paths: string[]) => void = (_p: string[]): void => {
   };
   /** 初始目录（默认从根开始） */
   initialPath: string = '';
+  /** 多选模式（对齐 Flutter folder_picker multiSelect） */
+  multiSelect: boolean = false;
 }
 
 @Builder
@@ -27,6 +31,7 @@ struct FolderPickerSheetInner {
   @Param p: FolderPickerSheetParams = new FolderPickerSheetParams();
   @Local ctrl: FileController = new FileController(false, '/api/file/list', '/api/file/search', false);
   @Local loading: boolean = false;
+  @Local selectedPaths: string[] = [];
 
   aboutToAppear(): void {
     this.ctrl.onlyShowDir = true;
@@ -34,6 +39,21 @@ struct FolderPickerSheetInner {
     this.ctrl.listDirectory(this.p.initialPath, 'normal').finally((): void => {
       this.loading = false;
     });
+  }
+
+  private isSelected(path: string): boolean {
+    return this.selectedPaths.indexOf(path) >= 0;
+  }
+
+  private toggleSelect(path: string): void {
+    const next = this.selectedPaths.slice();
+    const idx = next.indexOf(path);
+    if (idx >= 0) {
+      next.splice(idx, 1);
+    } else {
+      next.push(path);
+    }
+    this.selectedPaths = next;
   }
 
   private async enter(it: FileItem): Promise<void> {
@@ -108,6 +128,14 @@ struct FolderPickerSheetInner {
           ForEach(this.ctrl.displayItems, (it: FileItem): void => {
             ListItem() {
               Row({ space: 10 }) {
+                if (this.p.multiSelect) {
+                  CircleCheckbox({
+                    value: this.isSelected(FileModelAccess.path(it)),
+                    onChanged: (_c: boolean): void => {
+                      this.toggleSelect(FileModelAccess.path(it));
+                    }
+                  })
+                }
                 Image($rawfile('icons/file/folder.png'))
                   .width(34)
                   .height(34)
@@ -140,7 +168,7 @@ struct FolderPickerSheetInner {
       Divider()
         .color(AppTheme.current().divider)
 
-      // 底部确认
+      // 底部确认（多选模式显示已选数量，对齐 Flutter folder_picker_confirm_bar）
       Row() {
         Button(L10n.cancel)
           .fontSize(14)
@@ -151,20 +179,29 @@ struct FolderPickerSheetInner {
           .onClick((): void => {
             this.p.close();
           })
-        Button(L10n.confirm)
+        Button(this.p.multiSelect && this.selectedPaths.length > 0
+          ? `${L10n.confirm}(${this.selectedPaths.length})` : L10n.confirm)
           .fontSize(14)
           .fontColor(AppTheme.current().buttonText)
           .backgroundColor(AppTheme.current().buttonBg)
           .height(40)
           .layoutWeight(1)
           .onClick((): void => {
+            if (this.p.multiSelect) {
+              if (this.selectedPaths.length === 0) {
+                return;
+              }
+              this.p.close();
+              this.p.onPicked(this.selectedPaths.slice());
+              return;
+            }
             const target = this.ctrl.currentPath;
             if (target.trim().length === 0) {
               // 根目录不可作为移动/复制目标
               return;
             }
             this.p.close();
-            this.p.onPicked(target);
+            this.p.onPicked([target]);
           })
       }
       .width('100%')
@@ -177,17 +214,18 @@ struct FolderPickerSheetInner {
 
 /**
  * 打开目标文件夹选择弹层（对齐 Flutter FolderPickerDialog 的选择能力）。
- * 取消/关闭时 resolve 空数组，确认时返回 [path]。
+ * 取消/关闭时 resolve 空数组，确认时返回 [path]（multiSelect=true 时返回所选路径数组）。
  */
 export function pickTargetFolderViaSheet(initialPath: string,
-  onResult: (paths: string[]) => void): void {
+  onResult: (paths: string[]) => void, multiSelect: boolean = false): void {
   const p = new FolderPickerSheetParams();
-  p.onPicked = (path: string): void => {
-    onResult([path]);
+  p.onPicked = (paths: string[]): void => {
+    onResult(paths);
   };
   p.onDismissed = (): void => {
     onResult([]);
   };
   p.initialPath = initialPath;
+  p.multiSelect = multiSelect;
   SheetUtil.present(p, wrapBuilder(FolderPickerSheetContent));
 }

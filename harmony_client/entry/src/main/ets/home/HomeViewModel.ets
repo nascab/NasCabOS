@@ -153,6 +153,9 @@ export class HomeViewModel {
     if (app === 'upload') {
       return true; // 快速上传已迁移，由页面接线路由
     }
+    if (app === 'photo') {
+      return true; // 照片管理已迁移（Phase1：时间线视图），由页面接线路由
+    }
     return false;
   }
 

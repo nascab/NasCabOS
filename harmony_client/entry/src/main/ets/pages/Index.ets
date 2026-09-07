@@ -12,6 +12,21 @@ import { SettingsPage } from '../settings/SettingsPage';
 import { LegalPage, LegalPageParam } from './LegalPage';
 import { FileBrowserPage, FileBrowserParam } from '../files/views/FileBrowserPage';
 import { UploadCenterPage, UploadCenterParam } from '../transfer/views/UploadCenterPage';
+import { PhotoTimelinePage, PhotoTimelinePageParam } from '../photo/views/timeline/PhotoTimelinePage';
+import { PhotoMainPage, PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
+import { PhotoTrashPage, PhotoTrashPageParam } from '../photo/views/trash/PhotoTrashPage';
+import { PhotoAlbumListPage, PhotoAlbumListPageParam } from '../photo/views/album/PhotoAlbumListPage';
+import {
+  PhotoSmartAlbumListPage, PhotoSmartAlbumListPageParam
+} from '../photo/views/smartalbum/PhotoSmartAlbumListPage';
+import {
+  PhotoCollectionListPage, PhotoCollectionListPageParam
+} from '../photo/views/collection/PhotoCollectionListPage';
+import { PhotoAiFacesPage, PhotoAiFacesPageParam } from '../photo/views/ai/PhotoAiFacesPage';
+import { PhotoAiScenesPage, PhotoAiScenesPageParam } from '../photo/views/ai/PhotoAiScenesPage';
+import { PhotoAiSimilarPage, PhotoAiSimilarPageParam } from '../photo/views/ai/PhotoAiSimilarPage';
+import { PhotoSettingsPage, PhotoSettingsPageParam } from '../photo/views/settings/PhotoSettingsPage';
+import { NavUtil } from '../common/NavUtil';
 
 @Entry
 @Component
@@ -22,6 +37,8 @@ struct Index {
     // 初始化全局弹窗工具（DialogUtil 依赖 UIContext）
     DialogUtil.init(this.getUIContext());
     SheetUtil.init(this.getUIContext());
+    // 初始化全局导航栈（NavUtil 供无参视图与弹层回调推入路由页）
+    NavUtil.init(this.pageStack);
     AppEventBus.onAuthSessionExpired(() => {
       this.pageStack.clear();
     });
@@ -78,6 +95,76 @@ struct Index {
         (n: string, p?: object): void => {
           this.pageStack.pushPathByName(n, p ?? new Object());
         },
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_TIMELINE) {
+      PhotoTimelinePageBuilder(
+        param instanceof PhotoTimelinePageParam ? param : new PhotoTimelinePageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_MAIN) {
+      PhotoMainPageBuilder(
+        param instanceof PhotoMainPageParam ? param : new PhotoMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_TRASH) {
+      PhotoTrashPageBuilder(
+        param instanceof PhotoTrashPageParam ? param : new PhotoTrashPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_ALBUM_LIST) {
+      PhotoAlbumListPageBuilder(
+        param instanceof PhotoAlbumListPageParam ? param : new PhotoAlbumListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_SMART_ALBUM_LIST) {
+      PhotoSmartAlbumListPageBuilder(
+        param instanceof PhotoSmartAlbumListPageParam ? param : new PhotoSmartAlbumListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_COLLECTION_LIST) {
+      PhotoCollectionListPageBuilder(
+        param instanceof PhotoCollectionListPageParam ? param : new PhotoCollectionListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_AI_FACES) {
+      PhotoAiFacesPageBuilder(
+        param instanceof PhotoAiFacesPageParam ? param : new PhotoAiFacesPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_AI_SCENES) {
+      PhotoAiScenesPageBuilder(
+        param instanceof PhotoAiScenesPageParam ? param : new PhotoAiScenesPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_AI_SIMILAR) {
+      PhotoAiSimilarPageBuilder(
+        param instanceof PhotoAiSimilarPageParam ? param : new PhotoAiSimilarPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_SETTINGS) {
+      PhotoSettingsPageBuilder(
+        param instanceof PhotoSettingsPageParam ? param : new PhotoSettingsPageParam(),
         (): void => {
           this.pageStack.pop();
         }
@@ -149,4 +236,54 @@ function FileBrowserPageBuilder(param: FileBrowserParam, pushPage: (name: string
 function UploadCenterPageBuilder(param: UploadCenterParam, pushPage: (name: string, param?: object) => void,
   popPage: () => void) {
   UploadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
+}
+
+@Builder
+function PhotoTimelinePageBuilder(param: PhotoTimelinePageParam, popPage: () => void) {
+  PhotoTimelinePage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoMainPageBuilder(param: PhotoMainPageParam, popPage: () => void) {
+  PhotoMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoTrashPageBuilder(param: PhotoTrashPageParam, popPage: () => void) {
+  PhotoTrashPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoAlbumListPageBuilder(param: PhotoAlbumListPageParam, popPage: () => void) {
+  PhotoAlbumListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoSmartAlbumListPageBuilder(param: PhotoSmartAlbumListPageParam, popPage: () => void) {
+  PhotoSmartAlbumListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoCollectionListPageBuilder(param: PhotoCollectionListPageParam, popPage: () => void) {
+  PhotoCollectionListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoAiFacesPageBuilder(param: PhotoAiFacesPageParam, popPage: () => void) {
+  PhotoAiFacesPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoAiScenesPageBuilder(param: PhotoAiScenesPageParam, popPage: () => void) {
+  PhotoAiScenesPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoAiSimilarPageBuilder(param: PhotoAiSimilarPageParam, popPage: () => void) {
+  PhotoAiSimilarPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoSettingsPageBuilder(param: PhotoSettingsPageParam, popPage: () => void) {
+  PhotoSettingsPage({ param: param, popPage: popPage })
 }

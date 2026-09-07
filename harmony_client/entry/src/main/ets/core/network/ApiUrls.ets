@@ -7,10 +7,18 @@ import { NetworkConfig } from './NetworkConfig';
  * 文件资源 URL 工具（对齐 Flutter api_controller_urls.dart）：
  * - getTinyUrl：缩略图 /api/file/tiny
  * - getRawFileUrl：原始文件 /api/file/rawFile
+ * - getFaceImageUrl：人脸头像 /api/photo/face/image
  * 参数优先走 AES 加密（key=SHA256(serverId)，iv=SHA256(json) 前16位，AES-CBC+PKCS7，base64(iv+cipher)），
  * 失败时回退明文 query（与服务端行为一致）。
  */
 export class ApiUrls {
+  /** 人脸头像缓存时间戳（刷新后更新以避免图片缓存，对齐 Flutter faceImageTimestamp） */
+  private static faceImageTimestamp: number = Date.now();
+
+  /** 刷新人脸头像时间戳（对齐 Flutter refreshFaceImageTimestamp，列表刷新前调用） */
+  static refreshFaceImageTimestamp(): void {
+    ApiUrls.faceImageTimestamp = Date.now();
+  }
   /** SHA-256 摘要（Hex 无关，直接返回字节） */
   private static async sha256(input: string): Promise<Uint8Array> {
     const md = cryptoFramework.createMd('SHA256');
@@ -128,6 +136,42 @@ export class ApiUrls {
       url += '&p2pChannel=file';
     }
     if (withAccessToken && token.length > 0) {
+      url += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  /**
+   * 人脸头像 URL（对齐 Flutter getFaceImageUrl）：
+   * 参数 face_id/size/quality/t/accessToken，AES 加密失败时回退明文 query（与 getTinyUrl 策略一致）。
+   */
+  static async getFaceImageUrl(faceId: number, size: number = 240, quality: number = 85,
+    fileHash: string = ''): Promise<string> {
+    const api = APIClient.getInstance();
+    const base = api.state.baseUrl;
+    const token = api.state.accessToken ?? '';
+    const params = new Map<string, string>();
+    params.set('face_id', `${faceId}`);
+    if (fileHash.trim().length > 0) {
+      params.set('file_hash', fileHash.trim());
+    }
+    params.set('size', `${size}`);
+    params.set('quality', `${quality}`);
+    params.set('t', `${ApiUrls.faceImageTimestamp}`);
+    if (token.length > 0) {
+      params.set('accessToken', token);
+    }
+    const aes = await ApiUrls.encryptParams(params);
+    if (aes.length > 0) {
+      return `${base}/api/photo/face/image?aes=${encodeURIComponent(aes)}`;
+    }
+    let url = `${base}/api/photo/face/image?face_id=${encodeURIComponent(`${faceId}`)}`;
+    if (fileHash.trim().length > 0) {
+      url += `&file_hash=${encodeURIComponent(fileHash.trim())}`;
+    }
+    url += `&size=${encodeURIComponent(`${size}`)}&quality=${encodeURIComponent(`${quality}`)}`;
+    url += `&t=${encodeURIComponent(`${ApiUrls.faceImageTimestamp}`)}`;
+    if (token.length > 0) {
       url += `&accessToken=${encodeURIComponent(token)}`;
     }
     return url;

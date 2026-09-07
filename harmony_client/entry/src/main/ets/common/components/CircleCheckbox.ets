@@ -9,6 +9,8 @@ export struct CircleCheckbox {
   @Param value: boolean = false;
   /** 尺寸（Flutter Checkbox 视觉尺寸约 22） */
   @Param boxSize: number = 22;
+  /** 未选中边框色（照片网格内为白色描边） */
+  @Param uncheckedBorderColor: string = '#A3A3A3';
   @Param onChanged: (checked: boolean) => void = (_checked: boolean) => {
   };
 
@@ -27,7 +29,7 @@ export struct CircleCheckbox {
     .borderRadius(this.boxSize / 2)
     .border({
       width: 2,
-      color: this.value ? this.palette().primary : '#A3A3A3'
+      color: this.value ? this.palette().primary : this.uncheckedBorderColor
     })
     .backgroundColor(this.value ? this.palette().primary : '#00000000')
     .onClick(() => {

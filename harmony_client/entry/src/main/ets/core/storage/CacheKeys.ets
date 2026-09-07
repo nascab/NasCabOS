@@ -19,4 +19,5 @@ export class CacheKeys {
   static readonly PRIVACY_CONSENT_ACCEPTED: string = 'privacy_consent_accepted';
   static readonly SELECTED_LANGUAGE: string = 'selected_language';
   static readonly THEME_MODE: string = 'theme_mode';
+  static readonly PHOTO_PREVIEW_WIFI_ORIGINAL: string = 'photo_preview_wifi_original';
 }
