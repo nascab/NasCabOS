@@ -261,6 +261,12 @@ export class VideoUtils {
     if (posterPath.length > 0) {
       return ApiUrls.getRawFileUrl(posterPath);
     }
+    const fallbackFilePath = item.firstFilePath.length > 0 ? item.firstFilePath : item.fullPath;
+    if (fallbackFilePath.trim().length === 0) {
+      // 诊断日志：三个图片来源字段均为空时输出，便于定位大图不显示
+      console.error(`[VideoFanart] no image source: id=${item.id}, name=${item.nfoName}`);
+      return '';
+    }
     return VideoUtils.getPosterUrl(item, 1600);
   }
 

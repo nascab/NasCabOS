@@ -113,6 +113,8 @@ export struct VideoItemPoster {
         Column() {
           this.MoreBadge()
         }
+        // 右上角 more 按钮：距右缘留 6px（对齐 Flutter Positioned right:6）
+        .padding({ right: 6 })
         .position({ x: '100%', y: 6 })
         .markAnchor({ x: '100%' })
         .onClick(() => {

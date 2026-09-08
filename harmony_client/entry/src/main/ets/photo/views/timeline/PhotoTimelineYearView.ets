@@ -1,6 +1,7 @@
 import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
+import { AppImage } from '../../../common/components/AppImage';
 import { TimelineController } from '../../controllers/TimelineController';
 import { TimelineYearItem } from '../../models/PhotoModels';
 import { PhotoTimelineApiService } from '../../service/PhotoTimelineApiService';
@@ -139,12 +140,15 @@ struct YearCard {
 
   build() {
     Stack() {
-      Image(this.tinyUrl.length > 0 ? this.tinyUrl : $rawfile('icons/no_data.png'))
-        .width('100%')
-        .height('100%')
-        .objectFit(ImageFit.Cover)
-        .draggable(false)
-        .alt($rawfile('icons/no_data.png'))
+      if (this.tinyUrl.length > 0) {
+        AppImage({ url: this.tinyUrl })
+      } else {
+        Image($rawfile('icons/no_data.png'))
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .draggable(false)
+      }
       // 底部黑色渐变遮罩（对齐 Flutter LinearGradient bottom→top）
       Column()
         .width('100%')

@@ -5,6 +5,7 @@ import { AppRouter } from '../../router/AppRouter';
 import { VideoHomeItemBean } from '../models/VideoModels';
 import { VideoDetailPageParam } from '../router/VideoRoutes';
 import { buildVideoHomeMeta, videoMediaTypeText, VideoUtils } from '../utils/VideoItemUtils';
+import { AppImage } from '../../common/components/AppImage';
 
 /**
  * 首页推荐轮播（对齐 Flutter _AppVideoRecommendSwiper）：
@@ -26,6 +27,13 @@ export struct VideoRecommendSwiper {
 
   aboutToDisappear(): void {
     this.stopTimer();
+  }
+
+  /** 首页数据异步到达后重新加载背景图并重启轮播（items 引用被整体替换时触发） */
+  @Monitor('items')
+  onItemsChange(): void {
+    this.loadImages();
+    this.startTimer();
   }
 
   private loadImages(): void {
@@ -191,11 +199,7 @@ export struct VideoRecommendSwiper {
   SwiperItem(item: VideoHomeItemBean, i: number) {
     Stack() {
       if (i < this.imageUrls.length && this.imageUrls[i].length > 0) {
-        Image(this.imageUrls[i])
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.imageUrls[i], objectFit: ImageFit.Cover })
       } else {
         Column()
           .width('100%')

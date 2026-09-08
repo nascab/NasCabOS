@@ -6,6 +6,7 @@ import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { SheetHandle, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { AppImage } from '../../../common/components/AppImage';
 import { PhotoMapIndexItem, PhotoMapTileServer } from '../../models/PhotoMapModels';
 import { MapBounds, PhotoFootprintMapController } from '../../controllers/PhotoFootprintMapController';
 import { LatLang } from '../../utils/CoordinateTransform';
@@ -296,11 +297,7 @@ struct MapMarker {
     Column() {
       Stack() {
         if (this.url.length > 0) {
-          Image(this.url)
-            .width('100%')
-            .height('100%')
-            .objectFit(ImageFit.Cover)
-            .draggable(false)
+          AppImage({ url: this.url })
         } else {
           Column() {
             SymbolGlyph($r('sys.symbol.picture'))
@@ -392,13 +389,10 @@ struct MapTile {
   }
 
   build() {
-    Image(this.tileUrl())
+    AppImage({ url: this.tileUrl() })
       .width(this.rect().size)
       .height(this.rect().size)
       .position({ x: this.rect().left, y: this.rect().top })
-      .backgroundColor('#D9D9D9')
-      .draggable(false)
-      .interpolation(ImageInterpolation.Medium)
   }
 }
 

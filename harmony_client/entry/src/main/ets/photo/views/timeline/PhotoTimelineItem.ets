@@ -1,5 +1,6 @@
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
+import { AppImage } from '../../../common/components/AppImage';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
 import { TimelineController } from '../../controllers/TimelineController';
 import { TimelinePhotoItem } from '../../models/PhotoModels';
@@ -43,13 +44,20 @@ export struct PhotoTimelineItem {
 
   build() {
     Stack() {
-      Image(this.tinyUrl.length > 0 ? this.tinyUrl : $rawfile('icons/no_data.png'))
-        .width('100%')
-        .height('100%')
-        .objectFit(this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain)
-        .borderRadius(4)
-        .draggable(false)
-        .alt($rawfile('icons/no_data.png'))
+      if (this.tinyUrl.length > 0) {
+        AppImage({
+          url: this.tinyUrl,
+          objectFit: this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain,
+          imageRadius: 4
+        })
+      } else {
+        Image($rawfile('icons/no_data.png'))
+          .width('100%')
+          .height('100%')
+          .objectFit(this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain)
+          .borderRadius(4)
+          .draggable(false)
+      }
 
       // 选中遮罩
       if (this.ctrl.isSelected(this.item.id)) {

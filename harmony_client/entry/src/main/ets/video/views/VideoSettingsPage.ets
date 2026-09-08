@@ -21,7 +21,9 @@ export struct VideoSettingsPage {
       onBack: (): void => {
         this.popPage();
       },
-      content: this.SettingsContent
+      content: (): void => {
+        this.SettingsContent()
+      }
     })
   }
 

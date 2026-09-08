@@ -11,20 +11,21 @@ import { VideoHomeApiService } from '../service/VideoApiServices';
  * 拉取首页数据（推荐/最近播放/最近添加电影/电视剧）；
  * 管理员且未配置来源路径时弹提示引导前往影音设置（仅提示一次）。
  */
+@ObservedV2
 export class VideoHomeController {
   /** 打开影音设置页（由视图注入，避免控制器依赖页面组件） */
   onOpenSettings: () => void = (): void => {
     NavUtil.push(AppRouter.VIDEO_SETTINGS, new Object());
   };
-  /** 数据变化回调（由视图注入以刷新 UI） */
+  /** 数据变化回调（保留：视图据此 tick++ 兜底刷新） */
   onDataChanged: () => void = (): void => {
   };
 
-  recommend: VideoHomeItemBean[] = [];
-  recentPlay: VideoHomeItemBean[] = [];
-  recentAddMovie: VideoHomeItemBean[] = [];
-  recentAddTv: VideoHomeItemBean[] = [];
-  loading: boolean = false;
+  @Trace recommend: VideoHomeItemBean[] = [];
+  @Trace recentPlay: VideoHomeItemBean[] = [];
+  @Trace recentAddMovie: VideoHomeItemBean[] = [];
+  @Trace recentAddTv: VideoHomeItemBean[] = [];
+  @Trace loading: boolean = false;
   private alertWhenNoSourcePath: boolean;
   private sourceEmptyDialogShown: boolean = false;
 
@@ -43,6 +44,8 @@ export class VideoHomeController {
       const res = await new VideoHomeApiService().getHomeData(
         recommendLimit, recentPlayLimit, recentAddLimit);
       if (!res.success || res.data === undefined) {
+        // 失败保持 UI 静默（对齐 Flutter），仅输出日志便于诊断首页空白
+        console.error(`[VideoHome] /api/video/home/data failed: code=${res.code}, message=${res.message}`);
         return;
       }
       const data: VideoHomeData = res.data;
@@ -63,6 +66,9 @@ export class VideoHomeController {
       } else {
         this.sourceEmptyDialogShown = false;
       }
+    } catch (e) {
+      // 异常兜底：避免冒泡导致页面异常，日志便于定位（解析失败/网络异常等）
+      console.error(`[VideoHome] /api/video/home/data error: ${e}`);
     } finally {
       this.loading = false;
       this.onDataChanged();

@@ -127,6 +127,8 @@ export struct VideoDetailPage {
             }
             .width('100%')
             .height(this.topHeight())
+            // 顶部图沉浸式：绘制延伸到状态栏后面（对齐 Flutter 全屏详情页）
+            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
             Column() {
               VideoDetailStorylineSection({ ctrl: this.ctrl })
@@ -206,8 +208,9 @@ export struct VideoDetailPage {
         }
         .alignItems(VerticalAlign.Center)
         .width('100%')
-        .height(40)
-        .padding({ left: 12, right: 12, top: 56 })
+        // 显式顶部定位（Stack 子项默认垂直居中），高度自适应；内容区已避让状态栏
+        .padding({ left: 12, right: 12, top: 10 })
+        .position({ x: 0, y: 0 })
 
         // 加载中
         if (this.ctrl.loading && !this.ctrl.hasItem) {

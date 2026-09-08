@@ -3,6 +3,7 @@ import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { DialogUtil, DialogResult } from '../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { AppImage } from '../../../common/components/AppImage';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
@@ -308,13 +309,16 @@ struct FaceGridItem {
       Stack() {
         // 圆形头像（对齐 Flutter ClipOval + getFaceImageUrl）
         Column() {
-          Image(this.avatarUrl.length > 0 ? this.avatarUrl : $rawfile('icons/no_data.png'))
-            .width(this.avatarSize)
-            .height(this.avatarSize)
-            .objectFit(ImageFit.Cover)
-            .borderRadius(this.avatarSize / 2)
-            .draggable(false)
-            .alt($rawfile('icons/no_data.png'))
+          if (this.avatarUrl.length > 0) {
+            AppImage({ url: this.avatarUrl, imageRadius: this.avatarSize / 2 })
+          } else {
+            Image($rawfile('icons/no_data.png'))
+              .width(this.avatarSize)
+              .height(this.avatarSize)
+              .objectFit(ImageFit.Cover)
+              .borderRadius(this.avatarSize / 2)
+              .draggable(false)
+          }
         }
         .width(this.avatarSize)
         .height(this.avatarSize)

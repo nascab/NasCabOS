@@ -1,6 +1,7 @@
 import { AppTheme } from '../../core/theme/AppTheme';
 import { VideoAlbumPreviewItem, VideoHomeItemBean } from '../models/VideoModels';
 import { VideoUtils } from '../utils/VideoItemUtils';
+import { AppImage } from '../../common/components/AppImage';
 
 /** 预览条单元图（异步加载海报缩略 URL） */
 @ComponentV2
@@ -21,11 +22,7 @@ export struct VideoAlbumPreviewImage {
   build() {
     Stack() {
       if (this.imageUrl.length > 0) {
-        Image(this.imageUrl)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.imageUrl, objectFit: ImageFit.Cover })
       } else {
         Column()
           .width('100%')

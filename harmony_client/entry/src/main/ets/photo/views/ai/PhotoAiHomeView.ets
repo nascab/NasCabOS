@@ -4,6 +4,7 @@ import { ApiUrls } from '../../../core/network/ApiUrls';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
+import { AppImage } from '../../../common/components/AppImage';
 import { GlassCard } from '../../../common/components/GlassCard';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { AiFaceItem, AiSceneItem } from '../../models/PhotoAiModels';
@@ -464,11 +465,9 @@ struct FaceAvatar {
 
   build() {
     if (this.url.length > 0) {
-      Image(this.url)
+      AppImage({ url: this.url })
         .width(this.avatarSize)
         .height(this.avatarSize)
-        .objectFit(ImageFit.Cover)
-        .draggable(false)
     } else {
       Column() {
         SymbolGlyph($r('sys.symbol.person'))
@@ -516,11 +515,7 @@ struct SceneCover {
   build() {
     Stack() {
       if (this.url.length > 0) {
-        Image(this.url)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.url })
       } else {
         Column() {
           SymbolGlyph($r('sys.symbol.picture'))

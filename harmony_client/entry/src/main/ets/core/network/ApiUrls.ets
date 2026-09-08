@@ -109,8 +109,8 @@ export class ApiUrls {
     return url;
   }
 
-  /** 原始文件 URL（对齐 Flutter getRawFileUrl） */
-  static async getRawFileUrl(filePath: string, withAccessToken: boolean = false): Promise<string> {
+  /** 原始文件 URL（对齐 Flutter getRawFileUrl；与 getTinyUrl 一致始终携带 accessToken，服务器图片接口需要鉴权） */
+  static async getRawFileUrl(filePath: string, withAccessToken: boolean = true): Promise<string> {
     const api = APIClient.getInstance();
     const base = api.state.baseUrl;
     const token = api.state.accessToken ?? '';

@@ -81,7 +81,7 @@ export struct HomePage {
         const param = new PhotoMainPageParam();
         param.title = L10n.t('app_photo', '照片管理');
         this.pushPage(AppRouter.PHOTO_MAIN, param);
-      } else if (app === 'video') {
+      } else if (app === 'movie') {
         this.pushPage(AppRouter.VIDEO_MAIN, new VideoMainPageParam());
       }
       return;

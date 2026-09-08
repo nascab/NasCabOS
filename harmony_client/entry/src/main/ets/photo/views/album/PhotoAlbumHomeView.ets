@@ -1,6 +1,7 @@
 import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
+import { AppImage } from '../../../common/components/AppImage';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
 import { AppEventBus, EVENT_PHOTO_ALBUM_OVERVIEW_CHANGED } from '../../../common/AppEventBus';
@@ -127,11 +128,7 @@ export struct PhotoAlbumCardView {
     Stack() {
       // 封面：空时占位背景 + no_data 图（对齐 Flutter _PreviewImage）
       if (this.coverUrl.length > 0) {
-        Image(this.coverUrl)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.coverUrl })
       } else {
         Column() {
           Image($rawfile('icons/no_data.png'))

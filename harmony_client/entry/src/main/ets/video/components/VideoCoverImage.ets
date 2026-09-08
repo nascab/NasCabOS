@@ -1,6 +1,7 @@
 import { AppTheme } from '../../core/theme/AppTheme';
 import { VideoHomeItemBean } from '../models/VideoModels';
 import { VideoUtils } from '../utils/VideoItemUtils';
+import { AppImage } from '../../common/components/AppImage';
 
 /**
  * 视频封面图（对齐 Flutter VideoItemCoverImage / CustomExtendedImage）：
@@ -52,11 +53,11 @@ export struct VideoCoverImage {
   build() {
     Stack() {
       if (this.imageUrl.length > 0) {
-        Image(this.imageUrl)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({
+          url: this.imageUrl,
+          objectFit: ImageFit.Cover,
+          imageRadius: this.imageRadius
+        })
       } else {
         Column()
           .width('100%')
@@ -85,6 +86,9 @@ export struct VideoCoverImage {
         .padding({ left: 8, right: 8, bottom: 8 })
         .width('100%')
         .hitTestBehavior(HitTestMode.None)
+        // 徽标行贴卡片底部（Stack 子项默认垂直居中，需显式定位底部）
+        .position({ x: 0, y: '100%' })
+        .markAnchor({ y: '100%' })
       }
     }
     .width('100%')

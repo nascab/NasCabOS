@@ -3,6 +3,7 @@ import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { DialogUtil, DialogResult } from '../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { AppImage } from '../../../common/components/AppImage';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { PageScaffold } from '../../../common/PageScaffold';
@@ -110,13 +111,7 @@ struct SceneGridItem {
     Column({ space: 6 }) {
       Stack() {
         if (this.coverUrl.length > 0) {
-          Image(this.coverUrl)
-            .width(this.coverSize)
-            .height(this.coverSize)
-            .objectFit(ImageFit.Cover)
-            .borderRadius(12)
-            .draggable(false)
-            .alt($rawfile('icons/no_data.png'))
+          AppImage({ url: this.coverUrl, imageRadius: 12 })
         } else {
           // 无封面占位（对齐 Flutter Icons.landscape_outlined 占位）
           Column() {

@@ -60,8 +60,10 @@ export struct VideoHomePage {
               Column() {
                 VideoRecommendSwiper({ items: this.ctrl.recommend })
               }
+              // 轮播沉浸式：背景图绘制延伸到状态栏后面（对齐 Flutter 首页全屏轮播）
               .width('100%')
               .height('52%')
+              .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
             } else if (!this.ctrl.isEmpty()) {
               Column().width('100%').height(38)
             }

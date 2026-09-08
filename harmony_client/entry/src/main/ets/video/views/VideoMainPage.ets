@@ -151,16 +151,16 @@ export struct VideoMainPage {
   @Builder
   FloatingModeBar() {
     Row() {
-      this.ModeChip(L10n.t('home', '首页'), this.libraryIndex === 0, (): void => {
+      this.ModeChip(L10n.t('home', '首页'), 0, (): void => {
         this.libraryIndex = 0;
       })
-      this.ModeChip(L10n.t('video_home_type_movie', '电影'), this.libraryIndex === 1, (): void => {
+      this.ModeChip(L10n.t('video_home_type_movie', '电影'), 1, (): void => {
         this.libraryIndex = 1;
       })
-      this.ModeChip(L10n.t('video_home_type_tv', '电视剧'), this.libraryIndex === 2, (): void => {
+      this.ModeChip(L10n.t('video_home_type_tv', '电视剧'), 2, (): void => {
         this.libraryIndex = 2;
       })
-      this.ModeChip(L10n.t('favorites', '收藏'), this.libraryIndex === 3, (): void => {
+      this.ModeChip(L10n.t('favorites', '收藏'), 3, (): void => {
         this.libraryIndex = 3;
       })
     }
@@ -172,13 +172,14 @@ export struct VideoMainPage {
     .margin({ left: 16, right: 16, bottom: 10 })
   }
 
+  /** 选中态在 @Builder 内直接读取 this.libraryIndex（@Builder 按值传参不随状态刷新） */
   @Builder
-  ModeChip(label: string, selected: boolean, onTap: () => void) {
+  ModeChip(label: string, index: number, onTap: () => void) {
     Column() {
       Text(label)
         .fontSize(14)
-        .fontWeight(selected ? FontWeight.Bold : FontWeight.Medium)
-        .fontColor(selected ? '#FFFFFF' : AppTheme.current().onSurface)
+        .fontWeight(this.libraryIndex === index ? FontWeight.Bold : FontWeight.Medium)
+        .fontColor(this.libraryIndex === index ? '#FFFFFF' : AppTheme.current().onSurface)
         .maxLines(1)
         .textAlign(TextAlign.Center)
     }
@@ -186,7 +187,7 @@ export struct VideoMainPage {
     .height(32)
     .justifyContent(FlexAlign.Center)
     .borderRadius(16)
-    .backgroundColor(selected ? AppTheme.current().primary : Color.Transparent)
+    .backgroundColor(this.libraryIndex === index ? AppTheme.current().primary : Color.Transparent)
     .onClick(() => {
       onTap();
     })

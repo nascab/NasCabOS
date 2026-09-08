@@ -14,6 +14,7 @@ import { VideoItemPoster } from './VideoItemPoster';
 import { VideoItemActions, VideoSearchMediaHelper } from './VideoItemViews';
 import { VideoDetailPageParam, VideoListPageParam } from '../router/VideoRoutes';
 import { VideoUtils } from '../utils/VideoItemUtils';
+import { AppImage } from '../../common/components/AppImage';
 
 /**
  * 视频详情页区块组件（对齐 Flutter video/detail/view/parts，移动端版式）：
@@ -98,24 +99,12 @@ export struct DetailAsyncImage {
   }
 
   build() {
-    Stack() {
-      if (this.url.length > 0) {
-        Image(this.url)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
-      } else {
-        Column()
-          .width('100%')
-          .height('100%')
-          .backgroundColor(DetailColors.container)
-      }
-    }
-    .width('100%')
-    .height('100%')
-    .borderRadius(this.imageRadius)
-    .clip(true)
+    AppImage({
+      url: this.url,
+      objectFit: ImageFit.Cover,
+      imageRadius: this.imageRadius,
+      showLoadingSpin: false
+    })
   }
 }
 
@@ -127,6 +116,12 @@ export struct VideoDetailTopSection {
   @Local logoUrl: string = '';
 
   aboutToAppear(): void {
+    this.loadImages();
+  }
+
+  /** 详情数据异步到达后重新解析图片（item 是 raw 的 getter，需监听 raw 替换） */
+  @Monitor('ctrl.raw')
+  onRawChange(): void {
     this.loadImages();
   }
 
@@ -243,11 +238,7 @@ export struct VideoDetailTopSection {
   build() {
     Stack() {
       if (this.fanartUrl.length > 0) {
-        Image(this.fanartUrl)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.fanartUrl, objectFit: ImageFit.Cover, showLoadingSpin: false })
       } else {
         Column()
           .width('100%')
@@ -272,8 +263,7 @@ export struct VideoDetailTopSection {
       // 左下信息
       Column() {
         if (this.logoUrl.length > 0) {
-          Image(this.logoUrl)
-            .objectFit(ImageFit.Contain)
+          AppImage({ url: this.logoUrl, objectFit: ImageFit.Contain, showLoadingSpin: false })
             .height(60)
             .width('55%')
             .constraintSize({ maxWidth: 220 })

@@ -1,6 +1,7 @@
 import { AppTheme } from '../../core/theme/AppTheme';
 import { NavUtil } from '../../common/NavUtil';
 import { AppRouter } from '../../router/AppRouter';
+import { AppImage } from '../../common/components/AppImage';
 import { VideoHomeItemBean } from '../models/VideoModels';
 import { VideoUtils, buildVideoHomeMeta, videoMediaTypeText } from '../utils/VideoItemUtils';
 import { VideoItemActions } from './VideoItemViews';
@@ -27,11 +28,7 @@ export struct VideoItemRecommend {
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       if (this.imageUrl.length > 0) {
-        Image(this.imageUrl)
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .draggable(false)
+        AppImage({ url: this.imageUrl, objectFit: ImageFit.Cover })
       } else {
         Column()
           .width('100%')

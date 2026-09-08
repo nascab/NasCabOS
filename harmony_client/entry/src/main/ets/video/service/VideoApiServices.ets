@@ -297,6 +297,9 @@ export class VideoListApiService {
     const res = await this.api().apiPost<VideoListPagedResult>('/api/video/list', body,
       undefined, undefined, undefined, parseVideoListPagedResult);
     if (!res.success || res.data === undefined) {
+      // 失败保持 UI 静默（对齐 Flutter），输出日志便于诊断列表空白/空态
+      console.error(`[VideoList] /api/video/list failed: listType=${listType}, mediaType=${mediaType}, ` +
+        `page=${page}, code=${res.code}, message=${res.message}`);
       return new VideoListPagedResult();
     }
     return res.data;

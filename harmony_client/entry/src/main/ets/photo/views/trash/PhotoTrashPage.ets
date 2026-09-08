@@ -4,6 +4,7 @@ import { ApiUrls } from '../../../core/network/ApiUrls';
 import { APIClient } from '../../../core/network/APIClient';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { AppImage } from '../../../common/components/AppImage';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
@@ -270,13 +271,16 @@ struct TrashGridItem {
 
   build() {
     Stack() {
-      Image(this.tinyUrl.length > 0 ? this.tinyUrl : $rawfile('icons/no_data.png'))
-        .width('100%')
-        .height('100%')
-        .objectFit(ImageFit.Cover)
-        .borderRadius(4)
-        .draggable(false)
-        .alt($rawfile('icons/no_data.png'))
+      if (this.tinyUrl.length > 0) {
+        AppImage({ url: this.tinyUrl, imageRadius: 4 })
+      } else {
+        Image($rawfile('icons/no_data.png'))
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .borderRadius(4)
+          .draggable(false)
+      }
 
       // 选中状态覆盖层（对齐 Flutter isSelected 遮罩）
       if (this.ctrl.isSelected(this.item.id)) {

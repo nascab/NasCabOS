@@ -109,8 +109,12 @@ export struct VideoListPage {
       onBack: (): void => {
         this.popPage();
       },
-      actions: this.listActions,
-      content: this.listContent
+      actions: (): void => {
+        this.listActions()
+      },
+      content: (): void => {
+        this.listContent()
+      }
     })
   }
 

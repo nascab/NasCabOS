@@ -4,6 +4,7 @@ import { ApiUrls } from '../../../core/network/ApiUrls';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { AppImage } from '../../../common/components/AppImage';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
@@ -107,13 +108,16 @@ struct SimilarPhotoTile {
   build() {
     Column({ space: 4 }) {
       Stack() {
-        Image(this.tinyUrl.length > 0 ? this.tinyUrl : $rawfile('icons/no_data.png'))
-          .width('100%')
-          .height('100%')
-          .objectFit(ImageFit.Cover)
-          .borderRadius(6)
-          .draggable(false)
-          .alt($rawfile('icons/no_data.png'))
+        if (this.tinyUrl.length > 0) {
+          AppImage({ url: this.tinyUrl, imageRadius: 6 })
+        } else {
+          Image($rawfile('icons/no_data.png'))
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Cover)
+            .borderRadius(6)
+            .draggable(false)
+        }
 
         // 选中遮罩（对齐 Flutter selected 覆盖层）
         if (this.ctrl.isSelected(this.photo.id)) {
