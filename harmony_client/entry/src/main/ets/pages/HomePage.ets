@@ -1,8 +1,10 @@
 import { image } from '@kit.ImageKit';
+import { window } from '@kit.ArkUI';
 import { L10n } from '../core/localization/L10n';
 import { APIClient } from '../core/network/APIClient';
 import { CurrentUserStore } from '../core/user/CurrentUserStore';
 import { AppEventBus } from '../common/AppEventBus';
+import { WindowStore } from '../common/WindowStore';
 import { HomeViewModel } from '../home/HomeViewModel';
 import { WallpaperLoader } from '../home/WallpaperLoader';
 import { HomeServerInfoCard } from '../home/views/HomeServerInfoCard';
@@ -29,6 +31,8 @@ export struct HomePage {
   @Param pushPage: (name: string, param?: object) => void = (_name: string, _param?: object) => {
   };
   private lastWallpaperUrl: string = '';
+  /** 状态栏高度（vp）：全屏布局下内容用它避让（壁纸背景仍顶格） */
+  @Local statusBarHeight: number = 0;
   @Local localeBump: number = 0;
   private localeListener: (data: string) => void = (_data: string) => {
     this.vm.notifyLocaleChanged();
@@ -37,8 +41,18 @@ export struct HomePage {
 
   aboutToAppear(): void {
     this.vm.init();
+    this.fetchStatusBarHeight();
     void this.refreshWallpaper();
     AppEventBus.on(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
+  }
+
+  private fetchStatusBarHeight(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const area = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(area.topRect.height);
   }
 
   aboutToDisappear(): void {
@@ -100,6 +114,13 @@ export struct HomePage {
     }
     .hideTitleBar(true)
     .mode(NavDestinationMode.STANDARD)
+    .onShown((): void => {
+      // 首页为沉浸式（壁纸顶格）：每次显示确保全屏布局，从设置等常规页返回时零跳动
+      const w = WindowStore.getMainWindow();
+      if (w !== undefined) {
+        w.setWindowLayoutFullScreen(true);
+      }
+    })
     // 依赖 localeBump：切换语言后触发首页整体刷新
     .opacity(this.localeBump >= 0 ? 1 : 1)
   }
@@ -178,7 +199,8 @@ export struct HomePage {
       }
       .width('100%')
       .height('100%')
-      .padding({ top: 8, bottom: 24 })
+      // 全屏布局下避让状态栏（壁纸背景层仍顶格延伸）
+      .padding({ top: this.statusBarHeight + 8, bottom: 24 })
 
       if (this.showUserInfo) {
         HomeUserInfoDialog({

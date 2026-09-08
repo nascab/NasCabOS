@@ -372,20 +372,20 @@ export struct VideoDetailStorylineSection {
   }
 
   build() {
-    Row() {
-      Text(`${L10n.t('video_detail_storyline', '剧情简介')}:`)
+    // 标题与内容合并为单个 Text（标题在最前，粗体区分），点击查看完整信息
+    Text() {
+      Span(`${L10n.t('video_detail_storyline', '剧情简介')}:`)
         .fontSize(14)
         .fontWeight(FontWeight.Bold)
         .fontColor(DetailColors.alpha(0.9))
-      Text(this.storyline())
+      Span(` ${this.storyline()}`)
         .fontSize(14)
         .fontColor(DetailColors.alpha(0.85))
-        .lineHeight(22)
-        .maxLines(4)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .layoutWeight(1)
     }
-    .alignItems(VerticalAlign.Top)
+    .lineHeight(22)
+    .maxLines(4)
+    .textOverflow({ overflow: TextOverflow.Ellipsis })
+    .copyOption(CopyOptions.InApp)
     .padding({ top: 6, bottom: 6 })
     .borderRadius(12)
     .width('100%')
@@ -1059,6 +1059,8 @@ export struct VideoDetailEpisodeSection {
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
       .borderRadius(10)
       .backgroundColor(selected ? DetailColors.playBlue : DetailColors.container)
+      // chip 之间右侧间距 + 换行行间距
+      .margin({ right: 8, bottom: 8 })
       .onClick(() => {
         void this.ctrl.jumpToEpisodePage(page);
       })
@@ -1081,6 +1083,8 @@ export struct VideoDetailEpisodeSection {
           this.PagerChip(c.page, c.label, c.selected)
         }, (c: VideoPagerChip): string => `${c.page}`)
       }
+      // 与剧集列表之间留白
+      .margin({ bottom: 12 })
     }
   }
 
@@ -1155,9 +1159,9 @@ export struct VideoDetailEpisodeSection {
         Column() {
           this.PlayBadge()
         }
-        .position({ x: '100%', y: 6 })
-        .markAnchor({ x: '100%' })
+        .margin({ top: 6, right: 6 })
       }
+      .alignContent(Alignment.TopEnd)
       .width(115)
       .height(95)
       .border({ width: 1, color: DetailColors.alpha(0.3) })
@@ -1226,10 +1230,10 @@ export struct VideoDetailEpisodeSection {
           Column() {
             this.PlayBadge()
           }
-          .position({ x: '100%', y: 6 })
-          .markAnchor({ x: '100%' })
+          .margin({ top: 6, right: 6 })
         }
       }
+      .alignContent(Alignment.TopEnd)
       .width(115)
       .height(95)
       .border({ width: 1, color: DetailColors.alpha(0.3) })

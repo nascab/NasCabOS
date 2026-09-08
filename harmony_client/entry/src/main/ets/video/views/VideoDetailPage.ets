@@ -1,8 +1,10 @@
 import { window } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { DialogUtil } from '../../common/DialogUtil';
 import { AppEventBus } from '../../common/AppEventBus';
+import { WindowStore } from '../../common/WindowStore';
 import { ThemeManager } from '../../core/theme/ThemeManager';
 import { asNum, asStr } from '../models/VideoModels';
 import { VideoDetailController } from '../controllers/VideoDetailController';
@@ -29,6 +31,10 @@ export struct VideoDetailPage {
   @Local bodyHeight: number = 0;
   @Local themeTick: number = 0;
   private errorDialogShown: boolean = false;
+  /** 状态栏高度（vp）：全屏布局后浮层用它避让 */
+  @Local statusBarHeight: number = 0;
+  /** 延迟重设全屏的定时器（push 转场期间系统可能回滚全屏设置，转场后纠正） */
+  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
   };
@@ -37,7 +43,49 @@ export struct VideoDetailPage {
     this.ctrl = new VideoDetailController(this.param.indexId);
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.applyStatusBar();
+    this.setFullScreen(true);
+    this.fetchStatusBarHeight();
     void this.ctrl.refreshDetail();
+  }
+
+  /** 全屏沉浸布局：同步调用，写顺序=调用顺序，杜绝异步竞态 */
+  private setFullScreen(full: boolean): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      hilog.error(0x0000, 'FullScreen', 'VideoDetail mainWindow undefined');
+      return;
+    }
+    w.setWindowLayoutFullScreen(full).then((): void => {
+      hilog.info(0x0000, 'FullScreen', 'VideoDetail set %{public}s ok, now=%{public}s',
+        `${full}`, `${w.getWindowProperties().isLayoutFullScreen}`);
+    }).catch((e: Object): void => {
+      hilog.error(0x0000, 'FullScreen', 'VideoDetail set %{public}s failed: %{public}s',
+        `${full}`, JSON.stringify(e));
+    });
+  }
+
+  /** onShown 后延迟重设全屏：纠正系统在 push 转场期间对全屏设置的回滚 */
+  private scheduleFullScreenRetry(): void {
+    this.clearRetryTimer();
+    this.retryTimer = setTimeout((): void => {
+      this.setFullScreen(true);
+    }, 120);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
+  }
+
+  private fetchStatusBarHeight(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const area = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(area.topRect.height);
   }
 
   /** 加载结束后检查失败弹窗（对齐 Flutter Obx 内 addPostFrameCallback 逻辑） */
@@ -50,7 +98,8 @@ export struct VideoDetailPage {
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 恢复主题默认状态栏
+    // 不在此恢复非全屏：pop 回影音主页时由其 onShown 重新设全屏，
+    // push 常规页时由 PageScaffold 恢复；离开者不写，避免异步竞态
     const p = AppTheme.current();
     VideoDetailPage.setStatusBar(getContext(this), p.statusBarContent, '#00000000');
   }
@@ -127,8 +176,6 @@ export struct VideoDetailPage {
             }
             .width('100%')
             .height(this.topHeight())
-            // 顶部图沉浸式：绘制延伸到状态栏后面（对齐 Flutter 全屏详情页）
-            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
             Column() {
               VideoDetailStorylineSection({ ctrl: this.ctrl })
@@ -208,8 +255,9 @@ export struct VideoDetailPage {
         }
         .alignItems(VerticalAlign.Center)
         .width('100%')
-        // 显式顶部定位（Stack 子项默认垂直居中），高度自适应；内容区已避让状态栏
-        .padding({ left: 12, right: 12, top: 10 })
+        // 显式顶部定位（Stack 子项默认垂直居中），高度自适应；
+        // 全屏布局下页面从状态栏顶开始，浮层需避让状态栏高度
+        .padding({ left: 12, right: 12, top: this.statusBarHeight + 10 })
         .position({ x: 0, y: 0 })
 
         // 加载中
@@ -246,6 +294,15 @@ export struct VideoDetailPage {
       .opacity(this.themeTick >= 0 ? 1 : 1)
     }
     .hideTitleBar(true)
+    .onShown((): void => {
+      // 转场动画完成后再次确保全屏（从常规避让页面 push 时 aboutToAppear 期间设置可能被覆盖）
+      this.setFullScreen(true);
+      this.scheduleFullScreenRetry();
+    })
+    .onHidden((): void => {
+      // 页面被覆盖（push 子页）时取消延迟重设，避免污染子页面的全屏状态
+      this.clearRetryTimer();
+    })
     .onBackPressed(() => {
       this.popPage();
       return true;

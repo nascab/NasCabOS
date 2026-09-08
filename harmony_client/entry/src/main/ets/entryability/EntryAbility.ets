@@ -4,6 +4,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { AppBootstrap } from '../AppBootstrap';
 import { ThemeManager } from '../core/theme/ThemeManager';
+import { WindowStore } from '../common/WindowStore';
 
 const DOMAIN = 0x0000;
 
@@ -17,6 +18,8 @@ export default class EntryAbility extends UIAbility {
   }
 
   async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
+    // 缓存主窗口供页面同步调用（setWindowLayoutFullScreen 等需要避免异步竞态）
+    WindowStore.setMainWindow(windowStage.getMainWindowSync());
     // 等待初始化完成后再加载页面，保证 preferences 就绪（服务器列表等本地数据可读取）
     try {
       await AppBootstrap.init(this.context, this.context.config?.colorMode);

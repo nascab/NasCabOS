@@ -1,8 +1,10 @@
 import { window } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { ThemeManager } from '../../core/theme/ThemeManager';
 import { AppEventBus } from '../../common/AppEventBus';
+import { WindowStore } from '../../common/WindowStore';
 import { NavUtil } from '../../common/NavUtil';
 import { AppRouter } from '../../router/AppRouter';
 import { BorderedIconButton } from '../../common/components/BorderedIconButton';
@@ -28,6 +30,12 @@ export struct VideoMainPage {
   @Local libraryIndex: number = 0;
   /** 主题变化刷新计数（AppTheme.current() 非响应式，依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
+  /** 状态栏高度（vp）：全屏布局后非沉浸内容用它避让 */
+  @Local statusBarHeight: number = 0;
+  /** 底部导航条高度（vp）：全屏布局后底部标签栏用它避让 */
+  @Local navigationBarHeight: number = 0;
+  /** 延迟重设全屏的定时器（push 转场期间系统可能回滚全屏设置，转场后纠正） */
+  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
     this.applyStatusBar();
@@ -35,13 +43,58 @@ export struct VideoMainPage {
 
   aboutToAppear(): void {
     this.applyStatusBar();
+    this.setFullScreen(true);
+    this.fetchSafeAreas();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 恢复透明状态栏背景 + 白色文字（对齐 PageScaffold 行为）
-    VideoMainPage.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
+    this.clearRetryTimer();
+    // 不恢复非全屏：唯一入口/出口是沉浸式首页（onShown 确保 true），在此切 false 会导致返回时布局跳动
+    this.applyStatusBar();
+  }
+
+  /** 全屏沉浸布局：同步调用，写顺序=调用顺序，杜绝异步竞态 */
+  private setFullScreen(full: boolean): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      hilog.error(0x0000, 'FullScreen', 'VideoMain mainWindow undefined');
+      return;
+    }
+    w.setWindowLayoutFullScreen(full).then((): void => {
+      hilog.info(0x0000, 'FullScreen', 'VideoMain set %{public}s ok, now=%{public}s',
+        `${full}`, `${w.getWindowProperties().isLayoutFullScreen}`);
+    }).catch((e: Object): void => {
+      hilog.error(0x0000, 'FullScreen', 'VideoMain set %{public}s failed: %{public}s',
+        `${full}`, JSON.stringify(e));
+    });
+  }
+
+  /** onShown 后延迟重设全屏：纠正系统在 push 转场期间对全屏设置的回滚 */
+  private scheduleFullScreenRetry(): void {
+    this.clearRetryTimer();
+    this.retryTimer = setTimeout((): void => {
+      this.setFullScreen(true);
+    }, 120);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
+  }
+
+  private fetchSafeAreas(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const top = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(top.topRect.height);
+    const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+    this.navigationBarHeight = px2vp(bottom.bottomRect.height);
   }
 
   private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
@@ -58,8 +111,8 @@ export struct VideoMainPage {
   }
 
   private applyStatusBar(): void {
-    const p = AppTheme.current();
-    VideoMainPage.setStatusBar(getContext(this), p.statusBarContent, p.surfaceBg);
+    // 状态栏透明（对齐 Flutter edgeToEdge）：全屏布局时区域被内容覆盖，非全屏时透出深色内容观感一致
+    VideoMainPage.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
   }
 
   private get isHomeMode(): boolean {
@@ -117,7 +170,7 @@ export struct VideoMainPage {
                 }
               }
               .width('100%')
-              .padding({ left: 12, right: 12, top: 10 })
+              .padding({ left: 12, right: 12, top: this.statusBarHeight + 10 })
               .position({ x: 0, y: 0 })
             }
           }
@@ -127,6 +180,7 @@ export struct VideoMainPage {
           BottomTabBar({
             items: this.tabItems(),
             selectedIndex: this.activeTab,
+            bottomInset: this.navigationBarHeight,
             onSelect: (index: number): void => {
               this.activeTab = index;
             }
@@ -141,6 +195,15 @@ export struct VideoMainPage {
       .height('100%')
     }
     .hideTitleBar(true)
+    .onShown((): void => {
+      // 转场动画完成后再次确保全屏（aboutToAppear 期间设置可能被转场覆盖）
+      this.setFullScreen(true);
+      this.scheduleFullScreenRetry();
+    })
+    .onHidden((): void => {
+      // 页面被覆盖（push 子页）时取消延迟重设，避免污染子页面的全屏状态
+      this.clearRetryTimer();
+    })
     .onBackPressed((): boolean => {
       this.popPage();
       return true;
@@ -193,9 +256,24 @@ export struct VideoMainPage {
     })
   }
 
-  /** tab 主体（对齐 _buildTabBody） */
+  /** tab 主体（对齐 _buildTabBody）：全屏布局下非首页 tab 需避让状态栏 */
   @Builder
   TabBody() {
+    if (this.activeTab === 0 && this.libraryIndex === 0) {
+      // 首页轮播顶格沉浸，不做状态栏避让
+      this.TabBodyInner()
+    } else {
+      Column() {
+        this.TabBodyInner()
+      }
+      .width('100%')
+      .height('100%')
+      .padding({ top: this.statusBarHeight })
+    }
+  }
+
+  @Builder
+  TabBodyInner() {
     if (this.activeTab === 0) {
       if (this.libraryIndex === 0) {
         VideoHomePage({

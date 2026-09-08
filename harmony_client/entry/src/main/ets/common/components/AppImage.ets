@@ -1,8 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { image } from '@kit.ImageKit';
-import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import fs from '@ohos.file.fs';
-import { util } from '@kit.ArkTS';
 import { APIClient } from '../../core/network/APIClient';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { L10n } from '../../core/localization/L10n';
@@ -31,6 +29,24 @@ export class AppImageLoader {
   private static readonly inflight: Map<string, Promise<PixelMap>> = new Map();
   private static cacheDir: string = '';
 
+  /** tiny 缩略图退避重试配置（对齐 Flutter _kTiny404MaxRetries） */
+  static readonly TINY_MAX_RETRIES: number = 5;
+  static readonly TINY_INITIAL_DELAY_MS: number = 500;
+
+  /** 是否 tiny 缩略图接口 URL（对齐 Flutter _isTinyUrl：服务端可能异步生成中返回 404/202） */
+  static isTinyUrl(url: string): boolean {
+    return url.includes('/api/file/tiny');
+  }
+
+  /** 是否可重试的 tiny 生成中错误（对齐 Flutter _isTinyPendingError） */
+  static isTinyPendingError(url: string, error: Object): boolean {
+    if (!AppImageLoader.isTinyUrl(url)) {
+      return false;
+    }
+    const s = `${error}`;
+    return s.includes('image_http_404') || s.includes('image_http_202');
+  }
+
   /** 由 AppImage 组件注入应用缓存目录（getContext(this).cacheDir） */
   static initCacheDir(dir: string): void {
     if (AppImageLoader.cacheDir.length > 0 || dir.length === 0) {
@@ -41,22 +57,15 @@ export class AppImageLoader {
       if (!fs.accessSync(AppImageLoader.cacheDir)) {
         fs.mkdirSync(AppImageLoader.cacheDir, true);
       }
+      // 清理历史污染文件（早期版本 sha256 返回 Promise，所有 URL 共用同一个缓存文件）
+      const poisoned = `${AppImageLoader.cacheDir}/[object Promise]`;
+      if (fs.accessSync(poisoned)) {
+        fs.unlinkSync(poisoned);
+      }
     } catch (_e) {
       // 目录创建失败时禁用磁盘缓存（仅内存）
       AppImageLoader.cacheDir = '';
     }
-  }
-
-  private static async sha256Hex(input: string): Promise<string> {
-    const md = cryptoFramework.createMd('SHA256');
-    const encoder = new util.TextEncoder();
-    await md.update({ data: encoder.encodeInto(input) });
-    const digest = await md.digest();
-    const parts: string[] = [];
-    digest.data.forEach((b: number): void => {
-      parts.push(b.toString(16).padStart(2, '0'));
-    });
-    return parts.join('');
   }
 
   /** 主入口：内存 → 磁盘 → 网络（带 Bearer header），同 URL 去重 */
@@ -119,7 +128,19 @@ export class AppImageLoader {
   }
 
   private static diskPath(url: string): string {
-    return `${AppImageLoader.cacheDir}/${AppImageLoader.sha256Hex(url)}`;
+    return `${AppImageLoader.cacheDir}/${AppImageLoader.hashKey(url)}_${url.length}`;
+  }
+
+  /** 同步 64 位双种子 FNV-1a 哈希（碰撞概率可忽略）。不能用 async crypto：Promise 插值会令所有 URL 共用一个文件名 */
+  private static hashKey(input: string): string {
+    let h1 = 0x811c9dc5;
+    let h2 = 0x01000193;
+    for (let i = 0; i < input.length; i++) {
+      const c = input.charCodeAt(i);
+      h1 = Math.imul((h1 ^ c) >>> 0, 0x01000193) >>> 0;
+      h2 = Math.imul((h2 ^ ((c << 3) | (c >>> 29))) >>> 0, 0x85ebca6b) >>> 0;
+    }
+    return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
   }
 
   private static async readDisk(url: string): Promise<ArrayBuffer | undefined> {
@@ -220,20 +241,49 @@ export struct AppImage {
   @Local pixelMap: PixelMap | undefined = undefined;
   @Local failed: boolean = false;
   private loadSeq: number = 0;
+  /** tiny 404/202 退避重试计数与定时器（对齐 Flutter _tiny404RetryCount/_tiny404RetryTimer） */
+  private retryCount: number = 0;
+  private retryTimer: number = -1;
 
   aboutToAppear(): void {
     AppImageLoader.initCacheDir(getContext(this).cacheDir);
     void this.reload();
   }
 
-  /** 组件复用时 url 变化重新加载 */
+  /** 组件销毁时取消挂起的重试定时器（对齐 Flutter dispose cancel） */
+  aboutToDisappear(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
+  }
+
+  /** 组件复用时 url 变化重新加载（重置重试计数，对齐 Flutter didUpdateWidget） */
   @Monitor('url')
   onUrlChange(): void {
+    this.retryCount = 0;
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
     void this.reload();
   }
 
   private isLocal(target: string): boolean {
     return target.length > 0 && !target.startsWith('http://') && !target.startsWith('https://');
+  }
+
+  /** tiny 生成中的指数退避重试：delay = 500ms × 2^count，最多 5 次 */
+  private scheduleRetry(): void {
+    if (this.retryTimer >= 0 || this.retryCount >= AppImageLoader.TINY_MAX_RETRIES) {
+      return;
+    }
+    const delay = AppImageLoader.TINY_INITIAL_DELAY_MS * (1 << this.retryCount);
+    this.retryTimer = setTimeout((): void => {
+      this.retryTimer = -1;
+      this.retryCount++;
+      void this.reload();
+    }, delay);
   }
 
   private async reload(): Promise<void> {
@@ -251,9 +301,19 @@ export struct AppImage {
       }
       this.pixelMap = pm;
       this.failed = false;
-    } catch (_e) {
+      this.retryCount = 0;
+    } catch (e) {
       if (seq !== this.loadSeq) {
         return;
+      }
+      if (AppImageLoader.isTinyPendingError(target, e as Object)) {
+        // 缩略图服务端生成中：保持加载占位，指数退避重试，重试耗尽才显示失败
+        if (this.retryCount < AppImageLoader.TINY_MAX_RETRIES) {
+          this.pixelMap = undefined;
+          this.failed = false;
+          this.scheduleRetry();
+          return;
+        }
       }
       this.pixelMap = undefined;
       this.failed = true;

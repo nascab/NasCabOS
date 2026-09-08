@@ -2,6 +2,7 @@ import { window } from '@kit.ArkUI';
 import { AppTheme, ThemePalette } from '../core/theme/AppTheme';
 import { ThemeManager } from '../core/theme/ThemeManager';
 import { AppEventBus } from './AppEventBus';
+import { WindowStore } from './WindowStore';
 
 @Builder
 function PageScaffoldEmptyActions() {
@@ -36,6 +37,8 @@ export struct PageScaffold {
 
   aboutToAppear(): void {
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
+    // 常规页面强制非全屏布局：从全屏沉浸页面（影音主页/详情页）push 过来时恢复避让布局
+    PageScaffold.setFullScreen(getContext(this), false);
     this.applyStatusBar();
   }
 
@@ -65,6 +68,14 @@ export struct PageScaffold {
       });
     } catch (_e) {
       // 状态栏设置失败不阻塞页面
+    }
+  }
+
+  /** 全屏布局开关：同步调用，写顺序=调用顺序（沉浸页面 onShown 设 true，常规页面强制 false） */
+  private static setFullScreen(_ctx: Context, full: boolean): void {
+    const w = WindowStore.getMainWindow();
+    if (w !== undefined) {
+      w.setWindowLayoutFullScreen(full);
     }
   }
 
