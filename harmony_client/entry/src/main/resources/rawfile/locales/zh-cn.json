@@ -2288,5 +2288,8 @@
   "zoom_mode": "缩放模式",
   "zoom_out": "缩小",
   "process.worker.subtitlePreExtract.purpose": "用于预先提取视频中的内置字幕，避免播放器选中字幕后无法及时显示",
-  "tap_to_retry": "点击重试"
+  "tap_to_retry": "点击重试",
+  "downloading": "下载中...",
+  "download_success": "下载成功",
+  "download_failed": "下载失败"
 }

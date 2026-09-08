@@ -2288,5 +2288,8 @@
   "zoom_mode": "ズームモード",
   "zoom_out": "縮小",
   "process.worker.subtitlePreExtract.purpose": "内蔵字幕を事前に抽出し、プレーヤーで字幕選択時の表示遅延を防ぎます",
-  "tap_to_retry": "タップして再試行"
+  "tap_to_retry": "タップして再試行",
+  "downloading": "ダウンロード中...",
+  "download_success": "ダウンロードしました",
+  "download_failed": "ダウンロードに失敗しました"
 }

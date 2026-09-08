@@ -2288,5 +2288,8 @@
   "zoom_mode": "줌 모드",
   "zoom_out": "축소",
   "process.worker.subtitlePreExtract.purpose": "내장 자막을 미리 추출하여 플레이어에서 자막 선택 시 지연 없이 표시합니다",
-  "tap_to_retry": "탭하여 다시 시도"
+  "tap_to_retry": "탭하여 다시 시도",
+  "downloading": "다운로드 중...",
+  "download_success": "다운로드 성공",
+  "download_failed": "다운로드 실패"
 }

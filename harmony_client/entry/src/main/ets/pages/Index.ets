@@ -40,6 +40,9 @@ import {
   VideoAlbumVideosPageParam, VideoDetailPageParam, VideoListPageParam,
   VideoAlbumListPageParam, VideoSmartAlbumListPageParam, VideoCollectionListPageParam
 } from '../video/router/VideoRoutes';
+import { GalleryPage, PanoramaPageParam } from '../gallery/views/GalleryPage';
+import { PanoramaPage } from '../gallery/views/PanoramaPage';
+import { GalleryPageParam } from '../gallery/models/GalleryModels';
 import { NavUtil } from '../common/NavUtil';
 
 @Entry
@@ -250,6 +253,20 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.PHOTO_GALLERY) {
+      GalleryPageBuilder(
+        param instanceof GalleryPageParam ? param : new GalleryPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_PANORAMA) {
+      PanoramaPageBuilder(
+        param instanceof PanoramaPageParam ? param : new PanoramaPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     }
   }
 
@@ -360,6 +377,16 @@ function PhotoAiSimilarPageBuilder(param: PhotoAiSimilarPageParam, popPage: () =
 @Builder
 function PhotoSettingsPageBuilder(param: PhotoSettingsPageParam, popPage: () => void) {
   PhotoSettingsPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function GalleryPageBuilder(param: GalleryPageParam, popPage: () => void) {
+  GalleryPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PanoramaPageBuilder(param: PanoramaPageParam, popPage: () => void) {
+  PanoramaPage({ param: param, popPage: popPage })
 }
 
 @Builder

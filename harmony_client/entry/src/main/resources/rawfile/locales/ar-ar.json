@@ -2293,5 +2293,8 @@
   "zoom_mode": "وضع التكبير",
   "zoom_out": "تصغير",
   "process.worker.subtitlePreExtract.purpose": "تستخرج الترجمات المدمجة مسبقاً لتظهر بسرعة عند اختيارها في المشغل",
-  "tap_to_retry": "انقر للمحاولة مجددًا"
+  "tap_to_retry": "انقر للمحاولة مجددًا",
+  "downloading": "جارٍ التنزيل...",
+  "download_success": "تم التنزيل بنجاح",
+  "download_failed": "فشل التنزيل"
 }

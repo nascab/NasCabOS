@@ -1,6 +1,10 @@
 import { L10n } from '../../core/localization/L10n';
 import { ToastUtil } from '../../common/ToastUtil';
 import { DialogUtil } from '../../common/DialogUtil';
+import { NavUtil } from '../../common/NavUtil';
+import { AppRouter } from '../../router/AppRouter';
+import { openVideoPlayer, toPlayerPlaylist } from '../../video_player/views/PlayerNavigator';
+import { GalleryPageParam, galleryItemFromTimelinePhoto } from '../../gallery/models/GalleryModels';
 import { PreferencesStore } from '../../core/storage/PreferencesStore';
 import { CurrentUserStore } from '../../core/user/CurrentUserStore';
 import {
@@ -1043,9 +1047,61 @@ export class TimelineController {
 
   // ================= 媒体 =================
 
-  /** 打开媒体预览（图片浏览器/视频播放器为独立模块，迁移前给出提示） */
-  openMedia(_item: TimelinePhotoItem): void {
-    ToastUtil.show(L10n.t('feature_coming_soon', '敬请期待'));
+  /** 打开媒体预览：视频跳播放器（playlist 按当前视图视频顺序），图片跳图片浏览器（对齐 Flutter openMedia） */
+  openMedia(item: TimelinePhotoItem): void {
+    // 从扁平序列提取所有照片（对齐 Flutter photoItems）
+    const allPhotos: TimelinePhotoItem[] = [];
+    for (const it of this.flat) {
+      if (it instanceof TimelineListPhoto) {
+        allPhotos.push(it.photo);
+      }
+    }
+
+    if (item.type === 2) {
+      // 视频：构造播放列表并跳转播放器
+      const records: Record<string, Object>[] = [];
+      let index = -1;
+      for (const p of allPhotos) {
+        if (p.type === 2) {
+          if (p.fullpath === item.fullpath) {
+            index = records.length;
+          }
+          const r: Record<string, Object> = {
+            'type': 'video',
+            'path': p.fullpath,
+            'name': p.filename
+          };
+          records.push(r);
+        }
+      }
+      if (index < 0) {
+        return;
+      }
+      openVideoPlayer(toPlayerPlaylist(records), index, 0);
+      return;
+    }
+
+    // 图片：构造图片浏览器列表
+    const param = new GalleryPageParam();
+    let index = -1;
+    for (const p of allPhotos) {
+      if (p.type === 2) {
+        continue;
+      }
+      if (p.fullpath === item.fullpath) {
+        index = param.items.length;
+      }
+      param.items.push(galleryItemFromTimelinePhoto(p));
+    }
+    if (index < 0) {
+      return;
+    }
+    param.initialIndex = index;
+    param.showInfo = true;
+    param.onDeleted = (photoId: number): void => {
+      this.removeIdsAndCleanUp(new Set<number>([photoId]));
+    };
+    NavUtil.push(AppRouter.PHOTO_GALLERY, param);
   }
 
   // ================= 日期信息 =================

@@ -19,6 +19,8 @@ export class AppRouter {
   static readonly PHOTO_AI_SCENES: string = 'PhotoAiScenesPage';
   static readonly PHOTO_AI_SIMILAR: string = 'PhotoAiSimilarPage';
   static readonly PHOTO_SETTINGS: string = 'PhotoSettingsPage';
+  static readonly PHOTO_GALLERY: string = 'GalleryPage';
+  static readonly PHOTO_PANORAMA: string = 'PanoramaPage';
   static readonly VIDEO_MAIN: string = 'VideoMainPage';
   static readonly VIDEO_DETAIL: string = 'VideoDetailPage';
   static readonly VIDEO_LIST: string = 'VideoListPage';

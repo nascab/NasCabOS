@@ -2293,5 +2293,8 @@
   "zoom_mode": "Modo de zoom",
   "zoom_out": "Alejar",
   "process.worker.subtitlePreExtract.purpose": "Preextrae subtítulos integrados para mostrarlos rápidamente al seleccionarlos en el reproductor",
-  "tap_to_retry": "Toca para reintentar"
+  "tap_to_retry": "Toca para reintentar",
+  "downloading": "Descargando...",
+  "download_success": "Descarga completada",
+  "download_failed": "Error al descargar"
 }

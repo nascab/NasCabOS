@@ -5,6 +5,7 @@ import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
+import { WindowStore } from '../../../common/WindowStore';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { SearchInputBar } from '../../../common/components/SearchInputBar';
 import { EmptyState } from '../../../common/components/EmptyState';
@@ -88,6 +89,8 @@ export struct PhotoMainPage {
   @Local yearMode: boolean = false;
   /** 主题变化刷新计数（AppTheme.current() 非响应式，依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
+  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
+  private retryTimer: number = -1;
   private ctrl: TimelineController = new TimelineController();
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
@@ -99,12 +102,40 @@ export struct PhotoMainPage {
     void this.ctrl.refreshTimeline();
     this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
+    // 常规页强制非全屏避让布局：来源可能是沉浸页（壁纸首页等），窗口布局需显式恢复
+    this.setFullScreen(false);
+    this.scheduleAvoidRetry();
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
+    this.clearRetryTimer();
     // 恢复透明状态栏背景 + 白色文字（对齐 PageScaffold 行为）
     PhotoMainPage.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
+  }
+
+  /** 全屏布局开关（窗口主窗口同步单例，写顺序=调用顺序） */
+  private setFullScreen(full: boolean): void {
+    const w = WindowStore.getMainWindow();
+    if (w !== undefined) {
+      w.setWindowLayoutFullScreen(full);
+    }
+  }
+
+  /** push 转场会回滚窗口布局写入（实测，对齐沉浸页 scheduleFullScreenRetry）：延迟重设纠正 */
+  private scheduleAvoidRetry(): void {
+    this.clearRetryTimer();
+    this.retryTimer = setTimeout((): void => {
+      this.retryTimer = -1;
+      this.setFullScreen(false);
+    }, 120);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
   }
 
   private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
@@ -259,6 +290,15 @@ export struct PhotoMainPage {
       .height('100%')
     }
     .hideTitleBar(true)
+    .onShown((): void => {
+      // 每次显示都确保非全屏避让布局（push 进入/从子页返回均覆盖）
+      this.setFullScreen(false);
+      this.scheduleAvoidRetry();
+    })
+    .onHidden((): void => {
+      // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面
+      this.clearRetryTimer();
+    })
     .onBackPressed((): boolean => {
       // 多选模式下返回先退出多选（对齐 Flutter PopScope）
       if (this.currentTab === 0 && this.ctrl.isMultiSelectMode) {

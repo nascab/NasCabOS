@@ -2288,5 +2288,8 @@
   "zoom_mode": "Mode Zoom",
   "zoom_out": "Perkecil",
   "process.worker.subtitlePreExtract.purpose": "Mengekstrak subtitle tertanam terlebih dahulu agar cepat tampil saat dipilih di pemutar",
-  "tap_to_retry": "Ketuk untuk mencoba lagi"
+  "tap_to_retry": "Ketuk untuk mencoba lagi",
+  "downloading": "Mengunduh...",
+  "download_success": "Berhasil diunduh",
+  "download_failed": "Gagal mengunduh"
 }

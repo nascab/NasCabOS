@@ -2288,5 +2288,8 @@
   "zoom_mode": "Chế độ thu phóng",
   "zoom_out": "Thu nhỏ",
   "process.worker.subtitlePreExtract.purpose": "Trích xuất trước phụ đề nhúng trong video để hiển thị kịp khi chọn trong trình phát",
-  "tap_to_retry": "Nhấn để thử lại"
+  "tap_to_retry": "Nhấn để thử lại",
+  "downloading": "Đang tải xuống...",
+  "download_success": "Tải xuống thành công",
+  "download_failed": "Tải xuống thất bại"
 }

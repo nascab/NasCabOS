@@ -185,6 +185,13 @@ export class PhotoTimelineApiService {
       undefined, (d: Object, _c: number) => d);
   }
 
+  /** 获取照片属性（对齐 Flutter getPhotoProperties：POST /api/photo/properties/get，返回原始 Map） */
+  async getPhotoProperties(path: string): Promise<APIResponse<Record<string, Object>>> {
+    const body: Record<string, Object> = { 'path': path };
+    return this.api().apiPost<Record<string, Object>>('/api/photo/properties/get', body,
+      undefined, undefined, undefined, (d: Object, _c: number) => d as Record<string, Object>);
+  }
+
   /** 列出照片中检测到的人脸 */
   async listPhotoFaces(fileHash: string): Promise<APIResponse<TimelineDetectedFaceItem[]>> {
     const body: Record<string, Object> = { 'file_hash': fileHash };

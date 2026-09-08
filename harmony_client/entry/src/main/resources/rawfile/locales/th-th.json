@@ -2293,5 +2293,8 @@
   "zoom_mode": "โหมดซูม",
   "zoom_out": "ซูมออก",
   "process.worker.subtitlePreExtract.purpose": "ดึงคำบรรยายในตัวล่วงหน้า เพื่อให้แสดงได้ทันทีเมื่อเลือกในเครื่องเล่น",
-  "tap_to_retry": "แตะเพื่อลองอีกครั้ง"
+  "tap_to_retry": "แตะเพื่อลองอีกครั้ง",
+  "downloading": "กำลังดาวน์โหลด...",
+  "download_success": "ดาวน์โหลดสำเร็จ",
+  "download_failed": "ดาวน์โหลดไม่สำเร็จ"
 }

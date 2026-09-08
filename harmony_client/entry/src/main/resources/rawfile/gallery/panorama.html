@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+  canvas { width: 100vw; height: 100vh; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+  // 等距柱状全景查看器（对齐 Flutter panorama_gallery_page 的拖动浏览交互）：
+  // 横向拖动环绕滚动（wrap-around）、纵向拖动有限平移、滚轮/双指缩放视野高度。
+  var img = null;
+  var yaw = 0;        // 横向滚动（0~1 圈）
+  var pitch = 0;      // 纵向平移（-0.5~0.5 视口高）
+  var zoomH = 1.0;    // 视野高度倍率（>1 放大细节）
+  var drag = false, lastX = 0, lastY = 0;
+  var cv = document.getElementById('c');
+  var ctx = cv.getContext('2d');
+
+  function initPano(url) {
+    img = new Image();
+    img.onload = function () { draw(); };
+    img.src = url;
+  }
+
+  function draw() {
+    var dpr = window.devicePixelRatio || 1;
+    var w = window.innerWidth * dpr;
+    var h = window.innerHeight * dpr;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+    if (!img || !img.width) { return; }
+    var H = h * zoomH;
+    var W = H * (img.width / img.height);
+    var y = (h - H) / 2 + pitch * h;
+    var x = (-yaw * w) % W;
+    if (x > 0) { x -= W; }
+    if (img.complete && img.naturalWidth) {
+      ctx.drawImage(img, 0, 0, img.width, img.height, x, y, W, H);
+      ctx.drawImage(img, 0, 0, img.width, img.height, x + W, y, W, H);
+    }
+  }
+
+  cv.addEventListener('pointerdown', function (e) {
+    drag = true; lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag) { return; }
+    yaw += (e.clientX - lastX) / window.innerWidth;
+    pitch += (e.clientY - lastY) / window.innerHeight;
+    pitch = Math.max(-0.5, Math.min(0.5, pitch));
+    lastX = e.clientX; lastY = e.clientY;
+    draw();
+  });
+  window.addEventListener('pointerup', function () { drag = false; });
+  window.addEventListener('pointercancel', function () { drag = false; });
+  // 双指缩放视野高度
+  var pinchDist = 0;
+  cv.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  cv.addEventListener('touchmove', function (e) {
+    if (e.touches.length === 2 && pinchDist > 0) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+      zoomH = Math.max(0.6, Math.min(4, zoomH * d / pinchDist));
+      pinchDist = d;
+      draw();
+      e.preventDefault();
+    }
+  }, { passive: false });
+  cv.addEventListener('touchend', function () { pinchDist = 0; }, { passive: true });
+  document.addEventListener('wheel', function (e) {
+    zoomH = Math.max(0.6, Math.min(4, zoomH * (e.deltaY > 0 ? 0.9 : 1.1)));
+    draw();
+  }, { passive: true });
+  window.addEventListener('resize', draw);
+</script>
+</body>
+</html>

@@ -2288,5 +2288,8 @@
   "zoom_mode": "Modo Zoom",
   "zoom_out": "Reduzir",
   "process.worker.subtitlePreExtract.purpose": "Pré-extrai legendas embutidas para exibição rápida quando selecionadas no player",
-  "tap_to_retry": "Toque para tentar novamente"
+  "tap_to_retry": "Toque para tentar novamente",
+  "downloading": "Baixando...",
+  "download_success": "Download concluído",
+  "download_failed": "Falha no download"
 }

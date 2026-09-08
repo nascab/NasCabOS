@@ -30,6 +30,8 @@ export struct PageScaffold {
   @BuilderParam overlayContent: () => void = PageScaffoldEmptyActions;
   /** 主题变化刷新计数（依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
+  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
+  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string) => {
     this.themeTick++;
     this.applyStatusBar();
@@ -37,15 +39,32 @@ export struct PageScaffold {
 
   aboutToAppear(): void {
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 常规页面强制非全屏布局：从全屏沉浸页面（影音主页/详情页）push 过来时恢复避让布局
+    // 常规页面强制非全屏布局：从全屏沉浸页面（影音主页/详情页/图片浏览器）push 过来时恢复避让布局
     PageScaffold.setFullScreen(getContext(this), false);
     this.applyStatusBar();
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
+    this.clearRetryTimer();
     // 恢复透明状态栏背景 + 白色文字（首页/登录等深色沉浸页面）
     PageScaffold.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
+  }
+
+  /** push 转场会回滚窗口布局写入（实测，对齐沉浸页 scheduleFullScreenRetry）：延迟重设纠正 */
+  private scheduleAvoidRetry(): void {
+    this.clearRetryTimer();
+    this.retryTimer = setTimeout((): void => {
+      this.retryTimer = -1;
+      PageScaffold.setFullScreen(getContext(this), false);
+    }, 120);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
   }
 
   private palette(): ThemePalette {
@@ -112,6 +131,15 @@ export struct PageScaffold {
       .opacity(this.themeTick >= 0 ? 1 : 1)
     }
     .hideTitleBar(true)
+    .onShown((): void => {
+      // 每次显示都确保非全屏避让布局（从沉浸页返回/push 进入均覆盖）
+      PageScaffold.setFullScreen(getContext(this), false);
+      this.scheduleAvoidRetry();
+    })
+    .onHidden((): void => {
+      // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面
+      this.clearRetryTimer();
+    })
     .onBackPressed(() => {
       if (this.customBack()) {
         return true;

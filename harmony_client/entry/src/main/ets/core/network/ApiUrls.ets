@@ -142,6 +142,21 @@ export class ApiUrls {
   }
 
   /**
+   * 合并式 Live Photo 视频提取 URL（对齐 Flutter getMergeLvpVideoUrl）：
+   * /api/file/mergeLvpVideo?path=&accessToken=（明文 query，与 Flutter 一致）
+   */
+  static getMergeLvpVideoUrl(filePath: string): string {
+    const api = APIClient.getInstance();
+    const base = api.state.baseUrl;
+    const token = api.state.accessToken ?? '';
+    let url = `${base}/api/file/mergeLvpVideo?path=${encodeURIComponent(filePath)}`;
+    if (token.length > 0) {
+      url += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  /**
    * 人脸头像 URL（对齐 Flutter getFaceImageUrl）：
    * 参数 face_id/size/quality/t/accessToken，AES 加密失败时回退明文 query（与 getTinyUrl 策略一致）。
    */

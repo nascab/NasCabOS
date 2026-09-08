@@ -60,6 +60,7 @@ function SimilarPageSizeSheetContent(p: SimilarPageSizeSheetParams) {
 @ComponentV2
 struct SimilarPhotoTile {
   @Param photo: TimelinePhotoItem = new TimelinePhotoItem();
+  @Param group: AiSimilarGroupItem = new AiSimilarGroupItem();
   @Param ctrl: PhotoAiSimilarController = new PhotoAiSimilarController();
   @Local tinyUrl: string = '';
 
@@ -142,8 +143,8 @@ struct SimilarPhotoTile {
       .width('100%')
       .aspectRatio(1)
       .onClick(() => {
-        // 图片浏览器未迁移，点击展示路径信息（对齐移动端路径点击的 info 弹窗）
-        DialogUtil.showInfoDialog(L10n.t('path', '路径'), this.photo.fullpath);
+        // 打开图片浏览器（对齐 Flutter openGroupPreview：组内照片浏览 + 浏览器内删除）
+        this.ctrl.openGroupPreview(this.group, this.photo);
       })
 
       Text(this.formatSize(this.ctrl.photoSize(this.photo)))
@@ -422,7 +423,7 @@ export struct PhotoAiSimilarPage {
       ForEach(this.photoRows(group), (row: TimelinePhotoItem[]) => {
         Row({ space: 6 }) {
           ForEach(row, (photo: TimelinePhotoItem) => {
-            SimilarPhotoTile({ photo: photo, ctrl: this.ctrl })
+            SimilarPhotoTile({ photo: photo, group: group, ctrl: this.ctrl })
               .layoutWeight(1)
           }, (photo: TimelinePhotoItem) => `photo_${photo.id}`)
           // 末行不满列时占位补齐（保证格宽一致）

@@ -2288,5 +2288,8 @@
   "zoom_mode": "Zoom Mode",
   "zoom_out": "Zoom out",
   "process.worker.subtitlePreExtract.purpose": "Pre-extracts embedded subtitles so they appear quickly when selected in the player",
-  "tap_to_retry": "Tap to retry"
+  "tap_to_retry": "Tap to retry",
+  "downloading": "Downloading...",
+  "download_success": "Download successful",
+  "download_failed": "Download failed"
 }

@@ -115,6 +115,8 @@ export class AppImageLoader {
         expectDataType: http.HttpDataType.ARRAY_BUFFER,
         connectTimeout: 15000,
         readTimeout: 60000,
+        // 原图常超过默认 5MB 响应上限（超限直接报错），放宽到模块最大值 100MB
+        maxLimit: 100 * 1024 * 1024,
         usingProtocol: http.HttpProtocol.HTTP1_1,
         remoteValidation: 'skip',
       });

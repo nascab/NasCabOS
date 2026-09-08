@@ -1,7 +1,10 @@
 import { L10n } from '../../core/localization/L10n';
 import { ToastUtil } from '../../common/ToastUtil';
 import { DialogUtil } from '../../common/DialogUtil';
+import { NavUtil } from '../../common/NavUtil';
 import { CurrentUserStore } from '../../core/user/CurrentUserStore';
+import { AppRouter } from '../../router/AppRouter';
+import { GalleryPageParam, galleryItemFromTimelinePhoto } from '../../gallery/models/GalleryModels';
 import { TimelinePhotoItem } from '../models/PhotoModels';
 import { AiSimilarGroupItem } from '../models/PhotoAiModels';
 import { PhotoAiSimilarApiService } from '../service/PhotoAiSimilarApiService';
@@ -307,5 +310,60 @@ export class PhotoAiSimilarController {
       return false;
     }
     return true;
+  }
+
+  // ================= 图片浏览器预览（对齐 Flutter trashPhotoFromGallery / openGroupPreview） =================
+
+  /** 从图片浏览器内删除：放入回收站并刷新分组（对齐 Flutter trashPhotoFromGallery） */
+  async trashPhotoFromGallery(photoId: number): Promise<boolean> {
+    if (photoId <= 0) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      return false;
+    }
+    try {
+      const res = await this.timelineApi.batchTrash([photoId]);
+      if (!res.success) {
+        ToastUtil.show(res.code === 403
+          ? L10n.t('permission_denied', '权限被拒绝')
+          : L10n.t('operation_failed', '操作失败'));
+        return false;
+      }
+      ToastUtil.show(L10n.t('photo_trashed_success', '已放入照片回收站'));
+      await this.refreshGroups(false);
+      return true;
+    } catch (_e) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      return false;
+    }
+  }
+
+  /** 打开组内相似照片预览（对齐 Flutter openGroupPreview：过滤视频 → 图片浏览器，初始页为点击项） */
+  openGroupPreview(group: AiSimilarGroupItem, clicked: TimelinePhotoItem): void {
+    const photos: TimelinePhotoItem[] = [];
+    for (const p of group.photos) {
+      if (p.type !== 2) {
+        photos.push(p);
+      }
+    }
+    if (photos.length === 0) {
+      return;
+    }
+    let index = -1;
+    const param = new GalleryPageParam();
+    for (const p of photos) {
+      if (p.fullpath === clicked.fullpath) {
+        index = param.items.length;
+      }
+      param.items.push(galleryItemFromTimelinePhoto(p));
+    }
+    if (index < 0) {
+      return;
+    }
+    param.initialIndex = index;
+    param.showInfo = true;
+    param.onDeleted = (photoId: number): void => {
+      void this.trashPhotoFromGallery(photoId);
+    };
+    NavUtil.push(AppRouter.PHOTO_GALLERY, param);
   }
 }

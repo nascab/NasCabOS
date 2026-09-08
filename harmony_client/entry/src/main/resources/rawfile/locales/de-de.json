@@ -2288,5 +2288,8 @@
   "zoom_mode": "Zoom-Modus",
   "zoom_out": "Verkleinern",
   "process.worker.subtitlePreExtract.purpose": "Extrahiert eingebettete Untertitel vorab, damit sie beim Auswählen im Player schnell angezeigt werden",
-  "tap_to_retry": "Zum Wiederholen tippen"
+  "tap_to_retry": "Zum Wiederholen tippen",
+  "downloading": "Wird heruntergeladen...",
+  "download_success": "Download erfolgreich",
+  "download_failed": "Download fehlgeschlagen"
 }

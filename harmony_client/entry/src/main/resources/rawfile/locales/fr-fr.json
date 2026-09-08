@@ -2293,5 +2293,8 @@
   "zoom_mode": "Mode zoom",
   "zoom_out": "Zoom arrière",
   "process.worker.subtitlePreExtract.purpose": "Pré-extrait les sous-titres intégrés pour un affichage rapide lors de la sélection dans le lecteur",
-  "tap_to_retry": "Appuyez pour réessayer"
+  "tap_to_retry": "Appuyez pour réessayer",
+  "downloading": "Téléchargement...",
+  "download_success": "Téléchargement réussi",
+  "download_failed": "Échec du téléchargement"
 }
