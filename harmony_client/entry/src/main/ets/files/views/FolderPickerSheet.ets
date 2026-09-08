@@ -9,7 +9,8 @@ import { FILE_HIDDEN_LIST_OPACITY } from '../models/FileModels';
 /**
  * 目标文件夹选择弹层（对齐 Flutter FolderPickerDialog 的文件系统浏览能力）：
  * 仅列出目录，点击进入子目录，支持返回上级，底部确认选择当前目录；
- * 多选模式（对齐 Flutter multiSelect: true）行首勾选框选择多个目录。
+ * 多选模式（对齐 Flutter multiSelect: true）行首勾选框选择多个目录；
+ * 文件选择模式（对齐 Flutter allowFileSelect: true）列出文件，点击勾选文件。
  */
 class FolderPickerSheetParams extends SheetParamsBase {
   /** 确认选择时回调，返回所选目录路径数组 */
@@ -19,6 +20,8 @@ class FolderPickerSheetParams extends SheetParamsBase {
   initialPath: string = '';
   /** 多选模式（对齐 Flutter folder_picker multiSelect） */
   multiSelect: boolean = false;
+  /** 允许选择文件（对齐 Flutter allowFileSelect） */
+  allowFileSelect: boolean = false;
 }
 
 @Builder
@@ -34,7 +37,8 @@ struct FolderPickerSheetInner {
   @Local selectedPaths: string[] = [];
 
   aboutToAppear(): void {
-    this.ctrl.onlyShowDir = true;
+    // 对齐 Flutter：allowFileSelect 时同时列出文件（onlyShowDir=false）
+    this.ctrl.onlyShowDir = !this.p.allowFileSelect;
     this.loading = true;
     this.ctrl.listDirectory(this.p.initialPath, 'normal').finally((): void => {
       this.loading = false;
@@ -128,7 +132,7 @@ struct FolderPickerSheetInner {
           ForEach(this.ctrl.displayItems, (it: FileItem): void => {
             ListItem() {
               Row({ space: 10 }) {
-                if (this.p.multiSelect) {
+                if (this.p.multiSelect || this.p.allowFileSelect) {
                   CircleCheckbox({
                     value: this.isSelected(FileModelAccess.path(it)),
                     onChanged: (_c: boolean): void => {
@@ -136,7 +140,7 @@ struct FolderPickerSheetInner {
                     }
                   })
                 }
-                Image($rawfile('icons/file/folder.png'))
+                Image($rawfile(FileModelAccess.isDir(it) ? 'icons/file/folder.png' : 'icons/file/file.png'))
                   .width(34)
                   .height(34)
                   .objectFit(ImageFit.Contain)
@@ -147,16 +151,22 @@ struct FolderPickerSheetInner {
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .layoutWeight(1)
-                SymbolGlyph($r('sys.symbol.chevron_right'))
-                  .fontSize(16)
-                  .fontColor([AppTheme.current().subText])
+                if (FileModelAccess.isDir(it)) {
+                  SymbolGlyph($r('sys.symbol.chevron_right'))
+                    .fontSize(16)
+                    .fontColor([AppTheme.current().subText])
+                }
               }
               .width('100%')
               .padding({ left: 20, right: 16, top: 10, bottom: 10 })
               .opacity(fileItemIsDotHidden(it) ? FILE_HIDDEN_LIST_OPACITY : 1.0)
             }
             .onClick((): void => {
-              void this.enter(it);
+              if (FileModelAccess.isDir(it)) {
+                void this.enter(it);
+              } else {
+                this.toggleSelect(FileModelAccess.path(it));
+              }
             })
           }, (it: FileItem): string => FileModelAccess.path(it))
         }
@@ -179,7 +189,7 @@ struct FolderPickerSheetInner {
           .onClick((): void => {
             this.p.close();
           })
-        Button(this.p.multiSelect && this.selectedPaths.length > 0
+        Button((this.p.multiSelect || this.p.allowFileSelect) && this.selectedPaths.length > 0
           ? `${L10n.confirm}(${this.selectedPaths.length})` : L10n.confirm)
           .fontSize(14)
           .fontColor(AppTheme.current().buttonText)
@@ -188,6 +198,15 @@ struct FolderPickerSheetInner {
           .layoutWeight(1)
           .onClick((): void => {
             if (this.p.multiSelect) {
+              if (this.selectedPaths.length === 0) {
+                return;
+              }
+              this.p.close();
+              this.p.onPicked(this.selectedPaths.slice());
+              return;
+            }
+            if (this.p.allowFileSelect) {
+              // 文件选择模式：必须勾选文件后确认
               if (this.selectedPaths.length === 0) {
                 return;
               }
@@ -227,5 +246,22 @@ export function pickTargetFolderViaSheet(initialPath: string,
   };
   p.initialPath = initialPath;
   p.multiSelect = multiSelect;
+  SheetUtil.present(p, wrapBuilder(FolderPickerSheetContent));
+}
+
+/**
+ * 服务器文件选择弹层（对齐 Flutter showFolderPickerBottomSheet(allowFileSelect: true)）：
+ * 浏览服务器目录并勾选文件，确认时返回所选文件路径数组，取消返回空数组。
+ */
+export function pickServerFileViaSheet(initialPath: string, onResult: (paths: string[]) => void): void {
+  const p = new FolderPickerSheetParams();
+  p.onPicked = (paths: string[]): void => {
+    onResult(paths);
+  };
+  p.onDismissed = (): void => {
+    onResult([]);
+  };
+  p.initialPath = initialPath;
+  p.allowFileSelect = true;
   SheetUtil.present(p, wrapBuilder(FolderPickerSheetContent));
 }

@@ -28,4 +28,5 @@ export class AppRouter {
   static readonly VIDEO_SMART_ALBUM_LIST: string = 'VideoSmartAlbumListPage';
   static readonly VIDEO_COLLECTION_LIST: string = 'VideoCollectionListPage';
   static readonly VIDEO_SETTINGS: string = 'VideoSettingsPage';
+  static readonly VIDEO_PLAYER: string = 'VideoPlayerPage';
 }

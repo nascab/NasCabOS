@@ -30,6 +30,8 @@ import { VideoMainPage, VideoMainPageParam } from '../video/views/VideoMainPage'
 import { VideoListPage } from '../video/views/VideoListPage';
 import { VideoAlbumVideosPage } from '../video/views/VideoAlbumVideosPage';
 import { VideoSettingsPage } from '../video/views/VideoSettingsPage';
+import { VideoPlayerPage } from '../video_player/views/VideoPlayerPage';
+import { VideoPlayerPageParam } from '../video_player/router/PlayerRoutes';
 import { VideoDetailPage } from '../video/views/VideoDetailPage';
 import { VideoAlbumListPage } from '../video/views/VideoAlbumListPage';
 import { VideoSmartAlbumListPage } from '../video/views/VideoSmartAlbumListPage';
@@ -241,6 +243,13 @@ struct Index {
       VideoSettingsPageBuilder((): void => {
         this.pageStack.pop();
       })
+    } else if (name === AppRouter.VIDEO_PLAYER) {
+      VideoPlayerPageBuilder(
+        param instanceof VideoPlayerPageParam ? param : new VideoPlayerPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     }
   }
 
@@ -391,4 +400,9 @@ function VideoCollectionListPageBuilder(param: VideoCollectionListPageParam, pop
 @Builder
 function VideoSettingsPageBuilder(popPage: () => void) {
   VideoSettingsPage({ popPage: popPage })
+}
+
+@Builder
+function VideoPlayerPageBuilder(param: VideoPlayerPageParam, popPage: () => void) {
+  VideoPlayerPage({ param: param, popPage: popPage })
 }

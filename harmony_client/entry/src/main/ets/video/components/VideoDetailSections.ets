@@ -8,7 +8,8 @@ import { AppRouter } from '../../router/AppRouter';
 import { CurrentUserStore } from '../../core/user/CurrentUserStore';
 import { ApiUrls } from '../../core/network/ApiUrls';
 import { VideoDetailApiService, VideoFavoriteApiService } from '../service/VideoApiServices';
-import { VideoHomeItemBean, asNum, asStr, parseVideoHomeItemBean } from '../models/VideoModels';
+import { VideoHomeItemBean, asNum, asStr, asArray, asRecord, parseVideoHomeItemBean } from '../models/VideoModels';
+import { openVideoPlayer, toPlayerPlaylist } from '../../video_player/views/PlayerNavigator';
 import { VideoPersonInfo, VideoDetailController } from '../controllers/VideoDetailController';
 import { VideoItemPoster } from './VideoItemPoster';
 import { VideoItemActions, VideoSearchMediaHelper } from './VideoItemViews';
@@ -81,6 +82,25 @@ function splitComma(input: string): string[] {
   return input.split(',')
     .map((e: string): string => e.trim())
     .filter((e: string): boolean => e.length > 0);
+}
+
+/** tvPlayInfo 返回的 playlist 数组解析（对齐 Flutter rawList is List 过滤） */
+function parsePlaylistRecords(data: Record<string, Object>): Record<string, Object>[] {
+  const out: Record<string, Object>[] = [];
+  for (const e of asArray(data['playlist'])) {
+    out.push(asRecord(e));
+  }
+  return out;
+}
+
+/** 按 path 定位播放索引（对齐 indexWhere，找不到返回 0） */
+function indexOfPath(playlist: Record<string, Object>[], path: string): number {
+  for (let i = 0; i < playlist.length; i++) {
+    if (asStr(playlist[i]['path']) === path) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 /**
@@ -740,12 +760,56 @@ export struct VideoDetailActionsSection {
     ToastUtil.show(L10n.t('operation_success', '操作成功'));
   }
 
+  /** 主播放按钮（对齐 Flutter actions section onPressed：文件/原盘直连播放，剧集拉 tvPlayInfo） */
+  private async playMain(): Promise<void> {
+    const m = this.ctrl.item;
+    const isFile = asNum(m['is_file']) === 1;
+    const mediaType = asStr(m['media_type']).trim().toLowerCase();
+    const filePath = asStr(isFile ? m['full_path'] : m['play_file_path']).trim();
+    const isDisc = mediaType === 'bdmv' || mediaType === 'video_ts';
+    const discPlaylist = this.ctrl.buildDiscPlaybackPlaylist();
+    const hasDiscPlaylist = isDisc && discPlaylist.length > 0;
+    const canPlayTv = !isFile && (mediaType === 'tv' || mediaType === 'season') && this.ctrl.indexId > 0;
+
+    if ((isFile || isDisc) && filePath.length > 0) {
+      if (hasDiscPlaylist) {
+        openVideoPlayer(toPlayerPlaylist(discPlaylist), 0, 0);
+        return;
+      }
+      const nfoName = asStr(m['nfo_name']).trim();
+      const single: Record<string, Object>[] = [{
+        'path': filePath,
+        'name': nfoName.length > 0 ? nfoName : asStr(m['filename'])
+      }];
+      openVideoPlayer(toPlayerPlaylist(single), 0, 0);
+      return;
+    }
+    if (canPlayTv) {
+      await this.playTvWithInfo();
+    }
+  }
+
+  /** 拉取剧集播放信息并跳转播放器（对齐 canPlayTv 分支） */
+  private async playTvWithInfo(): Promise<void> {
+    const res = await new VideoDetailApiService().getTvPlayInfo(this.ctrl.indexId);
+    if (!res.success || res.data === undefined) {
+      ToastUtil.show(res.message ?? L10n.t('video_detail_load_failed', '加载失败'));
+      return;
+    }
+    const playlist = parsePlaylistRecords(res.data);
+    if (playlist.length === 0) {
+      ToastUtil.show(res.message ?? L10n.t('video_detail_load_failed', '加载失败'));
+      return;
+    }
+    openVideoPlayer(toPlayerPlaylist(playlist), asNum(res.data['initialIndex']), 0);
+  }
+
   build() {
     Column() {
       Row({ space: 10 }) {
-        // 播放（播放器未迁移，与下载一致提示）
+        // 播放（对齐 AppVideoDetailActionsSection：文件/原盘直连，剧集走 tvPlayInfo）
         this.ActionButton($r('sys.symbol.play_fill'), DetailColors.playBlue, DetailColors.onSurface, (): void => {
-          ToastUtil.show(L10n.featureComingSoon);
+          void this.playMain();
         })
         // 刷新
         this.ActionButton($r('sys.symbol.arrow_clockwise'), DetailColors.container, DetailColors.onSurface,
@@ -1032,9 +1096,44 @@ export struct VideoDetailEpisodeSection {
     return asStr(e['full_path']).trim();
   }
 
-  /** 剧集点击播放（播放器未迁移，提示） */
-  private playEpisode(_index: number): void {
-    ToastUtil.show(L10n.featureComingSoon);
+  /** 剧集点击播放（对齐 _playEpisodeAt：全集直连构建列表，分页走 tvPlayInfo） */
+  private async playEpisode(index: number): Promise<void> {
+    const items = this.ctrl.episodes;
+    if (index < 0 || index >= items.length) {
+      return;
+    }
+    const clickedPath = VideoDetailEpisodeSection.episodePath(items[index]);
+    if (clickedPath.length === 0) {
+      return;
+    }
+    if (this.isShowingAllEpisodes()) {
+      const playlist: Record<string, Object>[] = [];
+      for (const e of items) {
+        const path = VideoDetailEpisodeSection.episodePath(e);
+        if (path.length > 0) {
+          playlist.push({ 'path': path, 'name': VideoDetailEpisodeSection.episodeName(e) });
+        }
+      }
+      if (playlist.length === 0) {
+        return;
+      }
+      openVideoPlayer(toPlayerPlaylist(playlist), indexOfPath(playlist, clickedPath), 0);
+      return;
+    }
+    const res = await new VideoDetailApiService().getTvPlayInfo(this.ctrl.indexId);
+    if (!res.success || res.data === undefined) {
+      ToastUtil.show(res.message ?? L10n.t('video_detail_load_failed', '加载失败'));
+      return;
+    }
+    const playlist = parsePlaylistRecords(res.data);
+    if (playlist.length === 0) {
+      ToastUtil.show(res.message ?? L10n.t('video_detail_load_failed', '加载失败'));
+      return;
+    }
+    if (!this.ctrl.episodeAsc) {
+      playlist.reverse();
+    }
+    openVideoPlayer(toPlayerPlaylist(playlist), indexOfPath(playlist, clickedPath), 0);
   }
 
   private showEpisodeIntroDialog(e: Record<string, Object>): void {
@@ -1202,7 +1301,7 @@ export struct VideoDetailEpisodeSection {
     .borderRadius(14)
     .clip(true)
     .onClick(() => {
-      this.playEpisode(index);
+      void this.playEpisode(index);
     })
   }
 
@@ -1268,7 +1367,7 @@ export struct VideoDetailEpisodeSection {
     .borderRadius(14)
     .clip(true)
     .onClick(() => {
-      this.playEpisode(index);
+      void this.playEpisode(index);
     })
   }
 
@@ -1538,8 +1637,11 @@ export struct VideoDetailDiscContentSection {
             .backgroundColor(AppTheme.withAlpha(DetailColors.container, 0.28))
             .width('100%')
             .onClick(() => {
-              // 播放器未迁移
-              ToastUtil.show(L10n.featureComingSoon);
+              const playlist = this.ctrl.buildDiscPlaybackPlaylist();
+              if (playlist.length === 0) {
+                return;
+              }
+              openVideoPlayer(toPlayerPlaylist(playlist), this.ctrl.findDiscPlaybackIndex(item), 0);
             })
           }, (item: Record<string, Object>, index: number): string => `${index}_${asStr(item['path'])}`)
         }
