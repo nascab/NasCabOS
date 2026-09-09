@@ -17,6 +17,7 @@ import { LanguageService } from '../core/localization/LanguageService';
 import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
 import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 import { VideoMainPageParam } from '../video/views/VideoMainPage';
+import { MusicMainPageParam } from '../modules/music/router/MusicRoutes';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -97,6 +98,8 @@ export struct HomePage {
         this.pushPage(AppRouter.PHOTO_MAIN, param);
       } else if (app === 'movie') {
         this.pushPage(AppRouter.VIDEO_MAIN, new VideoMainPageParam());
+      } else if (app === 'music') {
+        this.pushPage(AppRouter.MUSIC_MAIN, new MusicMainPageParam());
       }
       return;
     }

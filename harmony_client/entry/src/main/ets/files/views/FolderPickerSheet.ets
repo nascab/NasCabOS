@@ -22,6 +22,8 @@ class FolderPickerSheetParams extends SheetParamsBase {
   multiSelect: boolean = false;
   /** 允许选择文件（对齐 Flutter allowFileSelect） */
   allowFileSelect: boolean = false;
+  /** 列目录 sourceType（对齐 Flutter sourceType，如音乐合集 'music'） */
+  sourceType: string = '';
 }
 
 @Builder
@@ -40,7 +42,7 @@ struct FolderPickerSheetInner {
     // 对齐 Flutter：allowFileSelect 时同时列出文件（onlyShowDir=false）
     this.ctrl.onlyShowDir = !this.p.allowFileSelect;
     this.loading = true;
-    this.ctrl.listDirectory(this.p.initialPath, 'normal').finally((): void => {
+    this.ctrl.listDirectory(this.p.initialPath, 'normal', this.p.sourceType).finally((): void => {
       this.loading = false;
     });
   }
@@ -236,7 +238,7 @@ struct FolderPickerSheetInner {
  * 取消/关闭时 resolve 空数组，确认时返回 [path]（multiSelect=true 时返回所选路径数组）。
  */
 export function pickTargetFolderViaSheet(initialPath: string,
-  onResult: (paths: string[]) => void, multiSelect: boolean = false): void {
+  onResult: (paths: string[]) => void, multiSelect: boolean = false, sourceType: string = ''): void {
   const p = new FolderPickerSheetParams();
   p.onPicked = (paths: string[]): void => {
     onResult(paths);
@@ -246,6 +248,7 @@ export function pickTargetFolderViaSheet(initialPath: string,
   };
   p.initialPath = initialPath;
   p.multiSelect = multiSelect;
+  p.sourceType = sourceType;
   SheetUtil.present(p, wrapBuilder(FolderPickerSheetContent));
 }
 

@@ -159,6 +159,9 @@ export class HomeViewModel {
     if (app === 'movie') {
       return true; // 影音管理已迁移（Flutter 端 app id 为 movie），由页面接线路由
     }
+    if (app === 'music') {
+      return true; // 音乐库已迁移，由页面接线路由
+    }
     return false;
   }
 

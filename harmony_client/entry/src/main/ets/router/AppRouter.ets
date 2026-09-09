@@ -31,4 +31,8 @@ export class AppRouter {
   static readonly VIDEO_COLLECTION_LIST: string = 'VideoCollectionListPage';
   static readonly VIDEO_SETTINGS: string = 'VideoSettingsPage';
   static readonly VIDEO_PLAYER: string = 'VideoPlayerPage';
+  static readonly MUSIC_MAIN: string = 'MusicMainPage';
+  static readonly MUSIC_SUB_LIST: string = 'MusicSubListPage';
+  static readonly MUSIC_PLAYER: string = 'MusicPlayerPage';
+  static readonly MUSIC_SETTINGS: string = 'MusicSettingsPage';
 }

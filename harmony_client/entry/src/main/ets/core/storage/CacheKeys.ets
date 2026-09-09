@@ -20,4 +20,18 @@ export class CacheKeys {
   static readonly SELECTED_LANGUAGE: string = 'selected_language';
   static readonly THEME_MODE: string = 'theme_mode';
   static readonly PHOTO_PREVIEW_WIFI_ORIGINAL: string = 'photo_preview_wifi_original';
+  // ===== music 模块（对齐 Flutter CacheKeys） =====
+  static readonly MUSIC_LIST_SELECTED_PATHS: string = 'musicListSelectedPaths';
+  static readonly MUSIC_SUB_LIST_SORT_BY: string = 'musicSubListSortBy';
+  static readonly MUSIC_SUB_LIST_SORT_ORDER: string = 'musicSubListSortOrder';
+  static readonly MUSIC_VOLUME: string = 'musicVolume';
+  static readonly MUSIC_VOLUME_BEFORE_MUTE: string = 'musicVolumeBeforeMute';
+  static readonly MUSIC_LOOP_MODE_INDEX: string = 'musicLoopModeIndex';
+  static readonly MUSIC_AUDIO_CACHE_ENABLED: string = 'musicAudioCacheEnabled';
+  static readonly MUSIC_AUDIO_CACHE_MAX_ITEMS: string = 'musicAudioCacheMaxItems';
+  static readonly MUSIC_FULL_SCREEN_SHOW_LYRICS: string = 'musicFullScreenShowLyrics';
+  static readonly MUSIC_DISC_STYLE_INDEX: string = 'musicDiscStyleIndex';
+  /** 列表排序持久化（带 scope 前缀：series_{type}|favorite|list_{id}|collection_{id}|lib_{type}|lib_all） */
+  static readonly MUSIC_LIST_SORT_BY: string = 'musicListSortBy';
+  static readonly MUSIC_LIST_SORT_ORDER: string = 'musicListSortOrder';
 }

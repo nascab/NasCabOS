@@ -1,4 +1,5 @@
 import { window } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
 
 /**
  * 主窗口缓存：EntryAbility 启动时写入。
@@ -7,6 +8,8 @@ import { window } from '@kit.ArkUI';
  */
 export class WindowStore {
   private static mainWindow: window.Window | undefined = undefined;
+  /** UIAbility 上下文（服务层无 getContext 时使用，如音乐后台任务/AVSession） */
+  static appContext: common.UIAbilityContext | undefined = undefined;
 
   static setMainWindow(w: window.Window): void {
     WindowStore.mainWindow = w;

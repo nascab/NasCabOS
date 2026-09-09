@@ -328,10 +328,14 @@ export struct AppImage {
         Image(this.url)
           .objectFit(this.objectFit)
           .draggable(false)
+          .width('100%')
+          .height('100%')
       } else if (this.pixelMap) {
         Image(this.pixelMap)
           .objectFit(this.objectFit)
           .draggable(false)
+          .width('100%')
+          .height('100%')
       } else if (this.failed) {
         // 失败占位：点击重试
         Column({ space: 6 }) {

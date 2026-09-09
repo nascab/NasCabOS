@@ -43,6 +43,13 @@ import {
 import { GalleryPage, PanoramaPageParam } from '../gallery/views/GalleryPage';
 import { PanoramaPage } from '../gallery/views/PanoramaPage';
 import { GalleryPageParam } from '../gallery/models/GalleryModels';
+import { MusicMainPage } from '../modules/music/views/MusicMainPage';
+import { MusicMainPageParam } from '../modules/music/router/MusicRoutes';
+import { MusicSubListPage } from '../modules/music/views/MusicSubListPage';
+import { MusicSubListPageParam } from '../modules/music/router/MusicRoutes';
+import { MusicSubListPayload } from '../modules/music/controllers/MusicSubListController';
+import { MusicPlayerPage, MusicPlayerPageParam } from '../modules/music/views/MusicPlayerPage';
+import { MusicSettingsPage } from '../modules/music/views/MusicSettingsPage';
 import { NavUtil } from '../common/NavUtil';
 
 @Entry
@@ -267,6 +274,31 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.MUSIC_MAIN) {
+      MusicMainPageBuilder(
+        param instanceof MusicMainPageParam ? param : new MusicMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MUSIC_SUB_LIST) {
+      MusicSubListPageBuilder(
+        param instanceof MusicSubListPageParam ? param : new MusicSubListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MUSIC_PLAYER) {
+      MusicPlayerPageBuilder(
+        param instanceof MusicPlayerPageParam ? param : new MusicPlayerPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MUSIC_SETTINGS) {
+      MusicSettingsPageBuilder((): void => {
+        this.pageStack.pop();
+      })
     }
   }
 
@@ -432,4 +464,27 @@ function VideoSettingsPageBuilder(popPage: () => void) {
 @Builder
 function VideoPlayerPageBuilder(param: VideoPlayerPageParam, popPage: () => void) {
   VideoPlayerPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MusicMainPageBuilder(param: MusicMainPageParam, popPage: () => void) {
+  MusicMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MusicSubListPageBuilder(param: MusicSubListPageParam, popPage: () => void) {
+  MusicSubListPage({ payload: new MusicSubListPayload(
+    param.keyType, param.name, param.seriesIndexId, param.listId,
+    param.listType, param.collectionId, param.isFavorite, param.isHistory
+  ) })
+}
+
+@Builder
+function MusicPlayerPageBuilder(param: MusicPlayerPageParam, popPage: () => void) {
+  MusicPlayerPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MusicSettingsPageBuilder(popPage: () => void) {
+  MusicSettingsPage({ popPage: popPage })
 }

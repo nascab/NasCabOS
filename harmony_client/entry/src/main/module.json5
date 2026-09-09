@@ -15,6 +15,14 @@
     "pages": "$profile:main_pages",
     "requestPermissions": [
       {
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING",
+        "reason": "$string:permission_background_audio_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "always"
+        }
+      },
+      {
         "name": "ohos.permission.INTERNET",
         "reason": "$string:permission_internet_reason",
         "usedScene": {
@@ -48,6 +56,7 @@
         "label": "$string:EntryAbility_label",
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
+        "backgroundModes": ["audioPlayback"],
         "exported": true,
         "skills": [
           {

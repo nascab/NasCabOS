@@ -110,7 +110,8 @@ export class ApiUrls {
   }
 
   /** 原始文件 URL（对齐 Flutter getRawFileUrl；与 getTinyUrl 一致始终携带 accessToken，服务器图片接口需要鉴权） */
-  static async getRawFileUrl(filePath: string, withAccessToken: boolean = true): Promise<string> {
+  static async getRawFileUrl(filePath: string, withAccessToken: boolean = true,
+    p2pChannel: string = 'file'): Promise<string> {
     const api = APIClient.getInstance();
     const base = api.state.baseUrl;
     const token = api.state.accessToken ?? '';
@@ -124,7 +125,7 @@ export class ApiUrls {
     if (aes.length > 0) {
       let url = `${base}/api/file/rawFile?aes=${encodeURIComponent(aes)}`;
       if (ApiUrls.isP2p()) {
-        url += `&path=${encodeURIComponent(filePath)}&p2pChannel=file&raw=1`;
+        url += `&path=${encodeURIComponent(filePath)}&p2pChannel=${encodeURIComponent(p2pChannel)}&raw=1`;
         if (withAccessToken && token.length > 0) {
           url += `&accessToken=${encodeURIComponent(token)}`;
         }
@@ -133,7 +134,74 @@ export class ApiUrls {
     }
     let url = `${base}/api/file/rawFile?path=${encodeURIComponent(filePath)}&raw=1`;
     if (ApiUrls.isP2p()) {
-      url += '&p2pChannel=file';
+      url += `&p2pChannel=${encodeURIComponent(p2pChannel)}`;
+    }
+    if (withAccessToken && token.length > 0) {
+      url += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  /**
+   * 音乐封面 URL（对齐 Flutter getMusicCoverUrl）：
+   * /api/music/cover?file_path=&size=&accessToken=，AES 加密失败回退明文 query。
+   */
+  static async getMusicCoverUrl(filePath: string, size: number = 500): Promise<string> {
+    const p = filePath.trim();
+    if (p.length === 0) {
+      return '';
+    }
+    const api = APIClient.getInstance();
+    const base = api.state.baseUrl;
+    const token = api.state.accessToken ?? '';
+    const params = new Map<string, string>();
+    params.set('file_path', p);
+    params.set('size', `${size}`);
+    if (token.length > 0) {
+      params.set('accessToken', token);
+    }
+    const aes = await ApiUrls.encryptParams(params);
+    if (aes.length > 0) {
+      return `${base}/api/music/cover?aes=${encodeURIComponent(aes)}`;
+    }
+    let url = `${base}/api/music/cover?file_path=${encodeURIComponent(p)}&size=${encodeURIComponent(`${size}`)}`;
+    if (token.length > 0) {
+      url += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+
+  /**
+   * 音乐转码 URL（对齐 Flutter getMusicTranscodeUrl）：
+   * /api/music/transcode?path=&accessToken=，p2p 通道默认 'music'（音乐播放传 'download' 对齐 Flutter）。
+   */
+  static async getMusicTranscodeUrl(filePath: string, withAccessToken: boolean = true,
+    p2pChannel: string = 'music'): Promise<string> {
+    const api = APIClient.getInstance();
+    const base = api.state.baseUrl;
+    const token = api.state.accessToken ?? '';
+    const params = new Map<string, string>();
+    params.set('path', filePath);
+    if (withAccessToken && token.length > 0) {
+      params.set('accessToken', token);
+    }
+    const aes = await ApiUrls.encryptParams(params);
+    if (aes.length > 0) {
+      let url = `${base}/api/music/transcode?aes=${encodeURIComponent(aes)}`;
+      if (ApiUrls.isP2p()) {
+        url += `&path=${encodeURIComponent(filePath)}`;
+        if (p2pChannel.trim().length > 0) {
+          url += `&p2pChannel=${encodeURIComponent(p2pChannel)}`;
+        }
+        if (withAccessToken && token.length > 0) {
+          url += `&accessToken=${encodeURIComponent(token)}`;
+        }
+      }
+      return url;
+    }
+    let url = `${base}/api/music/transcode?path=${encodeURIComponent(filePath)}`;
+    if (ApiUrls.isP2p() && p2pChannel.trim().length > 0) {
+      url += `&p2pChannel=${encodeURIComponent(p2pChannel)}`;
     }
     if (withAccessToken && token.length > 0) {
       url += `&accessToken=${encodeURIComponent(token)}`;

@@ -23,6 +23,10 @@
     {
       "name": "permission_wifi_info_reason",
       "value": "局域网服务器发现需要 Wi-Fi 信息"
+    },
+    {
+      "name": "permission_background_audio_reason",
+      "value": "音乐后台播放与锁屏控制需要保持后台运行"
     }
   ]
 }
