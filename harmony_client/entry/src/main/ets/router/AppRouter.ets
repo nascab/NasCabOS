@@ -35,4 +35,10 @@ export class AppRouter {
   static readonly MUSIC_SUB_LIST: string = 'MusicSubListPage';
   static readonly MUSIC_PLAYER: string = 'MusicPlayerPage';
   static readonly MUSIC_SETTINGS: string = 'MusicSettingsPage';
+  static readonly BOOK_MAIN: string = 'BookMainPage';
+  static readonly BOOK_SETTINGS: string = 'BookSettingsPage';
+  static readonly BOOK_SUB_LIST: string = 'BookSubListPage';
+  static readonly BOOK_TXT_READER: string = 'BookTxtReaderPage';
+  static readonly BOOK_COMIC_READER: string = 'BookComicReaderPage';
+  static readonly BOOK_WEB_READER: string = 'BookWebReaderPage';
 }

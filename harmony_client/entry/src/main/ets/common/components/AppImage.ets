@@ -240,6 +240,9 @@ export struct AppImage {
   @Param imageRadius: number = 0;
   /** 加载中是否显示转圈（小缩略图场景可关） */
   @Param showLoadingSpin: boolean = true;
+  /** 加载结果回调（成功 true / 失败 false）：用于主图失败切换备选图等场景 */
+  @Param onLoaded: (ok: boolean) => void = (_ok: boolean): void => {
+  };
   @Local pixelMap: PixelMap | undefined = undefined;
   @Local failed: boolean = false;
   private loadSeq: number = 0;
@@ -304,6 +307,7 @@ export struct AppImage {
       this.pixelMap = pm;
       this.failed = false;
       this.retryCount = 0;
+      this.onLoaded(true);
     } catch (e) {
       if (seq !== this.loadSeq) {
         return;
@@ -319,6 +323,7 @@ export struct AppImage {
       }
       this.pixelMap = undefined;
       this.failed = true;
+      this.onLoaded(false);
     }
   }
 

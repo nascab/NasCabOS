@@ -31,10 +31,25 @@ export struct ZoomableImage {
   /** 缩放变化回调（页面用于放大时禁用 Swiper 滑动） */
   @Param onScaleChanged: (scale: number) => void = (_s: number): void => {
   };
+  /**
+   * 未放大时自身平移手势方向（另一个轴让给外层 Swiper 翻页）：
+   * 水平 Swiper（图片浏览器）用 Vertical；垂直 Swiper（漫画竖读）用 Horizontal。
+   */
+  @Param idlePanDirection: PanDirection = PanDirection.Vertical;
+  /**
+   * 适应宽度模式（漫画阅读器）：图片加载后计算基础缩放使宽度铺满容器，
+   * 初始顶对齐；缩放/平移均以基础缩放为基准（对齐 Flutter ExtendedImage fitWidth）。
+   */
+  @Param fitWidthMode: boolean = false;
+  /** 是否处于放大状态回调（相对自身基础缩放），页面用于禁用外层 Swiper 滑动 */
+  @Param onZoomChanged: (zoomed: boolean) => void = (_z: boolean): void => {
+  };
 
   @Local pixelMap: PixelMap | undefined = undefined;
   @Local failed: boolean = false;
   @Local currentScale: number = 1.0;
+  /** 基础缩放：普通模式 1.0；fitWidth 模式为宽度铺满所需的缩放 */
+  @Local baseScale: number = 1.0;
   @Local offsetX: number = 0;
   @Local offsetY: number = 0;
   @Local containerW: number = 0;
@@ -45,6 +60,8 @@ export struct ZoomableImage {
   private panStartY: number = 0;
   private panBaseX: number = 0;
   private panBaseY: number = 0;
+  /** fitWidth 基础缩放是否已应用（等待容器测量） */
+  private baseApplied: boolean = false;
 
   aboutToAppear(): void {
     this.currentScale = this.initScale;
@@ -57,6 +74,8 @@ export struct ZoomableImage {
 
   @Monitor('url')
   onUrlChange(): void {
+    this.baseScale = 1.0;
+    this.baseApplied = false;
     this.currentScale = this.initScale;
     this.offsetX = 0;
     this.offsetY = 0;
@@ -78,6 +97,7 @@ export struct ZoomableImage {
       }
       this.pixelMap = pm;
       this.failed = false;
+      this.applyBaseScale();
     } catch (e) {
       hilog.error(0x0000, TAG, 'load failed: %{public}s, url: %{public}s', `${e}`, target);
       if (seq !== this.loadSeq) {
@@ -88,19 +108,60 @@ export struct ZoomableImage {
     }
   }
 
+  /** fitWidth 模式：图片就绪后计算基础缩放（宽度铺满容器）并顶对齐 */
+  private applyBaseScale(): void {
+    if (!this.fitWidthMode) {
+      this.baseScale = 1.0;
+      this.baseApplied = true;
+      this.applyInitialAlign();
+      return;
+    }
+    if (this.containerW <= 0 || this.pixelMap === undefined) {
+      return; // 等待 onAreaChange 后重试
+    }
+    const containW = this.displayWidth();
+    if (containW <= 0) {
+      return;
+    }
+    this.baseScale = this.clampScale(this.containerW / containW);
+    this.currentScale = this.baseScale;
+    this.baseApplied = true;
+    this.applyInitialAlign();
+  }
+
+  /** 初始对齐：普通模式居中；fitWidth 模式顶对齐（图片高于容器时下移至顶边贴齐） */
+  private applyInitialAlign(): void {
+    this.offsetX = 0;
+    this.offsetY = 0;
+    if (this.fitWidthMode && this.baseScale > 1.001 && this.containerH > 0) {
+      const dispH = this.displayHeight() * this.currentScale;
+      if (dispH > this.containerH) {
+        this.offsetY = (dispH - this.containerH) / 2;
+      }
+    }
+    this.clampOffset(this.offsetX, this.offsetY);
+    this.notifyZoom();
+  }
+
+  private notifyZoom(): void {
+    this.onZoomChanged(this.currentScale > this.baseScale + 0.01);
+  }
+
   private clampScale(v: number): number {
     return Math.min(Math.max(v, this.minScale), this.maxScale);
   }
 
-  /** 缩放后限制平移范围，保证图片不会完全滑出视野 */
+  /** 缩放后限制平移范围，保证图片不会完全滑出视野（按图片实际显示尺寸计算） */
   private clampOffset(x: number, y: number): void {
     const w = this.containerW;
     const h = this.containerH;
     if (w <= 0 || h <= 0) {
       return;
     }
-    const overflowX = Math.max(0, (this.currentScale - 1) * w / 2);
-    const overflowY = Math.max(0, (this.currentScale - 1) * h / 2);
+    const dispW = this.displayWidth() * this.currentScale;
+    const dispH = this.displayHeight() * this.currentScale;
+    const overflowX = Math.max(0, (dispW - w) / 2);
+    const overflowY = Math.max(0, (dispH - h) / 2);
     this.offsetX = Math.min(Math.max(x, -overflowX), overflowX);
     this.offsetY = Math.min(Math.max(y, -overflowY), overflowY);
   }
@@ -109,6 +170,7 @@ export struct ZoomableImage {
     const next = this.clampScale(this.pinchBase * e.scale);
     this.currentScale = next;
     this.onScaleChanged(next);
+    this.notifyZoom();
     this.clampOffset(this.offsetX, this.offsetY);
   }
 
@@ -127,24 +189,29 @@ export struct ZoomableImage {
       this.panBaseY + (e.offsetY - this.panStartY));
   }
 
-  /** 双击：在点击位置 1↔doubleTapScale 缩放（对齐 ExtendedImage handleDoubleTap） */
+  /** 双击：基础缩放 ↔ 基础×doubleTapScale，保持点击位置不动（对齐 ExtendedImage handleDoubleTap） */
   private onDoubleTap(e: GestureEvent): void {
-    const target = this.currentScale > 1.01 ? 1.0 : this.doubleTapScale;
-    if (target === 1.0) {
-      this.currentScale = 1.0;
-      this.offsetX = 0;
-      this.offsetY = 0;
-      this.onScaleChanged(1.0);
+    const zoomed = this.currentScale > this.baseScale + 0.01;
+    if (zoomed) {
+      this.currentScale = this.baseScale;
+      this.applyInitialAlign();
+      this.onScaleChanged(this.currentScale);
       return;
     }
+    const target = this.clampScale(this.baseScale * this.doubleTapScale);
+    const w = this.containerW > 0 ? this.containerW : 360;
+    const h = this.containerH > 0 ? this.containerH : 640;
+    const tapX = e.fingerList.length > 0 ? e.fingerList[0].localX : w / 2;
+    const tapY = e.fingerList.length > 0 ? e.fingerList[0].localY : h / 2;
+    // 点击点在未缩放图像坐标系中的位置；缩放前后保持该点屏幕位置不变
+    const px = (tapX - w / 2 - this.offsetX) / this.currentScale;
+    const py = (tapY - h / 2 - this.offsetY) / this.currentScale;
+    this.offsetX = this.offsetX + px * (this.currentScale - target);
+    this.offsetY = this.offsetY + py * (this.currentScale - target);
     this.currentScale = target;
-    // 点击点相对容器中心的偏移，放大后反向放大该偏移使点击处保持在原视野位置
-    const px = e.fingerList.length > 0 ? e.fingerList[0].localX - this.containerW / 2 : 0;
-    const py = e.fingerList.length > 0 ? e.fingerList[0].localY - this.containerH / 2 : 0;
-    this.offsetX = -px * (target - 1);
-    this.offsetY = -py * (target - 1);
     this.clampOffset(this.offsetX, this.offsetY);
     this.onScaleChanged(target);
+    this.notifyZoom();
   }
 
   build() {
@@ -184,6 +251,9 @@ export struct ZoomableImage {
     .onAreaChange((_o: Area, n: Area): void => {
       this.containerW = Number(n.width);
       this.containerH = Number(n.height);
+      if (this.pixelMap !== undefined && !this.baseApplied) {
+        this.applyBaseScale();
+      }
     })
     .gesture(GestureGroup(GestureMode.Parallel,
       PinchGesture({ fingers: 2 })
@@ -195,8 +265,8 @@ export struct ZoomableImage {
         }),
       PanGesture({
         fingers: 1,
-        // 未放大时仅响应垂直平移，水平滑动让给外层 Swiper 翻页（对齐 Flutter ExtendedImage 手势策略）
-        direction: this.currentScale > 1.001 ? PanDirection.All : PanDirection.Vertical,
+        // 未放大时仅响应 idlePanDirection 平移，另一轴滑动让给外层 Swiper 翻页（对齐 Flutter ExtendedImage 手势策略）
+        direction: this.currentScale > 1.001 ? PanDirection.All : this.idlePanDirection,
         distance: 5
       })
         .onActionStart((e: GestureEvent): void => {

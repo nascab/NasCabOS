@@ -162,6 +162,9 @@ export class HomeViewModel {
     if (app === 'music') {
       return true; // 音乐库已迁移，由页面接线路由
     }
+    if (app === 'book') {
+      return true; // 图书馆已迁移（Flutter 端 app id 为 book），由页面接线路由
+    }
     return false;
   }
 

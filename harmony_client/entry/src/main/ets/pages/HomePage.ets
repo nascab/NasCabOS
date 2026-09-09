@@ -18,6 +18,7 @@ import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
 import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 import { VideoMainPageParam } from '../video/views/VideoMainPage';
 import { MusicMainPageParam } from '../modules/music/router/MusicRoutes';
+import { BookMainPageParam } from '../modules/book/router/BookRoutes';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -100,6 +101,8 @@ export struct HomePage {
         this.pushPage(AppRouter.VIDEO_MAIN, new VideoMainPageParam());
       } else if (app === 'music') {
         this.pushPage(AppRouter.MUSIC_MAIN, new MusicMainPageParam());
+      } else if (app === 'book') {
+        this.pushPage(AppRouter.BOOK_MAIN, new BookMainPageParam());
       }
       return;
     }

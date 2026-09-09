@@ -50,6 +50,13 @@ import { MusicSubListPageParam } from '../modules/music/router/MusicRoutes';
 import { MusicSubListPayload } from '../modules/music/controllers/MusicSubListController';
 import { MusicPlayerPage, MusicPlayerPageParam } from '../modules/music/views/MusicPlayerPage';
 import { MusicSettingsPage } from '../modules/music/views/MusicSettingsPage';
+import { BookMainPage } from '../modules/book/views/BookMainPage';
+import { BookMainPageParam, BookSubListPageParam, BookTxtReaderParam, BookComicReaderParam, BookWebReaderParam } from '../modules/book/router/BookRoutes';
+import { BookSubListPage } from '../modules/book/views/BookSubListPage';
+import { BookSettingsPage } from '../modules/book/views/BookSettingsPage';
+import { BookTxtReaderPage } from '../modules/book/views/BookTxtReaderPage';
+import { BookComicReaderPage } from '../modules/book/views/BookComicReaderPage';
+import { BookWebReaderPage } from '../modules/book/views/BookWebReaderPage';
 import { NavUtil } from '../common/NavUtil';
 
 @Entry
@@ -299,6 +306,45 @@ struct Index {
       MusicSettingsPageBuilder((): void => {
         this.pageStack.pop();
       })
+    } else if (name === AppRouter.BOOK_MAIN) {
+      BookMainPageBuilder(
+        param instanceof BookMainPageParam ? param : new BookMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.BOOK_SUB_LIST) {
+      BookSubListPageBuilder(
+        param instanceof BookSubListPageParam ? param : new BookSubListPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.BOOK_SETTINGS) {
+      BookSettingsPageBuilder((): void => {
+        this.pageStack.pop();
+      })
+    } else if (name === AppRouter.BOOK_TXT_READER) {
+      BookTxtReaderPageBuilder(
+        param instanceof BookTxtReaderParam ? param : new BookTxtReaderParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.BOOK_COMIC_READER) {
+      BookComicReaderPageBuilder(
+        param instanceof BookComicReaderParam ? param : new BookComicReaderParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.BOOK_WEB_READER) {
+      BookWebReaderPageBuilder(
+        param instanceof BookWebReaderParam ? param : new BookWebReaderParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     }
   }
 
@@ -487,4 +533,34 @@ function MusicPlayerPageBuilder(param: MusicPlayerPageParam, popPage: () => void
 @Builder
 function MusicSettingsPageBuilder(popPage: () => void) {
   MusicSettingsPage({ popPage: popPage })
+}
+
+@Builder
+function BookMainPageBuilder(param: BookMainPageParam, popPage: () => void) {
+  BookMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function BookSubListPageBuilder(param: BookSubListPageParam, popPage: () => void) {
+  BookSubListPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function BookSettingsPageBuilder(popPage: () => void) {
+  BookSettingsPage({ popPage: popPage })
+}
+
+@Builder
+function BookTxtReaderPageBuilder(param: BookTxtReaderParam, popPage: () => void) {
+  BookTxtReaderPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function BookComicReaderPageBuilder(param: BookComicReaderParam, popPage: () => void) {
+  BookComicReaderPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function BookWebReaderPageBuilder(param: BookWebReaderParam, popPage: () => void) {
+  BookWebReaderPage({ param: param, popPage: popPage })
 }

@@ -34,4 +34,13 @@ export class CacheKeys {
   /** 列表排序持久化（带 scope 前缀：series_{type}|favorite|list_{id}|collection_{id}|lib_{type}|lib_all） */
   static readonly MUSIC_LIST_SORT_BY: string = 'musicListSortBy';
   static readonly MUSIC_LIST_SORT_ORDER: string = 'musicListSortOrder';
+  // ===== book 模块（对齐 Flutter CacheKeys） =====
+  static readonly BOOK_LIST_SORT_BY: string = 'bookListSortBy';
+  static readonly BOOK_LIST_SORT_ORDER: string = 'bookListSortOrder';
+  static readonly BOOK_LIST_SELECTED_PATHS: string = 'bookListSelectedPaths';
+  static readonly BOOK_LIST_COVER_SCALE: string = 'book_list_cover_scale';
+  static readonly BOOK_CUSTOM_LIST_SORT_FIELD: string = 'book_custom_list_sort_field';
+  static readonly BOOK_CUSTOM_LIST_SORT_ORDER: string = 'book_custom_list_sort_order';
+  static readonly BOOK_COLLECTION_SORT_FIELD: string = 'book_collection_sort_field';
+  static readonly BOOK_COLLECTION_SORT_ORDER: string = 'book_collection_sort_order';
 }

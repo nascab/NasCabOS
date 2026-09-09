@@ -111,10 +111,11 @@ export class ApiUrls {
 
   /** 原始文件 URL（对齐 Flutter getRawFileUrl；与 getTinyUrl 一致始终携带 accessToken，服务器图片接口需要鉴权） */
   static async getRawFileUrl(filePath: string, withAccessToken: boolean = true,
-    p2pChannel: string = 'file'): Promise<string> {
+    p2pChannel: string = 'file', accessTokenOverride?: string): Promise<string> {
     const api = APIClient.getInstance();
     const base = api.state.baseUrl;
-    const token = api.state.accessToken ?? '';
+    const token = (accessTokenOverride !== undefined && accessTokenOverride.trim().length > 0)
+      ? accessTokenOverride.trim() : (api.state.accessToken ?? '');
     const params = new Map<string, string>();
     params.set('path', filePath);
     if (withAccessToken && token.length > 0) {
