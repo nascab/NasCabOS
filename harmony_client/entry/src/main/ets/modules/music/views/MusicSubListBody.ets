@@ -38,6 +38,8 @@ export struct MusicSubListBody {
   @Param onOpenSeries: (item: MusicListItem) => void = (_item: MusicListItem): void => {
   };
 
+  @Local private refreshing: boolean = false;
+
   private svc: MusicPlayService = MusicPlayService.getInstance();
 
   private isCurrentRow(item: MusicListItem): boolean {
@@ -129,6 +131,7 @@ export struct MusicSubListBody {
   }
 
   build() {
+    Refresh({ refreshing: this.refreshing }) {
     if (this.ctrl.loading) {
       Column() {
         LoadingProgress()
@@ -207,6 +210,15 @@ export struct MusicSubListBody {
       .width('100%')
       .height('100%')
     }
+    }
+    .onRefreshing(() => {
+      this.refreshing = true;
+      this.ctrl.refreshList(false).finally(() => {
+        this.refreshing = false;
+      });
+    })
+    .width('100%')
+    .height('100%')
   }
 
   /** 数据行（对齐 _MobileDataRow） */

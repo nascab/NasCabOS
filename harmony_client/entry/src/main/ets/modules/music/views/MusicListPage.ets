@@ -44,6 +44,7 @@ export struct MusicListPage {
 
   private ctrl: MusicListController = new MusicListController();
   @Local private gridWidth: number = 0;
+  @Local private refreshing: boolean = false;
 
   aboutToAppear(): void {
     const p = this.param;
@@ -124,6 +125,7 @@ export struct MusicListPage {
       .height(60)
       .padding({ left: 12, right: 12 })
 
+      Refresh({ refreshing: this.refreshing }) {
       if (this.ctrl.loading) {
         Column() {
           LoadingProgress()
@@ -223,6 +225,15 @@ export struct MusicListPage {
         .width('100%')
         .layoutWeight(1)
       }
+      }
+      .onRefreshing(() => {
+        this.refreshing = true;
+        this.ctrl.refreshList(false).finally(() => {
+          this.refreshing = false;
+        });
+      })
+      .width('100%')
+      .height('100%')
     }
     .width('100%')
     .height('100%')

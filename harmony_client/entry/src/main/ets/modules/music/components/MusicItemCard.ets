@@ -232,6 +232,8 @@ export struct MusicItemCard {
           }
           .width(30)
           .height(30)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
           .borderRadius(15)
           .backgroundColor('#BF' + AppTheme.current().surfaceBg.replace('#', ''))
           .border({ width: 1, color: AppTheme.withAlpha(AppTheme.current().onSurface, 0.12) })
@@ -241,7 +243,7 @@ export struct MusicItemCard {
           })
         }
 
-        // 右上徽标（非多选模式）
+        // 右上徽标（非多选模式；position 定位下 margin 不参与布局，用 translate 留出右侧间距）
         if (!this.selectionMode && this.badgeLabel().length > 0) {
           Text(this.badgeLabel())
             .fontSize(10)
@@ -252,7 +254,7 @@ export struct MusicItemCard {
             .borderRadius(6)
             .position({ x: '100%', y: 6 })
             .markAnchor({ x: '100%' })
-            .margin({ right: 6 })
+            .translate({ x: -6 })
         }
 
         // 左下操作入口（移动端）
@@ -264,12 +266,14 @@ export struct MusicItemCard {
           }
           .width(30)
           .height(30)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
           .borderRadius(15)
           .backgroundColor(AppTheme.withAlpha(AppTheme.current().surfaceBg, 0.75))
           .border({ width: 1, color: AppTheme.withAlpha(AppTheme.current().onSurface, 0.12) })
           .position({ x: 6, y: '100%' })
           .markAnchor({ y: '100%' })
-          .margin({ bottom: 6 })
+          .translate({ y: -6 })
           .onClick(() => {
             this.showActionSheet();
           })

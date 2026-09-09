@@ -462,6 +462,8 @@ struct MusicLyricSearchDialogContent {
 export struct MusicPlayerPage {
   @Param param: MusicPlayerPageParam = new MusicPlayerPageParam();
   @Param popPage: () => void = (): void => {
+    // 默认走全局导航栈弹出，防止路由构造时未注入导致收起按钮点击无效
+    NavUtil.pop();
   };
 
   private svc: MusicPlayService = MusicPlayService.getInstance();
@@ -491,8 +493,8 @@ export struct MusicPlayerPage {
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.clearRetryTimer();
-    // 返回目标是音乐主页（常规页）：必须恢复避让布局
-    this.setFullScreen(false);
+    // 不恢复非全屏：返回目标音乐主页已改为沉浸布局（其 onShown 确保 true），
+    // 在此写 false 会导致返回音乐主页时布局跳动
   }
 
   private setFullScreen(full: boolean): void {
@@ -758,6 +760,13 @@ export struct MusicPlayerPage {
       .width('100%')
       .height('100%')
       .backgroundColor(AppTheme.current().pageBg)
+      // 下滑手势退出（>80vp）；内部 Slider/歌词滚动为子手势优先不受影响
+      .gesture(PanGesture({ fingers: 1, direction: PanDirection.Vertical })
+        .onActionEnd((e: GestureEvent) => {
+          if (e.offsetY > 80) {
+            this.popPage();
+          }
+        }))
     }
     .hideTitleBar(true)
     .onShown((): void => {
@@ -778,18 +787,26 @@ export struct MusicPlayerPage {
   @Builder
   private Header() {
     Row() {
-      SymbolGlyph($r('sys.symbol.arrow_down'))
-        .fontSize(28)
-        .fontColor([AppTheme.current().onSurface])
-        .padding(4)
-        .onClick(() => {
-          this.popPage();
-        })
+      // 收起按钮：40 圆形半透明底 + 图标居中（点击绑在容器上，保证命中区域完整）
+      Column() {
+        SymbolGlyph($r('sys.symbol.arrow_left'))
+          .fontSize(20)
+          .fontColor([AppTheme.current().onSurface])
+      }
+      .width(40)
+      .height(40)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .borderRadius(20)
+      .backgroundColor('#33000000')
+      .border({ width: 1, color: AppTheme.withAlpha(AppTheme.current().onSurface, 0.12) })
+      .onClick(() => {
+        this.popPage();
+      })
       Blank()
     }
     .width('100%')
-    .height(60)
-    .padding({ left: 16, right: 16, top: this.statusBarHeight + 12 })
+    .padding({ left: 16, right: 16, top: this.statusBarHeight + 8, bottom: 8 })
   }
 
   /** 唱片区：大唱片 + 动作行（收藏/换碟/属性/队列） */

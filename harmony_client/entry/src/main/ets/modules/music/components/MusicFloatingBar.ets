@@ -32,7 +32,11 @@ export struct MusicFloatingBar {
         isPlaying: this.svc.isPlaying,
         discAsset: this.svc.discAsset,
         outerSize: 44,
-        innerSize: 30
+        innerSize: 30,
+        // 唱片组件自带 onTap 会拦截点击冒泡，需显式接通打开全屏播放页
+        onTap: (): void => {
+          this.onOpenFullscreen();
+        }
       })
 
       Column() {
@@ -58,11 +62,26 @@ export struct MusicFloatingBar {
       this.IconButton($r('sys.symbol.backward_end_fill'), L10n.t('music_prev_track'), (): void => {
         this.svc.playPrevious(false);
       })
-      // 播放/暂停按钮内联（@Builder 按值传参不随状态刷新，必须直接读 this.svc.isPlaying）
+      // 播放/暂停按钮内联（@Builder 按值传参不随状态刷新，必须直接读 this.svc.isPlaying）；
+      // sys.symbol 无 pause_circle，暂停用实心圆底 + 反色图标与 play_circle_fill 对齐
       Column() {
-        SymbolGlyph(this.svc.isPlaying ? $r('sys.symbol.pause_fill') : $r('sys.symbol.play_circle_fill'))
-          .fontSize(30)
-          .fontColor([AppTheme.current().onSurface])
+        if (this.svc.isPlaying) {
+          Column() {
+            SymbolGlyph($r('sys.symbol.pause_fill'))
+              .fontSize(14)
+              .fontColor([AppTheme.current().surfaceBg])
+          }
+          .width(30)
+          .height(30)
+          .borderRadius(15)
+          .backgroundColor(AppTheme.current().onSurface)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+        } else {
+          SymbolGlyph($r('sys.symbol.play_circle_fill'))
+            .fontSize(30)
+            .fontColor([AppTheme.current().onSurface])
+        }
       }
       .width(40)
       .height(40)

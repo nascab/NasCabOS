@@ -21,6 +21,9 @@ import { MusicSubListPageParam } from '../router/MusicRoutes';
 @ComponentV2
 export struct MusicPlayListPage {
   ctrl: MusicPlaylistController = new MusicPlaylistController();
+  /** 状态栏高度（vp）：嵌入音乐主页（沉浸全屏布局）时顶栏用它避让 */
+  @Param statusBarHeight: number = 0;
+  @Local private refreshing: boolean = false;
 
   aboutToAppear(): void {
     this.ctrl = new MusicPlaylistController();
@@ -138,12 +141,13 @@ export struct MusicPlayListPage {
         })
       }
       .width('100%')
-      .height(60)
-      .padding({ left: 12, right: 12 })
+      .height(60 + this.statusBarHeight)
+      .padding({ left: 12, right: 12, top: this.statusBarHeight })
       .border({ width: { bottom: 1 }, color: AppTheme.current().divider })
       .backgroundColor(AppTheme.current().surfaceBg)
 
-      // 内容
+      // 内容（Refresh 包裹，支持下拉刷新）
+      Refresh({ refreshing: this.refreshing }) {
       if (this.ctrl.isLoading && this.ctrl.items.length === 0) {
         Column() {
           LoadingProgress()
@@ -152,14 +156,14 @@ export struct MusicPlayListPage {
             .color(AppTheme.current().primary)
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .justifyContent(FlexAlign.Center)
       } else if (this.ctrl.items.length === 0) {
         Column() {
           EmptyState({ message: L10n.t('no_data') })
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .justifyContent(FlexAlign.Center)
       } else {
         List({ space: 12 }) {
@@ -182,7 +186,7 @@ export struct MusicPlayListPage {
           }
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
         .padding({ left: 12, right: 12, top: 6, bottom: 12 })
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring)
@@ -190,6 +194,15 @@ export struct MusicPlayListPage {
           void this.ctrl.loadMore();
         })
       }
+      }
+      .onRefreshing(() => {
+        this.refreshing = true;
+        this.ctrl.refreshLists().finally(() => {
+          this.refreshing = false;
+        });
+      })
+      .width('100%')
+      .layoutWeight(1)
     }
     .width('100%')
     .height('100%')

@@ -29,6 +29,7 @@ export struct MusicAlbumArtistPage {
 
   ctrl: MusicAlbumArtistController = new MusicAlbumArtistController(this.keyType);
   @Local private gridWidth: number = 0;
+  @Local private refreshing: boolean = false;
 
   private static readonly LETTERS: string[] = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -89,6 +90,7 @@ export struct MusicAlbumArtistPage {
     Column() {
       this.TopBar()
 
+      Refresh({ refreshing: this.refreshing }) {
       Stack() {
         if (this.ctrl.loading) {
           Column() {
@@ -150,6 +152,15 @@ export struct MusicAlbumArtistPage {
           this.LetterFilter()
         }
       }
+      .width('100%')
+      .height('100%')
+      }
+      .onRefreshing(() => {
+        this.refreshing = true;
+        this.ctrl.refreshList(false).finally(() => {
+          this.refreshing = false;
+        });
+      })
       .width('100%')
       .layoutWeight(1)
     }
@@ -442,6 +453,7 @@ export struct MusicAlbumArtistCard {
         }
 
         if (this.badgeLabel.trim().length > 0) {
+          // position 定位下 margin 不参与布局，右侧间距用 translate 留出
           Text(this.badgeLabel)
             .fontSize(10)
             .fontWeight(FontWeight.Bold)
@@ -449,9 +461,9 @@ export struct MusicAlbumArtistCard {
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
             .borderRadius(6)
             .backgroundColor('rgba(0,0,0,0.55)')
-            .position({ x: '100%', y: 0 })
+            .position({ x: '100%', y: 6 })
             .markAnchor({ x: '100%' })
-            .margin({ top: 6, right: 6 })
+            .translate({ x: -6 })
         }
       }
       .width('96%')

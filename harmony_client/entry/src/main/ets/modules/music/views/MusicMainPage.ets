@@ -39,6 +39,10 @@ export struct MusicMainPage {
   @Local hideFloatingBar: boolean = false;
   /** 主题变化刷新计数（AppTheme.current() 非响应式，依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
+  /** 状态栏高度（vp）：全屏布局后顶栏用它避让 */
+  @Local statusBarHeight: number = 0;
+  /** 底部导航条高度（vp）：全屏布局后底部标签栏用它避让 */
+  @Local navigationBarHeight: number = 0;
   /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
   private retryTimer: number = -1;
   private svc: MusicPlayService = MusicPlayService.getInstance();
@@ -50,14 +54,18 @@ export struct MusicMainPage {
   aboutToAppear(): void {
     this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 常规页强制非全屏避让布局：来源可能是沉浸页（壁纸首页等），窗口布局需显式恢复
-    this.setFullScreen(false);
-    this.scheduleAvoidRetry();
+    // 沉浸全屏布局（对齐 VideoMainPage）：页面自管安全区避让，tab 栏走 bottomInset 显式垫高，
+    // 避免 expandSafeArea 背景延伸在避让布局下不可靠，导致 tab 栏与底部安全区之间露缝
+    this.setFullScreen(true);
+    this.fetchSafeAreas();
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.clearRetryTimer();
+    // 不恢复非全屏：返回目标是沉浸式壁纸首页/全屏播放页（其 onShown 确保 true），
+    // 在此写 false 会导致返回时布局跳动
+    this.applyStatusBar();
   }
 
   /** 全屏布局开关（窗口主窗口同步单例，写顺序=调用顺序） */
@@ -69,11 +77,11 @@ export struct MusicMainPage {
   }
 
   /** push 转场会回滚窗口布局写入（实测）：延迟重设纠正 */
-  private scheduleAvoidRetry(): void {
+  private scheduleFullScreenRetry(): void {
     this.clearRetryTimer();
     this.retryTimer = setTimeout((): void => {
       this.retryTimer = -1;
-      this.setFullScreen(false);
+      this.setFullScreen(true);
     }, 120);
   }
 
@@ -82,6 +90,18 @@ export struct MusicMainPage {
       clearTimeout(this.retryTimer);
       this.retryTimer = -1;
     }
+  }
+
+  private fetchSafeAreas(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const top = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    // 钳制到合理范围，防止转场/布局切换瞬间返回异常值导致页面错乱
+    this.statusBarHeight = Math.min(Math.max(px2vp(top.topRect.height), 0), 140);
+    const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+    this.navigationBarHeight = Math.min(Math.max(px2vp(bottom.bottomRect.height), 0), 60);
   }
 
   private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
@@ -149,6 +169,8 @@ export struct MusicMainPage {
           BottomTabBar({
             items: this.tabItems(),
             selectedIndex: this.activeTab,
+            // 全屏布局下显式垫高避让导航条（expandSafeArea 模式在避让布局下不可靠）
+            bottomInset: this.navigationBarHeight,
             onSelect: (index: number): void => {
               if (index !== this.activeTab) {
                 this.hideFloatingBar = false;
@@ -167,9 +189,11 @@ export struct MusicMainPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      // 每次显示都确保非全屏避让布局（push 进入/从子页返回均覆盖）
-      this.setFullScreen(false);
-      this.scheduleAvoidRetry();
+      // 每次显示都确保全屏布局（从设置页等常规子页返回后覆盖其写入的 false）
+      this.setFullScreen(true);
+      this.scheduleFullScreenRetry();
+      this.fetchSafeAreas();
+      this.applyStatusBar();
     })
     .onHidden((): void => {
       // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面
@@ -202,9 +226,10 @@ export struct MusicMainPage {
       .width('100%')
       .height('100%')
     } else if (this.activeTab === 1) {
-      MusicPlayListPage()
+      // 嵌入页顶栏需自避让状态栏（主页为沉浸全屏布局）
+      MusicPlayListPage({ statusBarHeight: this.statusBarHeight })
     } else if (this.activeTab === 2) {
-      MusicCollectionPage()
+      MusicCollectionPage({ statusBarHeight: this.statusBarHeight })
     } else {
       // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入（同照片/影音主页处理方式）
       Column() {
@@ -257,8 +282,8 @@ export struct MusicMainPage {
       }
     }
     .width('100%')
-    .height(56)
-    .padding({ left: 12, right: 12 })
+    .height(56 + this.statusBarHeight)
+    .padding({ left: 12, right: 12, top: this.statusBarHeight })
     .border({ width: { bottom: 0.8 }, color: AppTheme.current().divider })
     .backgroundColor(AppTheme.current().surfaceBg)
   }
