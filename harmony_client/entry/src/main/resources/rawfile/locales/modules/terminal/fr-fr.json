@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Bloc",
   "terminal_cursor_underline": "Soulignement",
   "terminal_cursor_bar": "Barre",
-  "terminal_cursor_blink": "Clignotement curseur"
+  "terminal_cursor_blink": "Clignotement curseur",
+  "terminal_no_selection": "Aucun texte sélectionné"
 }

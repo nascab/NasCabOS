@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Block",
   "terminal_cursor_underline": "Unterstrich",
   "terminal_cursor_bar": "Balken",
-  "terminal_cursor_blink": "Cursor blinken"
+  "terminal_cursor_blink": "Cursor blinken",
+  "terminal_no_selection": "Kein Text ausgewählt"
 }

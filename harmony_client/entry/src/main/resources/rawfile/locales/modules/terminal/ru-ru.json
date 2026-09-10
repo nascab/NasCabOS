@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Блок",
   "terminal_cursor_underline": "Подчёркивание",
   "terminal_cursor_bar": "Вертикальная черта",
-  "terminal_cursor_blink": "Мигание курсора"
+  "terminal_cursor_blink": "Мигание курсора",
+  "terminal_no_selection": "Текст не выбран"
 }

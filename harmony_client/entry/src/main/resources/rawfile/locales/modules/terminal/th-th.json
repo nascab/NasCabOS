@@ -19,5 +19,6 @@
   "terminal_cursor_block": "สี่เหลี่ยม",
   "terminal_cursor_underline": "ขีดเส้นใต้",
   "terminal_cursor_bar": "เส้นตั้ง",
-  "terminal_cursor_blink": "เคอร์เซอร์กระพริบ"
+  "terminal_cursor_blink": "เคอร์เซอร์กระพริบ",
+  "terminal_no_selection": "ไม่มีข้อความที่เลือก"
 }

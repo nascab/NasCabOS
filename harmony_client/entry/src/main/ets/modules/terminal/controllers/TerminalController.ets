@@ -5,10 +5,7 @@ import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { PreferencesStore } from '../../../core/storage/PreferencesStore';
 import { DeviceFingerprint } from '../../../core/device/DeviceFingerprint';
-import {
-  TerminalUiConfig, TerminalLine, TerminalLineSource,
-  TERMINAL_MAX_LINES, TERMINAL_COPY_MAX_LINES, ansiFgColor
-} from '../models/TerminalModels';
+import { TerminalUiConfig } from '../models/TerminalModels';
 import {
   buildTerminalConnectUrl, buildTerminalFallbackUrl, isServerWin32, TerminalConnectOptions
 } from '../services/TerminalUrlService';
@@ -18,10 +15,8 @@ const TAG = '[Terminal]';
 const CONNECT_TIMEOUT_MS = 20000;
 /** 心跳间隔（对齐 Flutter 20s ping） */
 const PING_INTERVAL_MS = 20000;
-/** 输出批量刷新间隔（ms）：高频输出合并后一次性更新 UI */
+/** 输出批量刷新间隔（ms）：高频输出合并后一次性写入 Web xterm */
 const FLUSH_INTERVAL_MS = 50;
-/** 光标闪烁间隔（ms） */
-const CURSOR_BLINK_MS = 530;
 /** 重连退避上限（对齐 Flutter 15s） */
 const RECONNECT_MAX_DELAY_MS = 15000;
 /** 断开后等待服务端处理 terminate 的延时（对齐 Flutter 260ms） */
@@ -30,8 +25,8 @@ const TERMINATE_DELAY_MS = 260;
 /**
  * 终端控制器（对齐 Flutter TerminalController）：
  * - WebSocket 连接 /api/terminal/connect，ready/output/restore/ping/pong/exit/error 协议逐条对齐
- * - 输出进入简化 VT 解析器（SGR 颜色/粗体、\r 覆写、\b、行清除、OSC 剥离），50ms 批量渲染
- * - 手动重连指数退避自动重连、win32 shell 切换、UI 配置持久化、剪贴板复制/粘贴
+ * - 终端渲染由 Web xterm.js 承担（对齐 Flutter xterm 包），本控制器仅负责连接与数据转发
+ * - 手动重连指数退避自动重连、win32 shell 切换、UI 配置持久化、剪贴板粘贴
  */
 @ObservedV2
 export class TerminalController {
@@ -53,17 +48,11 @@ export class TerminalController {
   @Trace isWin32: boolean = false;
   /** UI 配置（修改必须整体替换实例，保证 V2 刷新） */
   @Trace uiConfig: TerminalUiConfig = TerminalUiConfig.defaults();
-  /** 正在输出中的最后一行（未收到换行） */
-  @Trace liveText: string = '';
-  @Trace liveColor: string = '';
-  @Trace liveBold: boolean = false;
-  /** 光标可见性（闪烁定时器驱动） */
-  @Trace cursorVisible: boolean = true;
-  /** 已提交行版本号：每次有新增提交行时自增（供视图监听滚动） */
-  @Trace revision: number = 0;
 
-  /** 已提交行数据源（LazyForEach 虚拟化渲染） */
-  readonly source: TerminalLineSource = new TerminalLineSource();
+  /** Web 渲染桥：由页面注入，收到服务器终端输出时回调（xterm term.write） */
+  onTerminalData: ((data: string) => void) | undefined = undefined;
+  /** Web 配置桥：由页面注入，UI 配置变化时回调（页面推送 __termApply 到 xterm） */
+  onUiConfigChanged: (() => void) | undefined = undefined;
 
   private instanceId: string = 'terminal';
   private ws: webSocket.WebSocket | undefined = undefined;
@@ -71,7 +60,6 @@ export class TerminalController {
   private reconnectTimer: number = -1;
   private connectTimeoutTimer: number = -1;
   private flushTimer: number = -1;
-  private blinkTimer: number = -1;
   private manualClose: boolean = false;
   private autoReconnectDisabled: boolean = false;
   private reconnectAttempt: number = 0;
@@ -83,32 +71,36 @@ export class TerminalController {
   private hasRenderedSessionContent: boolean = false;
   private attached: boolean = false;
 
-  // 输出解析缓冲
+  // 输出缓冲（合并高频输出后一次写入 Web）
   private pendingRaw: string = '';
-  // SGR 状态（跨消息持续）
-  private ansiFg: string = '';
-  private ansiBold: boolean = false;
-
-  // 命令历史（会话内持续）
-  private history: string[] = [];
-  private historyIndex: number = -1;
-  private historyDraft: string = '';
+  // 终端尺寸（Web onResize 更新；连接时携带初始值，对齐 Flutter resize 协议）
+  lastCols: number = 100;
+  lastRows: number = 30;
 
   // ===== 生命周期 =====
 
   /**
    * 页面挂载后调用（对齐 Flutter onInit）：加载 UI 配置并连接。
-   * 重复调用被忽略；页面退出时必须调用 detach()。
+   * 同实例重复挂载时仅确保连接存在；页面退出时必须调用 detach()。
    */
   async attach(instanceId: string): Promise<void> {
-    if (this.attached) {
+    const instance = instanceId.trim().length > 0 ? instanceId.trim() : 'terminal';
+    if (this.attached && this.instanceId === instance) {
+      // 单例控制器被同实例重复挂载（快速退出重进时旧页面尚未销毁）：
+      // 跳过初始化，仅确保连接存在
+      if (!this.connected && !this.connecting) {
+        this.reconnectAttempt = 0;
+        this.autoReconnectDisabled = false;
+        await this.connect(true, false);
+      }
       return;
     }
     this.attached = true;
-    this.instanceId = instanceId.trim().length > 0 ? instanceId.trim() : 'terminal';
+    this.instanceId = instance;
     this.isWin32 = isServerWin32();
+    this.reconnectAttempt = 0;
+    this.autoReconnectDisabled = false;
     this.loadUiConfig();
-    this.startBlink();
     await this.connect(false, false);
   }
 
@@ -120,7 +112,16 @@ export class TerminalController {
     this.attached = false;
     this.manualClose = true;
     this.autoReconnectDisabled = true;
-    this.stopBlink();
+    // 必须重置连接态与会话标识（控制器是单例，跨页面复用）：
+    // 1) connected 残留 → 下次 connect() 命中"已连接"检查被忽略
+    // 2) sessionId/hasRenderedSessionContent 残留 → 二次进入时服务端 restore 回放
+    //    被误判为重复数据丢弃，终端只剩光标无内容（Flutter 控制器随页面销毁重建，天然清零）
+    // 3) pendingRaw 残留 → 上次未 flush 的输出串扰到新会话
+    this.connected = false;
+    this.connecting = false;
+    this.sessionId = '';
+    this.hasRenderedSessionContent = false;
+    this.pendingRaw = '';
     this.disposeChannel();
   }
 
@@ -146,11 +147,9 @@ export class TerminalController {
   }
 
   setUiConfig(next: TerminalUiConfig): void {
-    const blinkChanged = next.cursorBlink !== this.uiConfig.cursorBlink;
     this.uiConfig = next;
-    if (blinkChanged) {
-      this.restartBlink();
-    }
+    // 实时推送新配置到 Web xterm（字号/行高/颜色/光标，设置面板改动即时生效）
+    this.onUiConfigChanged?.();
   }
 
   saveUiConfig(): Promise<void> {
@@ -167,31 +166,6 @@ export class TerminalController {
     if (parsed !== undefined) {
       this.setUiConfig(parsed);
     }
-  }
-
-  // ===== 光标闪烁 =====
-
-  private startBlink(): void {
-    this.cursorVisible = true;
-    if (this.blinkTimer >= 0 || !this.uiConfig.cursorBlink) {
-      return;
-    }
-    this.blinkTimer = setInterval((): void => {
-      this.cursorVisible = !this.cursorVisible;
-    }, CURSOR_BLINK_MS);
-  }
-
-  private stopBlink(): void {
-    if (this.blinkTimer >= 0) {
-      clearInterval(this.blinkTimer);
-      this.blinkTimer = -1;
-    }
-    this.cursorVisible = true;
-  }
-
-  private restartBlink(): void {
-    this.stopBlink();
-    this.startBlink();
   }
 
   // ===== 连接管理 =====
@@ -221,8 +195,8 @@ export class TerminalController {
     }
 
     const opts = new TerminalConnectOptions();
-    opts.cols = 100;
-    opts.rows = 30;
+    opts.cols = this.lastCols;
+    opts.rows = this.lastRows;
     opts.shell = this.isWin32 ? this.currentShell : '';
     opts.clientDeviceId = this.clientDeviceId;
     opts.terminalConnId = this.terminalConnId;
@@ -261,7 +235,13 @@ export class TerminalController {
       this.connectTimeoutTimer = setTimeout((): void => {
         this.connectTimeoutTimer = -1;
         if (this.connecting && !this.connected) {
-          console.info(`${TAG} connect timeout: no first message in 20s`);
+          console.info(`${TAG} connect timeout: no first message in 20s, dispose and retry`);
+          // 超时主动断开，交给自动重连退避接管（对齐 Flutter 超时仅日志的行为，但鸿蒙侧增加自愈）
+          this.disposeChannel();
+          this.connecting = false;
+          this.connected = false;
+          this.statusText = L10n.t('terminal_connection_failed', '终端连接失败');
+          this.scheduleReconnect();
         }
       }, CONNECT_TIMEOUT_MS);
       ws.connect(url, (err: Object, _value: boolean): void => {
@@ -286,7 +266,7 @@ export class TerminalController {
   /** 手动断开（对齐 Flutter disconnect） */
   disconnect(): void {
     this.manualClose = true;
-    const msg: Record<string, string> = { 'type': 'close' };
+    const msg: Record<string, Object> = { 'type': 'close' };
     this.sendJson(msg);
     this.disposeChannel();
     this.connected = false;
@@ -298,9 +278,9 @@ export class TerminalController {
   terminateSession(): Promise<void> {
     this.manualClose = true;
     this.autoReconnectDisabled = true;
-    const terminateMsg: Record<string, string> = { 'type': 'terminate' };
+    const terminateMsg: Record<string, Object> = { 'type': 'terminate' };
     this.sendJson(terminateMsg);
-    const closeMsg: Record<string, string> = { 'type': 'close', 'reason': 'terminate' };
+    const closeMsg: Record<string, Object> = { 'type': 'close', 'reason': 'terminate' };
     this.sendJson(closeMsg);
     return new Promise<void>((resolve: () => void) => {
       setTimeout((): void => {
@@ -325,7 +305,7 @@ export class TerminalController {
     if (!this.connected) {
       return;
     }
-    const msg: Record<string, string> = { 'type': 'input', 'data': '\u0003' };
+    const msg: Record<string, Object> = { 'type': 'input', 'data': '\u0003' };
     this.sendJson(msg);
   }
 
@@ -343,94 +323,39 @@ export class TerminalController {
     void this.connect(true, true);
   }
 
-  // ===== 命令输入与历史 =====
+  // ===== 命令输入 =====
 
-  /** 发送一行命令（自动追加回车；记录历史，对齐 xterm 回车键发送 '\r'） */
+  /**
+   * 发送一行命令并记录（供外部脚本化调用；常规键盘输入经 Web xterm onData → sendRawInput）。
+   */
   sendCommand(text: string): void {
-    const msg: Record<string, string> = { 'type': 'input', 'data': `${text}\r` };
+    const msg: Record<string, Object> = { 'type': 'input', 'data': `${text}\r` };
     this.sendJson(msg);
-    this.recordCommand(text);
   }
 
-  /** 仅发送原始输入（不追加回车、不记录历史），供粘贴直发等场景 */
+  /** 仅发送原始输入（不追加回车），对齐 Flutter _handleTerminalOutput → send */
   sendRawInput(data: string): void {
     if (data.length === 0) {
       return;
     }
-    const msg: Record<string, string> = { 'type': 'input', 'data': data };
+    const msg: Record<string, Object> = { 'type': 'input', 'data': data };
     this.sendJson(msg);
   }
 
-  private recordCommand(cmd: string): void {
-    const t = cmd.trim();
-    if (t.length === 0) {
+  /** 通知服务端终端尺寸变化（对齐 Flutter resize：{'type':'resize','cols','rows'}） */
+  sendResize(cols: number, rows: number): void {
+    if (!this.connected) {
       return;
     }
-    const last = this.history.length > 0 ? this.history[this.history.length - 1] : '';
-    if (last !== t) {
-      this.history.push(t);
-      if (this.history.length > 200) {
-        this.history.splice(0, this.history.length - 200);
-      }
-    }
-    this.historyIndex = -1;
-    this.historyDraft = '';
-  }
-
-  /** 上一条历史（无历史返回原文） */
-  historyBack(current: string): string {
-    if (this.history.length === 0) {
-      return current;
-    }
-    if (this.historyIndex === -1) {
-      this.historyDraft = current;
-      this.historyIndex = this.history.length - 1;
-    } else if (this.historyIndex > 0) {
-      this.historyIndex--;
-    }
-    return this.history[this.historyIndex] ?? current;
-  }
-
-  /** 下一条历史（越过最早一条回到未发送草稿） */
-  historyForward(): string {
-    if (this.historyIndex === -1) {
-      return '';
-    }
-    this.historyIndex++;
-    if (this.historyIndex >= this.history.length) {
-      this.historyIndex = -1;
-      return this.historyDraft;
-    }
-    return this.history[this.historyIndex] ?? '';
+    this.lastCols = Math.max(2, Math.floor(cols));
+    this.lastRows = Math.max(1, Math.floor(rows));
+    const msg: Record<string, Object> = { 'type': 'resize', 'cols': this.lastCols, 'rows': this.lastRows };
+    this.sendJson(msg);
   }
 
   // ===== 剪贴板 =====
 
-  /** 复制最近缓冲到剪贴板（无选区渲染，取最近 500 行，对齐 Flutter 复制后 toast 提示） */
-  copyBufferToClipboard(): void {
-    const lines: string[] = [];
-    const total = this.source.totalCount();
-    const from = Math.max(0, total - TERMINAL_COPY_MAX_LINES);
-    for (let i = from; i < total; i++) {
-      lines.push(this.source.getData(i).text);
-    }
-    if (this.liveText.length > 0) {
-      lines.push(this.liveText);
-    }
-    const text = lines.join('\n');
-    if (text.trim().length === 0) {
-      return;
-    }
-    try {
-      const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, text);
-      pasteboard.getSystemPasteboard().setPasteData(data);
-      ToastUtil.show(L10n.t('quick_share_copied', '已复制'));
-    } catch (_e) {
-      // 剪贴板不可用时忽略
-    }
-  }
-
-  /** 读取系统剪贴板文本（放入命令输入行，由用户回车发送） */
+  /** 读取系统剪贴板文本（由页面交给 Web xterm paste） */
   async pasteFromClipboard(): Promise<string> {
     try {
       const pasteData = await pasteboard.getSystemPasteboard().getPasteData();
@@ -499,7 +424,7 @@ export class TerminalController {
       return;
     }
     if (type === 'ping') {
-      const msg: Record<string, string> = { 'type': 'ping' };
+      const msg: Record<string, Object> = { 'type': 'ping' };
       this.sendJson(msg);
       return;
     }
@@ -636,7 +561,7 @@ export class TerminalController {
       if (!this.connected) {
         return;
       }
-      const msg: Record<string, string> = { 'type': 'ping' };
+      const msg: Record<string, Object> = { 'type': 'ping' };
       this.sendJson(msg);
     }, PING_INTERVAL_MS);
   }
@@ -680,7 +605,7 @@ export class TerminalController {
     }
   }
 
-  private sendJson(obj: Record<string, string>): void {
+  private sendJson(obj: Record<string, Object>): void {
     const ws = this.ws;
     if (ws === undefined) {
       return;
@@ -717,132 +642,8 @@ export class TerminalController {
     if (data.length === 0) {
       return;
     }
-    const newCommitted: TerminalLine[] = [];
-    let liveBuf = this.liveText;
-    let liveColor = this.liveColor;
-    let liveBold = this.liveBold;
-    let clearAll = false;
-
-    // 简化 VT 状态机：0 正文 / 1 ESC / 2 CSI / 3 OSC / 4 OSC 退出符
-    let mode = 0;
-    let csiParams = '';
-    for (let i = 0; i < data.length; i++) {
-      const code = data.charCodeAt(i);
-      const ch = data.charAt(i);
-      if (mode === 1) {
-        if (ch === '[') {
-          mode = 2;
-          csiParams = '';
-        } else if (ch === ']') {
-          mode = 3;
-        } else {
-          mode = 0;
-        }
-        continue;
-      }
-      if (mode === 2) {
-        if (code >= 0x40 && code <= 0x7e) {
-          mode = 0;
-          if (ch === 'm') {
-            // SGR：更新行颜色/粗体（整行单色近似：以行内最后一次设置为准）
-            const params = csiParams.split(';');
-            for (let p = 0; p < params.length; p++) {
-              const raw = params[p].trim();
-              const codeNum = raw.length === 0 ? 0 : parseInt(raw);
-              if (Number.isNaN(codeNum)) {
-                continue;
-              }
-              if (codeNum === 0) {
-                this.ansiFg = '';
-                this.ansiBold = false;
-              } else if (codeNum === 1) {
-                this.ansiBold = true;
-              } else if (codeNum === 22) {
-                this.ansiBold = false;
-              } else if (codeNum === 39) {
-                this.ansiFg = '';
-              } else if (codeNum >= 30 && codeNum <= 37) {
-                this.ansiFg = ansiFgColor(codeNum - 30);
-              } else if (codeNum >= 90 && codeNum <= 97) {
-                this.ansiFg = ansiFgColor(codeNum - 90 + 8);
-              }
-              // 其余（256 色/背景色/斜体等）忽略，保持当前状态
-            }
-            liveColor = this.ansiFg;
-            liveBold = this.ansiBold;
-          } else if (ch === 'K') {
-            // 行内擦除：近似为清空当前行
-            liveBuf = '';
-          } else if (ch === 'J') {
-            const nums = csiParams.split(';');
-            const first = nums.length > 0 && nums[0].length > 0 ? parseInt(nums[0]) : 0;
-            if (first === 2 || first === 3) {
-              clearAll = true;
-            }
-          }
-          // 其余 CSI（光标移动等）忽略
-        } else {
-          csiParams += ch;
-        }
-        continue;
-      }
-      if (mode === 3) {
-        if (code === 0x07) {
-          mode = 0;
-        } else if (code === 0x1b) {
-          mode = 4;
-        }
-        continue;
-      }
-      if (mode === 4) {
-        mode = 0;
-        continue;
-      }
-      if (code === 0x1b) {
-        mode = 1;
-        continue;
-      }
-      if (ch === '\n') {
-        newCommitted.push(new TerminalLine(liveBuf, liveColor, liveBold));
-        liveBuf = '';
-        liveColor = this.ansiFg;
-        liveBold = this.ansiBold;
-        continue;
-      }
-      if (ch === '\r') {
-        liveBuf = '';
-        continue;
-      }
-      if (code === 0x08) {
-        liveBuf = liveBuf.length > 0 ? liveBuf.substring(0, liveBuf.length - 1) : '';
-        continue;
-      }
-      if (code === 0x09) {
-        liveBuf += '    ';
-        continue;
-      }
-      if (code < 0x20) {
-        continue;
-      }
-      liveBuf += ch;
-    }
-
-    if (clearAll) {
-      newCommitted.length = 0;
-      liveBuf = '';
-      this.source.reset([]);
-    } else {
-      for (const line of newCommitted) {
-        this.source.append(line);
-      }
-    }
-    this.liveText = liveBuf;
-    this.liveColor = liveColor;
-    this.liveBold = liveBold;
-    if (clearAll || newCommitted.length > 0) {
-      this.source.trimTo(TERMINAL_MAX_LINES);
-      this.revision++;
-    }
+    // 直接交给 Web xterm.js 渲染（完整 VT/xterm 转义序列支持，对齐 Flutter xterm 包）
+    this.onTerminalData?.(data);
   }
 
   // ===== 工具 =====

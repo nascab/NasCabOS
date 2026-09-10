@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Khối",
   "terminal_cursor_underline": "Gạch dưới",
   "terminal_cursor_bar": "Dọc",
-  "terminal_cursor_blink": "Con trỏ nhấp nháy"
+  "terminal_cursor_blink": "Con trỏ nhấp nháy",
+  "terminal_no_selection": "Không có văn bản được chọn"
 }

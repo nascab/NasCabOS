@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Bloco",
   "terminal_cursor_underline": "Sublinhado",
   "terminal_cursor_bar": "Barra",
-  "terminal_cursor_blink": "Cursor piscar"
+  "terminal_cursor_blink": "Cursor piscar",
+  "terminal_no_selection": "Nenhum texto selecionado"
 }

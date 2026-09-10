@@ -19,5 +19,6 @@
   "terminal_cursor_block": "كتلة",
   "terminal_cursor_underline": "تسطير",
   "terminal_cursor_bar": "شريط",
-  "terminal_cursor_blink": "وميض المؤشر"
+  "terminal_cursor_blink": "وميض المؤشر",
+  "terminal_no_selection": "لا يوجد نص محدد"
 }

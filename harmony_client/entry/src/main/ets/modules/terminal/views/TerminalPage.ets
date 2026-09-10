@@ -1,18 +1,73 @@
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { webview } from '@kit.ArkWeb';
+import pasteboard from '@ohos.pasteboard';
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
 import { WindowStore } from '../../../common/WindowStore';
 import { L10n } from '../../../core/localization/L10n';
+import { ToastUtil } from '../../../common/ToastUtil';
 import { TerminalController } from '../controllers/TerminalController';
-import { TerminalOutputView } from '../components/TerminalOutputView';
 import { showTerminalSettingsSheet } from '../components/TerminalSettingsSheet';
 import { TerminalMainPageParam } from '../router/TerminalRoutes';
 
+const TAG = '[TerminalPage]';
+/** Web 终端本地源（onInterceptRequest 拦截到 rawfile/terminal/） */
+const TERMINAL_ORIGIN: string = 'http://nascab.terminal';
+const TERMINAL_START_URL: string = `${TERMINAL_ORIGIN}/index.html`;
+const TERMINAL_RAW_BASE: string = 'terminal/';
+
+// ===== Web 桥 =====
+
+/** JS → 原生回调集合（javaScriptProxy 注册对象；方法名与 index.html 协议一致） */
+class TerminalWebProxy {
+  onReady: () => void = (): void => {
+  };
+  onData: (data: string) => void = (_data: string): void => {
+  };
+  onResize: (cols: number, rows: number) => void = (_cols: number, _rows: number): void => {
+  };
+}
+
+/** 解包 runJavaScript 的字符串返回（内核可能 JSON 引号包裹） */
+function unwrapJsString(v: string): string {
+  if (v.length >= 2 && v.startsWith('"') && v.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(v) as Object;
+      if (typeof parsed === 'string') {
+        return parsed as string;
+      }
+    } catch (_e) {
+      // 非引号包裹原样返回
+    }
+  }
+  return v;
+}
+
+function mimeOf(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+    return 'text/html';
+  }
+  if (lower.endsWith('.js')) {
+    return 'application/javascript';
+  }
+  if (lower.endsWith('.css')) {
+    return 'text/css';
+  }
+  if (lower.endsWith('.png')) {
+    return 'image/png';
+  }
+  return 'application/octet-stream';
+}
+
 /**
  * 终端页（对齐 Flutter TerminalPage 移动端布局）：
- * 顶栏（返回 + 标题）→ 状态条（连接中/断开等，空时隐藏）→ 终端输出区 → 命令输入行（历史/发送）
+ * 顶栏（返回 + 标题）→ 状态条（连接中/断开等，空时隐藏）→ Web xterm.js 终端区
  * → 底部工具栏（win32 shell 切换、复制/粘贴、Ctrl+C、重连、设置）。
+ * 渲染采用 Web xterm.js（对齐 Flutter xterm 包的完整 VT/转义序列能力）；
+ * WebSocket 数据经 TerminalController 批量转发到 term.write，键盘输入经桥回传服务端。
  * 全屏交互页：根组件 NavDestination，自行处理沉浸式与状态栏。
  */
 @ComponentV2
@@ -21,11 +76,16 @@ export struct TerminalPage {
   @Param popPage: () => void = (): void => {
   };
   @Local ctrl: TerminalController = TerminalController.getInstance();
-  @Local inputText: string = '';
   /** 主题变化刷新计数（AppTheme.current() 非响应式，依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
   @Local statusBarHeight: number = 0;
   @Local navigationBarHeight: number = 0;
+  private webController: webview.WebviewController = new webview.WebviewController();
+  private webProxy: TerminalWebProxy = new TerminalWebProxy();
+  /** Web xterm 是否已就绪（onReady 后为 true） */
+  private webReady: boolean = false;
+  /** Web 未就绪期间的输出缓冲（ready 后一次性写入） */
+  private pendingWebData: string = '';
   /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
   private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
@@ -38,6 +98,13 @@ export struct TerminalPage {
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.setFullScreen(true);
     this.fetchSafeAreas();
+    this.bindBridge();
+    this.ctrl.onTerminalData = (data: string): void => {
+      this.writeToWeb(data);
+    };
+    this.ctrl.onUiConfigChanged = (): void => {
+      this.pushConfigToWeb();
+    };
     void this.ctrl.attach(this.param.instanceId);
   }
 
@@ -45,7 +112,90 @@ export struct TerminalPage {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.clearRetryTimer();
     this.applyStatusBar();
+    this.ctrl.onTerminalData = undefined;
+    this.ctrl.onUiConfigChanged = undefined;
     this.ctrl.detach();
+  }
+
+  // ===== Web 桥 =====
+
+  private bindBridge(): void {
+    this.webProxy.onReady = (): void => {
+      this.webReady = true;
+      this.pushConfigToWeb();
+      if (this.pendingWebData.length > 0) {
+        const buffered = this.pendingWebData;
+        this.pendingWebData = '';
+        this.runJs(`window.__termWrite(${JSON.stringify(buffered)})`);
+      }
+      this.runJs('window.__termFocus()');
+    };
+    this.webProxy.onData = (data: string): void => {
+      this.ctrl.sendRawInput(data);
+    };
+    this.webProxy.onResize = (cols: number, rows: number): void => {
+      this.ctrl.sendResize(cols, rows);
+    };
+  }
+
+  private runJs(script: string): void {
+    if (!this.webReady) {
+      return;
+    }
+    try {
+      this.webController.runJavaScript(script);
+    } catch (e) {
+      hilog.error(0x0000, TAG, 'runJavaScript failed: %{public}s', `${JSON.stringify(e)}`);
+    }
+  }
+
+  /** Web 未就绪时缓冲输出，就绪后直写 */
+  private writeToWeb(data: string): void {
+    if (!this.webReady) {
+      this.pendingWebData += data;
+      return;
+    }
+    this.runJs(`window.__termWrite(${JSON.stringify(data)})`);
+  }
+
+  /** 推送 UI 配置（颜色/字号/行高/光标）到 Web xterm */
+  private pushConfigToWeb(): void {
+    this.runJs(`window.__termApply(${JSON.stringify(this.ctrl.uiConfig.toJson())})`);
+  }
+
+  /** 复制当前选区（无选区提示），对齐 Flutter xterm 复制体验 */
+  private async copySelection(): Promise<void> {
+    let text = '';
+    try {
+      const raw = await this.webController.runJavaScript('window.__termSelection()');
+      text = unwrapJsString(raw ?? '');
+    } catch (_e) {
+      text = '';
+    }
+    if (text.trim().length === 0) {
+      ToastUtil.show(L10n.t('terminal_no_selection', '没有选中的内容'));
+      return;
+    }
+    try {
+      const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, text);
+      pasteboard.getSystemPasteboard().setPasteData(data);
+      ToastUtil.show(L10n.t('quick_share_copied', '已复制'));
+    } catch (_e) {
+      // 剪贴板不可用时忽略
+    }
+  }
+
+  /** 粘贴剪贴板文本到终端（对齐 Flutter TerminalView.paste） */
+  private async pasteFromClipboard(): Promise<void> {
+    const text = await this.ctrl.pasteFromClipboard();
+    if (text.length === 0) {
+      return;
+    }
+    this.runJs(`window.__termPaste(${JSON.stringify(text)})`);
+  }
+
+  private openSettings(): void {
+    showTerminalSettingsSheet(this.ctrl);
   }
 
   // ===== 沉浸式与状态栏（参考 NotesMainPage） =====
@@ -106,30 +256,36 @@ export struct TerminalPage {
     return AppTheme.current();
   }
 
-  // ===== 交互 =====
+  // ===== Web 资源拦截 =====
 
-  private sendInput(): void {
-    this.ctrl.sendCommand(this.inputText);
-    this.inputText = '';
-  }
-
-  private historyUp(): void {
-    this.inputText = this.ctrl.historyBack(this.inputText);
-  }
-
-  private historyDown(): void {
-    this.inputText = this.ctrl.historyForward();
-  }
-
-  private async pasteFromClipboard(): Promise<void> {
-    const text = await this.ctrl.pasteFromClipboard();
-    if (text.length > 0) {
-      this.inputText = text;
+  /** 本地资源拦截：http://nascab.terminal/<rest> → rawfile/terminal/<rest> */
+  private interceptRequest(event: OnInterceptRequestEvent): WebResourceResponse | null {
+    const url = event.request.getRequestUrl();
+    if (!url.startsWith(TERMINAL_ORIGIN)) {
+      return null;
     }
-  }
-
-  private openSettings(): void {
-    showTerminalSettingsSheet(this.ctrl);
+    let path = url.substring(TERMINAL_ORIGIN.length);
+    const q = path.indexOf('?');
+    if (q >= 0) {
+      path = path.substring(0, q);
+    }
+    let rest = path === '/' || path === '' ? 'index.html' : path.substring(1);
+    if (rest.length === 0 || rest.includes('..')) {
+      return null;
+    }
+    const resp = new WebResourceResponse();
+    resp.setResponseData($rawfile(TERMINAL_RAW_BASE + rest));
+    resp.setResponseMimeType(mimeOf(rest));
+    if (rest.endsWith('.html') || rest.endsWith('.js') || rest.endsWith('.css')) {
+      resp.setResponseEncoding('utf-8');
+    }
+    resp.setResponseCode(200);
+    resp.setReasonMessage('OK');
+    resp.setResponseIsReady(true);
+    const headers: Header[] = [];
+    headers.push({ headerKey: 'Cache-Control', headerValue: 'no-store' });
+    resp.setResponseHeader(headers);
+    return resp;
   }
 
   // ===== UI =====
@@ -186,56 +342,36 @@ export struct TerminalPage {
       .backgroundColor(this.palette().inputFill)
   }
 
-  /** 命令输入行：历史上下翻 + 输入框 + 发送 */
+  /** Web xterm 终端区（占满剩余空间，xterm fit 自适应） */
   @Builder
-  InputBar() {
-    Row({ space: 6 }) {
-      this.IconButton($r('sys.symbol.chevron_up'), (): void => {
-        this.historyUp();
-      }, true, L10n.t('terminal_input_hint', '输入命令'))
-      this.IconButton($r('sys.symbol.chevron_down'), (): void => {
-        this.historyDown();
-      }, true, L10n.t('terminal_input_hint', '输入命令'))
-
-      TextInput({
-        text: this.inputText,
-        placeholder: L10n.t('terminal_input_hint', '输入命令')
+  TerminalWeb() {
+    Web({ src: TERMINAL_START_URL, controller: this.webController })
+      .width('100%')
+      .layoutWeight(1)
+      .javaScriptAccess(true)
+      .domStorageAccess(true)
+      .zoomAccess(false)
+      .backgroundColor(this.ctrl.uiConfig.background)
+      .onInterceptRequest((event: OnInterceptRequestEvent): WebResourceResponse | null => {
+        return this.interceptRequest(event);
       })
-        .enterKeyType(EnterKeyType.Send)
-        .fontSize(14)
-        .fontFamily('monospace')
-        .fontColor(this.ctrl.uiConfig.foreground)
-        .caretColor(this.ctrl.uiConfig.cursor)
-        .placeholderColor(AppTheme.withAlpha(this.ctrl.uiConfig.foreground, 0.4))
-        .backgroundColor(AppTheme.withAlpha(this.ctrl.uiConfig.foreground, 0.08))
-        .border({ width: 1, color: AppTheme.withAlpha(this.ctrl.uiConfig.foreground, 0.15) })
-        .borderRadius(8)
-        .height(38)
-        .layoutWeight(1)
-        .onChange((v: string): void => {
-          this.inputText = v;
-        })
-        .onSubmit((_enterKey: EnterKeyType, _event: SubmitEvent): void => {
-          this.sendInput();
-        })
-
-      Button() {
-        SymbolGlyph($r('sys.symbol.paperplane'))
-          .fontSize(16)
-          .fontColor([this.palette().buttonText])
-      }
-      .type(ButtonType.Circle)
-      .width(34)
-      .height(34)
-      .backgroundColor(this.palette().primary)
-      .onClick((): void => {
-        this.sendInput();
+      .javaScriptProxy({
+        object: this.webProxy,
+        name: 'natBridge',
+        methodList: ['onReady', 'onData', 'onResize'],
+        controller: this.webController
       })
-    }
-    .width('100%')
-    .padding({ left: 8, right: 8, top: 6, bottom: 6 })
-    .border({ width: { top: 1 }, color: this.palette().divider })
-    .backgroundColor(this.ctrl.uiConfig.background)
+      .onTouch((_event: TouchEvent): void => {
+        // 触摸终端区时聚焦 xterm（弹出软键盘）
+        if (!this.webReady) {
+          return;
+        }
+        try {
+          this.webController.runJavaScript('window.__termFocus()');
+        } catch (_e) {
+          // 忽略
+        }
+      })
   }
 
   /** 底部工具栏（对齐 Flutter _TerminalBottomBar，移动端布局） */
@@ -243,32 +379,28 @@ export struct TerminalPage {
   BottomBar() {
     Row() {
       if (this.ctrl.isWin32) {
-        this.ShellChip('PowerShell', this.ctrl.currentShell === 'powershell', (): void => {
-          this.ctrl.switchShell('powershell');
-        })
-        this.ShellChip('CMD', this.ctrl.currentShell === 'cmd', (): void => {
-          this.ctrl.switchShell('cmd');
-        })
+        this.ShellChip('powershell', 'PowerShell')
+        this.ShellChip('cmd', 'CMD')
       }
       Blank()
 
       Row({ space: 4 }) {
         // 移动端无右键菜单，提供复制/粘贴按钮（对齐 Flutter isMobile 分支）
         this.BarButton($r('sys.symbol.doc_filled_on_doc'), (): void => {
-          this.ctrl.copyBufferToClipboard();
-        }, true)
+          void this.copySelection();
+        }, 'always')
         this.BarButton($r('sys.symbol.text_clipboard'), (): void => {
           void this.pasteFromClipboard();
-        }, true)
+        }, 'always')
         this.BarButton($r('sys.symbol.xmark_circle'), (): void => {
           this.ctrl.interruptRunningCommand();
-        }, this.ctrl.connected)
+        }, 'connectedOnly')
         this.BarButton($r('sys.symbol.arrow_clockwise'), (): void => {
           this.ctrl.reconnectNow();
-        }, true)
+        }, 'always')
         this.BarButton($r('sys.symbol.gearshape'), (): void => {
           this.openSettings();
-        }, true)
+        }, 'always')
       }
       .justifyContent(FlexAlign.End)
     }
@@ -279,28 +411,31 @@ export struct TerminalPage {
     .backgroundColor(this.palette().surfaceBg)
   }
 
+  /** shell 切换芯片：选中态在 Builder 内直接读 @Trace 属性，保证切换后 UI 刷新 */
   @Builder
-  ShellChip(label: string, selected: boolean, onTap: () => void) {
+  ShellChip(shellType: string, label: string) {
     Text(label)
       .fontSize(12)
-      .fontWeight(selected ? FontWeight.Bold : FontWeight.Normal)
-      .fontColor(selected ? this.palette().buttonText : this.palette().onSurface)
+      .fontWeight(this.ctrl.currentShell === shellType ? FontWeight.Bold : FontWeight.Normal)
+      .fontColor(this.ctrl.currentShell === shellType
+        ? this.palette().buttonText : this.palette().onSurface)
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
       .borderRadius(6)
-      .backgroundColor(selected ? this.palette().primary : this.palette().inputFill)
+      .backgroundColor(this.ctrl.currentShell === shellType
+        ? this.palette().primary : this.palette().inputFill)
       .margin({ right: 6 })
       .onClick((): void => {
-        onTap();
+        this.ctrl.switchShell(shellType);
       })
   }
 
-  /** 工具栏图标按钮（36x30 点击区，禁用时半透明） */
+  /** 工具栏图标按钮（36x30 点击区，禁用时半透明）；enabled 在 Builder 内读取 @Trace 保证刷新 */
   @Builder
-  BarButton(icon: Resource, onTap: () => void, enabled: boolean) {
+  BarButton(icon: Resource, onTap: () => void, state: string) {
     Row() {
       SymbolGlyph(icon)
         .fontSize(18)
-        .fontColor([enabled
+        .fontColor([state === 'always' || this.ctrl.connected
           ? this.palette().onSurface
           : AppTheme.withAlpha(this.palette().onSurface, 0.45)])
     }
@@ -309,29 +444,7 @@ export struct TerminalPage {
     .borderRadius(8)
     .justifyContent(FlexAlign.Center)
     .onClick((): void => {
-      if (enabled) {
-        onTap();
-      }
-    })
-  }
-
-  /** 输入行小图标按钮（历史上下翻） */
-  @Builder
-  IconButton(icon: Resource, onTap: () => void, enabled: boolean, hint: string = '') {
-    Row() {
-      SymbolGlyph(icon)
-        .fontSize(16)
-        .fontColor([enabled
-          ? this.palette().subText
-          : AppTheme.withAlpha(this.palette().onSurface, 0.3)])
-    }
-    .width(30)
-    .height(30)
-    .borderRadius(8)
-    .justifyContent(FlexAlign.Center)
-    .accessibilityText(hint)
-    .onClick((): void => {
-      if (enabled) {
+      if (state === 'always' || this.ctrl.connected) {
         onTap();
       }
     })
@@ -344,13 +457,7 @@ export struct TerminalPage {
         if (this.ctrl.statusText.trim().length > 0) {
           this.StatusBanner()
         }
-        Column() {
-          TerminalOutputView({ ctrl: this.ctrl })
-        }
-        .width('100%')
-        .layoutWeight(1)
-
-        this.InputBar()
+        this.TerminalWeb()
         this.BottomBar()
       }
       .width('100%')
@@ -364,6 +471,13 @@ export struct TerminalPage {
       this.scheduleFullScreenRetry();
       this.fetchSafeAreas();
       this.applyStatusBar();
+      // 兜底自愈：页面可见但连接既未建立也未在连接中时，强制重连
+      // （覆盖单例控制器状态残留、首次连接失败后自动重连被禁等场景）
+      setTimeout((): void => {
+        if (!this.ctrl.connected && !this.ctrl.connecting) {
+          this.ctrl.reconnectNow();
+        }
+      }, 600);
     })
     .onHidden((): void => {
       this.clearRetryTimer();

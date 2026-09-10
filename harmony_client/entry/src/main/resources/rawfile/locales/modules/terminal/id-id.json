@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Blok",
   "terminal_cursor_underline": "Garis Bawah",
   "terminal_cursor_bar": "Bar Vertikal",
-  "terminal_cursor_blink": "Kursor Berkedip"
+  "terminal_cursor_blink": "Kursor Berkedip",
+  "terminal_no_selection": "Tidak ada teks yang dipilih"
 }

@@ -3,7 +3,7 @@ import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TerminalController } from '../controllers/TerminalController';
-import { TerminalUiConfig, TERMINAL_DEFAULT_FG, TERMINAL_DEFAULT_BG, cursorGlyph } from '../models/TerminalModels';
+import { TerminalUiConfig, TERMINAL_DEFAULT_FG, TERMINAL_DEFAULT_BG } from '../models/TerminalModels';
 import { showTerminalColorPicker } from './TerminalColorPicker';
 
 const TAG = 'TerminalSettingsSheet';
@@ -54,7 +54,7 @@ export struct TerminalSettingsSheet {
       cursor.length > 0 ? cursor : TERMINAL_DEFAULT_FG,
       this.fontSize,
       this.lineHeight,
-      'RobotoMono',
+      'HarmonyOS Sans Mono',
       this.cursorStyle,
       this.cursorBlink);
   }
@@ -253,8 +253,8 @@ export struct TerminalSettingsSheet {
             this.CursorStyleChip('block', L10n.t('terminal_cursor_block', '方块'))
             this.CursorStyleChip('underline', L10n.t('terminal_cursor_underline', '下划线'))
             this.CursorStyleChip('bar', L10n.t('terminal_cursor_bar', '竖线'))
-            // 当前样式预览
-            Text(cursorGlyph(this.cursorStyle))
+            // 当前样式预览（方块/下划线/竖线）
+            Text(this.cursorStyle === 'bar' ? '▏' : this.cursorStyle === 'underline' ? '▁' : '█')
               .fontSize(20)
               .fontColor(TerminalUiConfig.parseColorWithFallback(this.cursorText, TERMINAL_DEFAULT_FG))
               .margin({ left: 4 })

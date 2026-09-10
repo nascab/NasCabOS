@@ -19,5 +19,6 @@
   "terminal_cursor_block": "Bloque",
   "terminal_cursor_underline": "Subrayado",
   "terminal_cursor_bar": "Barra",
-  "terminal_cursor_blink": "Parpadeo de cursor"
+  "terminal_cursor_blink": "Parpadeo de cursor",
+  "terminal_no_selection": "No hay texto seleccionado"
 }

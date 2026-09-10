@@ -19,5 +19,6 @@
   "terminal_cursor_block": "ブロック",
   "terminal_cursor_underline": "下線",
   "terminal_cursor_bar": "バー",
-  "terminal_cursor_blink": "カーソル点滅"
+  "terminal_cursor_blink": "カーソル点滅",
+  "terminal_no_selection": "選択されたテキストはありません"
 }

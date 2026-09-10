@@ -19,5 +19,6 @@
   "terminal_cursor_block": "블록",
   "terminal_cursor_underline": "밑줄",
   "terminal_cursor_bar": "세로줄",
-  "terminal_cursor_blink": "커서 깜빡임"
+  "terminal_cursor_blink": "커서 깜빡임",
+  "terminal_no_selection": "선택된 텍스트가 없습니다"
 }

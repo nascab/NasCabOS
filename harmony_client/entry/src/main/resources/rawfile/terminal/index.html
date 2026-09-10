@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="stylesheet" href="xterm.min.css">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+  }
+  #term {
+    width: 100%;
+    height: 100%;
+  }
+  /* 移动端：禁用长按选中（xterm 自带选区管理） */
+  #term * {
+    -webkit-touch-callout: none;
+  }
+</style>
+<script src="xterm.min.js"></script>
+<script src="addon-fit.min.js"></script>
+</head>
+<body>
+<div id="term"></div>
+<script>
+(function () {
+  // 终端必须使用等宽字体（xterm 按单字符测量宽度）：
+  // HarmonyOS Sans 是比例字体，用它会导致字符横向间距异常，因此固定等宽字体栈
+  var MONO_FONT = '"HarmonyOS Sans Mono", Menlo, Consolas, "Courier New", monospace';
+  var term = new Terminal({
+    convertEol: false,
+    cursorBlink: true,
+    cursorStyle: 'block',
+    fontFamily: MONO_FONT,
+    fontSize: 14,
+    lineHeight: 1.0,
+    scrollback: 10000,
+    allowProposedApi: true,
+    theme: {
+      foreground: '#E6E6E6',
+      background: '#0B0B0B',
+      cursor: '#E6E6E6',
+      cursorAccent: '#0B0B0B',
+      selectionBackground: 'rgba(61, 90, 254, 0.35)',
+      black: '#000000',
+      red: '#CD3131',
+      green: '#0DBC79',
+      yellow: '#E5E510',
+      blue: '#2472C8',
+      magenta: '#BC3FBC',
+      cyan: '#11A8CD',
+      white: '#E5E5E5',
+      brightBlack: '#666666',
+      brightRed: '#FF0000',
+      brightGreen: '#14CE14',
+      brightYellow: '#FFFF00',
+      brightBlue: '#3B8EEA',
+      brightMagenta: '#D670D6',
+      brightCyan: '#29B8DB',
+      brightWhite: '#FFFFFF'
+    }
+  });
+  var fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open(document.getElementById('term'));
+  try {
+    fit.fit();
+  } catch (e) { /* 容器未布局时忽略，ready 后再试 */ }
+
+  var bridge = null;
+  function native() {
+    if (bridge !== null) {
+      return bridge;
+    }
+    try {
+      if (typeof natBridge !== 'undefined' && natBridge !== null) {
+        bridge = natBridge;
+      }
+    } catch (e) {
+      bridge = null;
+    }
+    return bridge;
+  }
+
+  // 键盘/粘贴输入 → 原生 → WebSocket
+  term.onData(function (data) {
+    var b = native();
+    if (b) {
+      b.onData(data);
+    }
+  });
+
+  // 尺寸变化 → 原生 → 服务端 resize 协议
+  term.onResize(function (size) {
+    var b = native();
+    if (b) {
+      b.onResize(size.cols, size.rows);
+    }
+  });
+
+  function fitNow() {
+    try {
+      fit.fit();
+    } catch (e) { /* ignore */ }
+  }
+  window.addEventListener('resize', fitNow);
+  if (typeof ResizeObserver !== 'undefined') {
+    try {
+      new ResizeObserver(fitNow).observe(document.getElementById('term'));
+    } catch (e) { /* ignore */ }
+  }
+
+  // ===== 原生调用入口 =====
+  // 输出写入（原生侧已按 50ms 批量合并）
+  window.__termWrite = function (data) {
+    term.write(data);
+  };
+  // 应用 UI 配置（颜色/字号/行高/光标），键与 TerminalUiConfig.toJson 一致
+  window.__termApply = function (cfg) {
+    if (!cfg) {
+      return;
+    }
+    var theme = term.options.theme || {};
+    if (typeof cfg.foreground === 'string' && cfg.foreground.length > 0) {
+      theme.foreground = cfg.foreground;
+    }
+    if (typeof cfg.background === 'string' && cfg.background.length > 0) {
+      theme.background = cfg.background;
+      document.body.style.background = cfg.background;
+    }
+    if (typeof cfg.cursor === 'string' && cfg.cursor.length > 0) {
+      theme.cursor = cfg.cursor;
+    }
+    term.options.theme = theme;
+    if (typeof cfg.fontSize === 'number' && cfg.fontSize > 0) {
+      term.options.fontSize = cfg.fontSize;
+    }
+    if (typeof cfg.lineHeight === 'number' && cfg.lineHeight > 0) {
+      term.options.lineHeight = cfg.lineHeight;
+    }
+    // fontFamily 忽略原生配置（历史值可能为系统不存在的字体名，导致回退到比例字体），
+    // 始终固定等宽字体栈
+    term.options.fontFamily = MONO_FONT;
+    if (typeof cfg.cursorStyle === 'string' && cfg.cursorStyle.length > 0) {
+      var s = cfg.cursorStyle.toLowerCase();
+      term.options.cursorStyle = (s === 'underline') ? 'underline' : ((s === 'bar' || s === 'line' || s === 'verticalbar') ? 'bar' : 'block');
+    }
+    if (typeof cfg.cursorBlink === 'boolean') {
+      term.options.cursorBlink = cfg.cursorBlink;
+    }
+    fitNow();
+  };
+  // 当前选区（复制用），无选区返回空串
+  window.__termSelection = function () {
+    return term.getSelection();
+  };
+  // 粘贴文本（进入终端缓冲，对齐 Flutter TerminalView.paste）
+  window.__termPaste = function (text) {
+    term.paste(text);
+    term.focus();
+  };
+  // 清屏（保留回滚，对齐 term.clear 语义）
+  window.__termClear = function () {
+    term.clear();
+    term.focus();
+  };
+  // 聚焦（弹出软键盘）
+  window.__termFocus = function () {
+    term.focus();
+  };
+  // 失焦（收起软键盘）
+  window.__termBlur = function () {
+    term.blur();
+  };
+
+  // 通知原生就绪（原生收到后推送 UI 配置并 focus）
+  function ready() {
+    fitNow();
+    var b = native();
+    if (b) {
+      b.onReady();
+    }
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(ready, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', ready);
+  }
+})();
+</script>
+</body>
+</html>
