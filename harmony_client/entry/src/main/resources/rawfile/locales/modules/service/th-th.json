@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "เกินจำนวนอุปกรณ์ที่ผูกกับบัญชี",
+  "P2P.ERR_DEVICE_NOT_BIND": "อุปกรณ์ยังไม่ได้ผูก",
+  "P2P.ERR_NEED_VIP": "ฟีเจอร์นี้ต้องเป็นสมาชิก",
+  "copied": "คัดลอกแล้ว",
+  "service.PAIR_CODE_RESET_FAILED": "รีเซ็ตรหัสจับคู่ไม่สำเร็จ"
+}

@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Die maximale Anzahl der Geräte pro Konto wurde überschritten",
+  "P2P.ERR_DEVICE_NOT_BIND": "Gerät nicht gebunden",
+  "P2P.ERR_NEED_VIP": "Diese Funktion erfordert eine Mitgliedschaft",
+  "copied": "Kopiert",
+  "service.PAIR_CODE_RESET_FAILED": "Pairing-Code Zurücksetzen fehlgeschlagen"
+}

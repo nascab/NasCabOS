@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Limite de dispositivos vinculados à conta excedido",
+  "P2P.ERR_DEVICE_NOT_BIND": "Dispositivo não vinculado",
+  "P2P.ERR_NEED_VIP": "Este recurso requer assinatura",
+  "copied": "Copiado",
+  "service.PAIR_CODE_RESET_FAILED": "Falha ao redefinir código de pareamento"
+}

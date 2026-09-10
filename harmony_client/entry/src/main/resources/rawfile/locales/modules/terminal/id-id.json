@@ -1,0 +1,23 @@
+{
+  "terminal_title": "Terminal",
+  "terminal_connecting": "Menghubungkan...",
+  "terminal_input_hint": "Masukkan perintah",
+  "terminal_connection_failed": "Koneksi terminal gagal",
+  "terminal_disconnected": "Koneksi Terputus",
+  "terminal_access_denied": "Tidak ada izin untuk mengakses terminal",
+  "terminal_taken_over": "Terminal dibuka di halaman lain",
+  "terminal_settings_title": "Pengaturan Terminal",
+  "terminal_restore_defaults": "Kembalikan ke Default",
+  "terminal_pick_color": "Pilih Warna",
+  "terminal_color_hint": "#RRGGBB atau #AARRGGBB",
+  "terminal_font_color": "Warna Font",
+  "terminal_bg_color": "Warna Latar Belakang",
+  "terminal_cursor_color": "Warna Kursor",
+  "terminal_font_size": "Ukuran Font (@px)",
+  "terminal_line_height": "Tinggi Baris (@value)",
+  "terminal_cursor_style": "Gaya Kursor",
+  "terminal_cursor_block": "Blok",
+  "terminal_cursor_underline": "Garis Bawah",
+  "terminal_cursor_bar": "Bar Vertikal",
+  "terminal_cursor_blink": "Kursor Berkedip"
+}

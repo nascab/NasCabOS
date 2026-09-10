@@ -1,0 +1,23 @@
+{
+  "terminal_title": "Terminal",
+  "terminal_connecting": "Đang kết nối...",
+  "terminal_input_hint": "Nhập lệnh",
+  "terminal_connection_failed": "Kết nối terminal thất bại",
+  "terminal_disconnected": "Kết nối đã ngắt",
+  "terminal_access_denied": "Không có quyền truy cập terminal",
+  "terminal_taken_over": "Terminal đang được mở ở trang khác",
+  "terminal_settings_title": "Cài đặt terminal",
+  "terminal_restore_defaults": "Khôi phục mặc định",
+  "terminal_pick_color": "Chọn màu",
+  "terminal_color_hint": "#RRGGBB hoặc #AARRGGBB",
+  "terminal_font_color": "Màu chữ",
+  "terminal_bg_color": "Màu nền",
+  "terminal_cursor_color": "Màu con trỏ",
+  "terminal_font_size": "Cỡ chữ (@px)",
+  "terminal_line_height": "Độ cao dòng (@value)",
+  "terminal_cursor_style": "Kiểu con trỏ",
+  "terminal_cursor_block": "Khối",
+  "terminal_cursor_underline": "Gạch dưới",
+  "terminal_cursor_bar": "Dọc",
+  "terminal_cursor_blink": "Con trỏ nhấp nháy"
+}

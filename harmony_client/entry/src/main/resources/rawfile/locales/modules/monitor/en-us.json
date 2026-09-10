@@ -1,0 +1,8 @@
+{
+  "monitor_device_monitor": "Device Monitor",
+  "monitor_storage_device": "Storage Devices",
+  "monitor_used": "Used",
+  "monitor_total": "Total",
+  "monitor_memory": "Memory",
+  "monitor_network": "Network"
+}

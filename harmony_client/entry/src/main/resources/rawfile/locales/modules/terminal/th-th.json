@@ -1,0 +1,23 @@
+{
+  "terminal_title": "เทอร์มินัล",
+  "terminal_connecting": "กำลังเชื่อมต่อ...",
+  "terminal_input_hint": "ป้อนคำสั่ง",
+  "terminal_connection_failed": "เชื่อมต่อเทอร์มินัลล้มเหลว",
+  "terminal_disconnected": "การเชื่อมต่อขาดหาย",
+  "terminal_access_denied": "ไม่มีสิทธิ์เข้าถึงเทอร์มินัล",
+  "terminal_taken_over": "เทอร์มินัลถูกเปิดในหน้าอื่นอยู่",
+  "terminal_settings_title": "การตั้งค่าเทอร์มินัล",
+  "terminal_restore_defaults": "คืนค่าเริ่มต้น",
+  "terminal_pick_color": "เลือกสี",
+  "terminal_color_hint": "#RRGGBB หรือ #AARRGGBB",
+  "terminal_font_color": "สีตัวอักษร",
+  "terminal_bg_color": "สีพื้นหลัง",
+  "terminal_cursor_color": "สีเคอร์เซอร์",
+  "terminal_font_size": "ขนาดตัวอักษร (@px)",
+  "terminal_line_height": "ความสูงบรรทัด (@value)",
+  "terminal_cursor_style": "สไตล์เคอร์เซอร์",
+  "terminal_cursor_block": "สี่เหลี่ยม",
+  "terminal_cursor_underline": "ขีดเส้นใต้",
+  "terminal_cursor_bar": "เส้นตั้ง",
+  "terminal_cursor_blink": "เคอร์เซอร์กระพริบ"
+}

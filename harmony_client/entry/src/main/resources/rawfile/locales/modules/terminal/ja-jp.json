@@ -1,0 +1,23 @@
+{
+  "terminal_title": "ターミナル",
+  "terminal_connecting": "接続中...",
+  "terminal_input_hint": "コマンドを入力",
+  "terminal_connection_failed": "ターミナル接続に失敗",
+  "terminal_disconnected": "切断済み",
+  "terminal_access_denied": "ターミナルアクセスが拒否されました",
+  "terminal_taken_over": "ターミナルは他のページで開いています",
+  "terminal_settings_title": "ターミナル設定",
+  "terminal_restore_defaults": "デフォルトに戻す",
+  "terminal_pick_color": "色を選択",
+  "terminal_color_hint": "#RRGGBB または #AARRGGBB",
+  "terminal_font_color": "フォント色",
+  "terminal_bg_color": "背景色",
+  "terminal_cursor_color": "カーソル色",
+  "terminal_font_size": "フォントサイズ（@px）",
+  "terminal_line_height": "行間（@value）",
+  "terminal_cursor_style": "カーソルスタイル",
+  "terminal_cursor_block": "ブロック",
+  "terminal_cursor_underline": "下線",
+  "terminal_cursor_bar": "バー",
+  "terminal_cursor_blink": "カーソル点滅"
+}

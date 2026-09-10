@@ -1,0 +1,8 @@
+{
+  "monitor_device_monitor": "デバイスモニター",
+  "monitor_storage_device": "ストレージデバイス",
+  "monitor_used": "使用済み",
+  "monitor_total": "合計",
+  "monitor_memory": "メモリ",
+  "monitor_network": "ネットワーク"
+}

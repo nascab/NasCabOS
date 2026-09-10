@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "アカウントのデバイス登録数が上限を超えています",
+  "P2P.ERR_DEVICE_NOT_BIND": "デバイスがバインドされていません",
+  "P2P.ERR_NEED_VIP": "この機能には会員登録が必要です",
+  "copied": "コピーしました",
+  "service.PAIR_CODE_RESET_FAILED": "ペアリングコードのリセットに失敗"
+}

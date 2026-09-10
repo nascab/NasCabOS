@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "账号绑定设备超出数量限制",
+  "P2P.ERR_DEVICE_NOT_BIND": "设备未绑定",
+  "P2P.ERR_NEED_VIP": "此功能需要会员",
+  "copied": "已复制",
+  "service.PAIR_CODE_RESET_FAILED": "重置配对码失败"
+}

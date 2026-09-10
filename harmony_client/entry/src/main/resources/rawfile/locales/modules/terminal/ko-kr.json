@@ -1,0 +1,23 @@
+{
+  "terminal_title": "터미널",
+  "terminal_connecting": "연결 중...",
+  "terminal_input_hint": "명령 입력",
+  "terminal_connection_failed": "터미널 연결 실패",
+  "terminal_disconnected": "연결 끊김",
+  "terminal_access_denied": "터미널 액세스 권한 없음",
+  "terminal_taken_over": "터미널이 다른 페이지에서 열려 있습니다",
+  "terminal_settings_title": "터미널 설정",
+  "terminal_restore_defaults": "기본값 복원",
+  "terminal_pick_color": "색상 선택",
+  "terminal_color_hint": "#RRGGBB 또는 #AARRGGBB",
+  "terminal_font_color": "글꼴 색상",
+  "terminal_bg_color": "배경 색상",
+  "terminal_cursor_color": "커서 색상",
+  "terminal_font_size": "글꼴 크기 (@px)",
+  "terminal_line_height": "줄 높이 (@value)",
+  "terminal_cursor_style": "커서 스타일",
+  "terminal_cursor_block": "블록",
+  "terminal_cursor_underline": "밑줄",
+  "terminal_cursor_bar": "세로줄",
+  "terminal_cursor_blink": "커서 깜빡임"
+}

@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Превышен лимит привязанных устройств",
+  "P2P.ERR_DEVICE_NOT_BIND": "Устройство не привязано",
+  "P2P.ERR_NEED_VIP": "Для этой функции требуется подписка",
+  "copied": "Скопировано",
+  "service.PAIR_CODE_RESET_FAILED": "Сброс кода не удался"
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="quill.snow.css">
+<style>
+  :root { --ed-bg:#ffffff; --ed-fg:#1a1a1a; --ed-muted:#8a8a8a; --ed-border:#e2e2e2;
+    --ed-toolbar-bg:#f0f0f0; --ed-hover:#e0e0e0; --ed-primary:#4f6af2; --ed-btn-active:#e3e8ff; }
+  html, body { margin:0; padding:0; height:100%; background:var(--ed-bg); }
+  body { display:flex; flex-direction:column; overflow:hidden;
+    font-family:-apple-system,'HarmonyOS Sans','Microsoft YaHei',sans-serif; }
+  /* 工具栏（模拟 Flutter QuillSimpleToolbar 单行按钮集 + more 面板） */
+  #toolbar { flex:0 0 auto; background:var(--ed-toolbar-bg); border:none !important;
+    padding:4px 8px; display:flex; align-items:center; gap:2px; position:relative;
+    border-bottom:1px solid var(--ed-border) !important; }
+  #toolbar .ql-formats { margin-right:6px !important; display:flex; align-items:center; }
+  #toolbar button, #toolbar select { color:var(--ed-muted) !important; }
+  #toolbar button:hover:not(.ql-active), #toolbar select:hover { background:var(--ed-hover) !important; }
+  #toolbar button.ql-active, #toolbar .ql-picker-label.ql-active {
+    color:var(--ed-primary) !important; background:var(--ed-btn-active) !important; border-radius:6px; }
+  #toolbar .ql-picker-label.ql-active { color:var(--ed-primary) !important; }
+  #toolbar svg { stroke:currentColor; }
+  #toolbar .ql-picker { color:var(--ed-muted) !important; }
+  #toolbar .ql-picker-options { background:var(--ed-bg) !important; color:var(--ed-fg);
+    border:1px solid var(--ed-border) !important; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.14); }
+  #toolbar .ql-picker-item { color:var(--ed-fg); }
+  #toolbar .ql-stroke { stroke:var(--ed-muted); }
+  #toolbar .ql-fill { fill:var(--ed-muted); }
+  #toolbar button.ql-active .ql-stroke { stroke:var(--ed-primary); }
+  #toolbar button.ql-active .ql-fill { fill:var(--ed-primary); }
+  #more-btn { width:30px; height:30px; border:none; background:transparent; border-radius:8px;
+    color:var(--ed-muted); font-size:19px; line-height:30px; text-align:center; cursor:pointer; flex:0 0 auto; }
+  #more-btn:hover { background:var(--ed-hover); }
+  /* more 面板（2 行，对齐 Flutter _showToolbarMorePanel） */
+  #more-panel { position:fixed; right:8px; top:44px; width:300px; background:var(--ed-bg);
+    border:1px solid var(--ed-border); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.18);
+    padding:10px; z-index:1000; display:none; }
+  #more-panel.open { display:block; }
+  #more-panel .row { display:flex; margin:0 -3px 8px -3px; }
+  #more-panel .row:last-child { margin-bottom:0; }
+  #more-panel .act { flex:1; margin:0 3px; height:78px; border:none; border-radius:10px;
+    background:var(--ed-toolbar-bg); color:var(--ed-muted); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px; cursor:pointer; font-size:11px;
+    font-family:inherit; }
+  #more-panel .act:hover { background:var(--ed-hover); }
+  #more-panel .act svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2;
+    stroke-linecap:round; stroke-linejoin:round; }
+  #more-panel .act span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  /* 编辑区 */
+  #editor-container { flex:1 1 auto; min-height:0; overflow-y:auto; background:var(--ed-bg); }
+  .ql-editor { color:var(--ed-fg); font-size:16px; padding:12px 16px !important; }
+  .ql-editor.ql-blank::before { color:var(--ed-muted); opacity:.58; font-style:normal;
+    font-size:16px; left:16px; right:16px; }
+  .ql-editor img { max-width:100%; }
+  /* snow 主题浮层下拉的阴影适配 */
+  .ql-snow .ql-tooltip { background:var(--ed-bg); color:var(--ed-fg); border:1px solid var(--ed-border); }
+  .ql-snow .ql-tooltip a.ql-action, .ql-snow .ql-tooltip a.ql-remove { color:var(--ed-primary); }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <span class="ql-formats">
+    <button class="ql-bold" title="Bold"></button>
+    <button class="ql-italic" title="Italic"></button>
+    <button class="ql-underline" title="Underline"></button>
+    <button class="ql-strike" title="Strikethrough"></button>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-color">
+      <option value=""></option>
+      <option value="#e60000"></option><option value="#e49118"></option>
+      <option value="#0d9b4c"></option><option value="#1a73e8"></option>
+      <option value="#8b5cf6"></option><option value="#ec4899"></option>
+      <option value="#333333"></option><option value="#888888"></option>
+    </select>
+    <select class="ql-size">
+      <option value="small"></option>
+      <option selected></option>
+      <option value="large"></option>
+      <option value="huge"></option>
+    </select>
+  </span>
+  <button id="more-btn" title="More">···</button>
+</div>
+<div id="more-panel">
+  <div class="row">
+    <button class="act" data-cmd="undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span id="l-undo"></span></button>
+    <button class="act" data-cmd="redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span id="l-redo"></span></button>
+    <button class="act" data-cmd="clear"><svg viewBox="0 0 24 24"><path d="m12 3-9 9 9 9 9-9-9-9Z"/><path d="m8 16 8-8"/></svg><span id="l-clear"></span></button>
+    <button class="act" data-cmd="quote"><svg viewBox="0 0 24 24"><path d="M7 7h4v6H7z"/><path d="M3 13h8V7H5a2 2 0 0 0-2 2v4Z"/><path d="M17 7h4v6h-4z"/><path d="M13 13h8V9a2 2 0 0 0-2-2h-6v4Z"/></svg><span id="l-quote"></span></button>
+    <button class="act" data-cmd="code"><svg viewBox="0 0 24 24"><path d="m8 8-5 4 5 4"/><path d="m16 8 5 4-5 4"/><path d="m13 5-2 14"/></svg><span id="l-code"></span></button>
+  </div>
+  <div class="row">
+    <button class="act" data-cmd="bullet"><svg viewBox="0 0 24 24"><circle cx="4" cy="6" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="4" cy="18" r="1.6"/><path d="M9 6h12M9 12h12M9 18h12"/></svg><span id="l-bullet"></span></button>
+    <button class="act" data-cmd="number"><svg viewBox="0 0 24 24"><path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4M4 10h3M4 16h3v4H4v-2h3"/></svg><span id="l-number"></span></button>
+    <button class="act" data-cmd="check"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><path d="m5 7 2 2 3.5-3.5"/><path d="M14 6h7M14 12h7M4 18h17"/></svg><span id="l-check"></span></button>
+    <button class="act" data-cmd="image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span id="l-image"></span></button>
+  </div>
+</div>
+<div id="editor-container"></div>
+<script src="quill.js"></script>
+<script>
+(function () {
+  'use strict';
+  var Parchment = Quill.import('parchment');
+  var DeltaCtor = Quill.import('delta');
+
+  // ===== 通用 style 属性 attributor（对齐 flutter_quill StyleAttribute：attributes.style 整串往返）=====
+  function RawStyleAttributor(attrName, keyName, options) {
+    Parchment.Attributor.call(this, attrName, keyName, options);
+  }
+  RawStyleAttributor.prototype = Object.create(Parchment.Attributor.prototype);
+  RawStyleAttributor.prototype.value = function (node) { return node.getAttribute('style') || ''; };
+  RawStyleAttributor.prototype.add = function (node, value) { node.setAttribute('style', value); };
+  RawStyleAttributor.prototype.remove = function (node) { node.removeAttribute('style'); };
+  Quill.register(new RawStyleAttributor('style', 'style',
+    { scope: Parchment.Scope.INLINE_ATTRIBUTE }), true);
+
+  // ===== 参数 =====
+  function queryParam(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  }
+  var dark = queryParam('dark') === '1';
+  var primary = queryParam('primary') || '#4f6af2';
+  var placeholder = queryParam('placeholder') || '';
+
+  function applyTheme() {
+    var root = document.documentElement;
+    function set(v, light, darkVal) {
+      root.style.setProperty(v, dark ? darkVal : light);
+    }
+    set('--ed-bg', '#ffffff', '#17181c');
+    set('--ed-fg', '#1a1a1a', '#e6e6e6');
+    set('--ed-muted', '#8a8a8a', '#9a9ba2');
+    set('--ed-border', '#e2e2e2', '#33343a');
+    set('--ed-toolbar-bg', '#f0f0f0', '#26272e');
+    set('--ed-hover', '#e0e0e0', '#33343a');
+    set('--ed-primary', primary, primary);
+    set('--ed-btn-active', '#e3e8ff', '#31365a');
+    document.body.style.backgroundColor = dark ? '#17181c' : '#ffffff';
+  }
+  applyTheme();
+
+  // 本地化文案（native 以查询参数传入）
+  var labels = {
+    undo: queryParam('l_undo') || 'Undo',
+    redo: queryParam('l_redo') || 'Redo',
+    clear: queryParam('l_clear') || 'Clear format',
+    quote: queryParam('l_quote') || 'Quote',
+    code: queryParam('l_code') || 'Code block',
+    bullet: queryParam('l_bullet') || 'Bullet list',
+    number: queryParam('l_number') || 'Number list',
+    check: queryParam('l_check') || 'Check list',
+    image: queryParam('l_image') || 'Image'
+  };
+  Object.keys(labels).forEach(function (k) {
+    var el = document.getElementById('l-' + k);
+    if (el) { el.textContent = labels[k]; }
+  });
+
+  // ===== Quill 初始化 =====
+  var quill = new Quill('#editor-container', {
+    theme: 'snow',
+    placeholder: placeholder,
+    modules: {
+      toolbar: {
+        container: '#toolbar',
+        handlers: {
+          undo: function () { this.quill.history.undo(); },
+          redo: function () { this.quill.history.redo(); }
+        }
+      },
+      history: { delay: 800, maxStack: 200 }
+    }
+  });
+
+  var pending = new DeltaCtor();
+  var ignoreEvents = false;
+  var pushTimer = null;
+  var currentImg = null;
+  var nativeReady = false;
+
+  // onDeltaChanged 仅作"有变更"通知；pending 保留至 native takePending() 原子取走
+  // （对齐 Flutter _pendingChangeDelta 语义：compose 累积，保存时取走并清空）
+  function flushPending() {
+    var json = JSON.stringify(pending.ops || []);
+    if (nativeReady && window.NativeBridge) {
+      try { window.NativeBridge.onDeltaChanged(json); } catch (e) { /* noop */ }
+    }
+  }
+
+          function schedulePush() {
+            if (pushTimer) { clearTimeout(pushTimer); }
+            pushTimer = setTimeout(function () {
+              pushTimer = null;
+              flushPending();
+            }, 250);
+          }
+
+  quill.on('text-change', function (delta, oldDelta, source) {
+    if (ignoreEvents) { return; }
+    if (delta && delta.length() > 0) {
+      pending = pending.compose(delta);
+    }
+    schedulePush();
+  });
+
+  // ===== 图片点击（委托）=====
+  quill.root.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG') {
+      currentImg = t;
+      var info = { src: t.getAttribute('src') || '', style: t.getAttribute('style') || '' };
+      try { window.NativeBridge.onImageClicked(JSON.stringify(info)); } catch (err) { /* noop */ }
+    }
+  });
+
+  // ===== more 面板 =====
+  var panel = document.getElementById('more-panel');
+  document.getElementById('more-btn').addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    panel.classList.toggle('open');
+  });
+  document.addEventListener('click', function (ev) {
+    if (panel.classList.contains('open') && !panel.contains(ev.target)) {
+      panel.classList.remove('open');
+    }
+  });
+
+  function sel() { return quill.getSelection() || { index: quill.getLength(), length: 0 }; }
+
+  function runCmd(name) {
+    panel.classList.remove('open');
+    if (name === 'undo') { quill.history.undo(); return; }
+    if (name === 'redo') { quill.history.redo(); return; }
+    if (name === 'clear') {
+      var s = sel();
+      quill.removeFormat(s.index, s.length, 'user');
+      ['blockquote', 'code-block', 'list'].forEach(function (f) {
+        quill.format(f, false, 'user');
+      });
+      return;
+    }
+    if (name === 'quote') { quill.format('blockquote', true, 'user'); return; }
+    if (name === 'code') { quill.format('code-block', true, 'user'); return; }
+    if (name === 'bullet') { quill.format('list', 'bullet', 'user'); return; }
+    if (name === 'number') { quill.format('list', 'ordered', 'user'); return; }
+    if (name === 'check') { quill.format('list', 'unchecked', 'user'); return; }
+    if (name === 'image') {
+      try { window.NativeBridge.onPickImage(); } catch (e) { /* noop */ }
+      return;
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#more-panel .act'), function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      runCmd(btn.getAttribute('data-cmd'));
+    });
+  });
+
+  // ===== 原生桥（javaScriptProxy 注入对象：onDeltaChanged(patchJson)/onEditorReady/
+  // onImageClicked(infoJson)/onPickImage）。注入发生在文档元素创建时，先于本脚本，
+  // 故不能赋值占位（会覆盖注入对象）；轮询等待注入完成后通知 native。=====
+          function notifyNativeReady() {
+            if (window.NativeBridge && window.NativeBridge.onEditorReady) {
+              nativeReady = true;
+              try { window.NativeBridge.onEditorReady(); } catch (e) { /* noop */ }
+            } else {
+              setTimeout(notifyNativeReady, 30);
+            }
+          }
+          notifyNativeReady();
+
+  // ===== 供 native runJavaScript / runJavaScriptCodeAsync 调用 =====
+  window.__notes = {
+    load: function (deltaJson) {
+      ignoreEvents = true;
+      try {
+        var ops = JSON.parse(deltaJson || '[]');
+        if (!Array.isArray(ops) || ops.length === 0) { ops = [{ insert: '\n' }]; }
+        pending = new DeltaCtor();
+        quill.setContents(ops, 'silent');
+      } finally {
+        ignoreEvents = false;
+      }
+      return 'ok';
+    },
+    applyPatch: function (patchJson) {
+      try {
+        var ops = JSON.parse(patchJson || '[]');
+        if (Array.isArray(ops) && ops.length > 0) {
+          quill.updateContents(ops, 'user');
+        }
+      } catch (e) { /* noop */ }
+      return 'ok';
+    },
+    insertImage: function (url, style) {
+      var s = quill.getSelection(true);
+      var index = s ? s.index : quill.getLength();
+      quill.insertEmbed(index, 'image', url, 'user');
+      if (style) { quill.formatText(index, 1, 'style', style, 'user'); }
+      flushPending();
+      return 'ok';
+    },
+    resizeImage: function (style) {
+      if (!currentImg) { return 'no-img'; }
+      var blot = Quill.find(currentImg);
+      if (!blot) { return 'no-blot'; }
+      var index = quill.getIndex(blot);
+      quill.formatText(index, 1, 'style', style, 'user');
+      flushPending();
+      return 'ok';
+    },
+    removeImage: function () {
+      if (!currentImg) { return 'no-img'; }
+      var blot = Quill.find(currentImg);
+      if (!blot) { return 'no-blot'; }
+      var index = quill.getIndex(blot);
+      quill.deleteText(index, 1, 'user');
+      currentImg = null;
+      flushPending();
+      return 'ok';
+    },
+    clickedImageInfo: function () {
+      return currentImg ? JSON.stringify({
+        src: currentImg.getAttribute('src') || '',
+        style: currentImg.getAttribute('style') || ''
+      }) : '';
+    },
+    takePending: function () {
+      var json = JSON.stringify(pending.ops || []);
+      pending = new DeltaCtor();
+      return json;
+    },
+    restorePending: function (patchJson) {
+      try {
+        var ops = JSON.parse(patchJson || '[]');
+        if (Array.isArray(ops) && ops.length > 0) {
+          pending = pending.compose(new DeltaCtor(ops));
+        }
+      } catch (e) { /* noop */ }
+      return 'ok';
+    },
+    setTheme: function (darkFlag, primaryColor) {
+      dark = darkFlag === '1' || darkFlag === 1 || darkFlag === true;
+      if (primaryColor) { primary = primaryColor; }
+      applyTheme();
+      return 'ok';
+    },
+    hasPending: function () {
+      return pending.ops && pending.ops.length > 0 ? '1' : '0';
+    }
+  };
+})();
+</script>
+</body>
+</html>

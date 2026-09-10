@@ -1,0 +1,23 @@
+{
+  "terminal_title": "Terminal",
+  "terminal_connecting": "Conectando...",
+  "terminal_input_hint": "Digite um comando",
+  "terminal_connection_failed": "Falha na conexão do terminal",
+  "terminal_disconnected": "Desconectado",
+  "terminal_access_denied": "Acesso ao terminal negado",
+  "terminal_taken_over": "Terminal aberto em outra página",
+  "terminal_settings_title": "Configurações do Terminal",
+  "terminal_restore_defaults": "Restaurar padrões",
+  "terminal_pick_color": "Escolher cor",
+  "terminal_color_hint": "#RRGGBB ou #AARRGGBB",
+  "terminal_font_color": "Cor da fonte",
+  "terminal_bg_color": "Cor de fundo",
+  "terminal_cursor_color": "Cor do cursor",
+  "terminal_font_size": "Tamanho da fonte (@px)",
+  "terminal_line_height": "Altura da linha (@value)",
+  "terminal_cursor_style": "Estilo do cursor",
+  "terminal_cursor_block": "Bloco",
+  "terminal_cursor_underline": "Sublinhado",
+  "terminal_cursor_bar": "Barra",
+  "terminal_cursor_blink": "Cursor piscar"
+}

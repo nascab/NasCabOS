@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Batas perangkat yang terhubung ke akun terlampaui",
+  "P2P.ERR_DEVICE_NOT_BIND": "Perangkat belum terhubung",
+  "P2P.ERR_NEED_VIP": "Fitur ini memerlukan keanggotaan",
+  "copied": "Tersalin",
+  "service.PAIR_CODE_RESET_FAILED": "Gagal mereset kode pencocokan"
+}

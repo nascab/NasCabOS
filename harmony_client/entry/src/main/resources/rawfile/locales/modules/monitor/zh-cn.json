@@ -1,0 +1,8 @@
+{
+  "monitor_device_monitor": "设备监控",
+  "monitor_storage_device": "存储设备",
+  "monitor_used": "已用",
+  "monitor_total": "总量",
+  "monitor_memory": "内存",
+  "monitor_network": "网络"
+}

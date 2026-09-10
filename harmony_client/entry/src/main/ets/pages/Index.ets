@@ -57,7 +57,57 @@ import { BookSettingsPage } from '../modules/book/views/BookSettingsPage';
 import { BookTxtReaderPage } from '../modules/book/views/BookTxtReaderPage';
 import { BookComicReaderPage } from '../modules/book/views/BookComicReaderPage';
 import { BookWebReaderPage } from '../modules/book/views/BookWebReaderPage';
+import { NotesMainPage } from '../modules/notes/views/NotesMainPage';
+import { NotesEditorPage } from '../modules/notes/views/NotesEditorPage';
+import { NotesMainPageParam, NotesEditorPageParam } from '../modules/notes/router/NotesRoutes';
+import { SecurityCenterPage } from '../modules/security/views/SecurityCenterPage';
+import { SecurityCenterPageParam } from '../modules/security/router/SecurityRoutes';
+import { ProcessListPage } from '../modules/process/views/ProcessListPage';
+import { ProcessListPageParam } from '../modules/process/router/ProcessRoutes';
+import { MonitorPage } from '../modules/monitor/views/MonitorPage';
+import { MonitorPageParam } from '../modules/monitor/router/MonitorRoutes';
+import { TerminalPage } from '../modules/terminal/views/TerminalPage';
+import { TerminalMainPageParam } from '../modules/terminal/router/TerminalRoutes';
+import { TransmissionMainPage } from '../modules/transmission/views/TransmissionMainPage';
+import { TransmissionMainPageParam } from '../modules/transmission/router/TransmissionRoutes';
+import { DockerMainPage } from '../modules/docker/views/DockerMainPage';
+import { DockerMainPageParam } from '../modules/docker/router/DockerRoutes';
+import { UserManagementPage } from '../modules/user/views/UserManagementPage';
+import { UserManagementPageParam, UserDetailPageParam } from '../modules/user/router/UserRoutes';
+import { UserDetailPage } from '../modules/user/views/UserDetailPage';
+import { FileMountPage } from '../modules/file_mount/views/FileMountPage';
+import {
+  FileMountPageParam, FileMountEditPageParam, OpenlistMountEditPageParam
+} from '../modules/file_mount/router/FileMountRoutes';
+import { FileMountEditPage } from '../modules/file_mount/views/FileMountEditPage';
+import { OpenlistMountEditPage } from '../modules/file_mount/views/OpenlistMountEditPage';
+import { ShareServerMainPage } from '../modules/share_server/views/ShareServerMainPage';
+import {
+  ShareServerMainPageParam, SharePortsPageParam
+} from '../modules/share_server/router/ShareServerRoutes';
+import { SharePortsSettingsPage } from '../modules/share_server/views/SharePortsSettingsPage';
+import { ServiceMainPage } from '../modules/service/views/ServiceMainPage';
+import { ServiceMainPageParam } from '../modules/service/router/ServiceRoutes';
+import { EncryptedSpaceMainPage } from '../modules/encrypted_space/views/EncryptedSpaceMainPage';
+import { EncryptedSpaceDetailPage } from '../modules/encrypted_space/views/EncryptedSpaceDetailPage';
+import { EncryptedSpaceViewerPage } from '../modules/encrypted_space/views/EncryptedSpaceViewerPage';
+import {
+  EncryptedSpaceMainPageParam, EncryptedSpaceDetailPageParam, EncryptedSpaceViewerPageParam
+} from '../modules/encrypted_space/router/EncryptedSpaceRoutes';
 import { NavUtil } from '../common/NavUtil';
+import { FileBackupPage } from '../modules/file_backup/views/FileBackupPage';
+import { FileBackupPageParam, FileBackupEditPageParam } from '../modules/file_backup/router/FileBackupRoutes';
+import { FileBackupEditPage } from '../modules/file_backup/views/FileBackupEditPage';
+import { MediaToolEntryPage } from '../modules/media_tool/views/MediaToolEntryPage';
+import {
+  MediaToolEntryPageParam, MediaToolImageCompressPageParam, MediaToolImgBatchCompressPageParam,
+  MediaToolVideoTransPageParam, MediaToolAudioTransPageParam, MediaToolMediaArrangePageParam
+} from '../modules/media_tool/router/MediaToolRoutes';
+import { MediaToolImageCompressPage } from '../modules/media_tool/views/MediaToolImageCompressPage';
+import { MediaToolImgBatchCompressPage } from '../modules/media_tool/views/MediaToolImgBatchCompressPage';
+import { MediaToolVideoTransPage } from '../modules/media_tool/views/MediaToolVideoTransPage';
+import { MediaToolAudioTransPage } from '../modules/media_tool/views/MediaToolAudioTransPage';
+import { MediaToolMediaArrangePage } from '../modules/media_tool/views/MediaToolMediaArrangePage';
 
 @Entry
 @Component
@@ -345,6 +395,185 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.NOTES_MAIN) {
+      NotesMainPageBuilder(
+        param instanceof NotesMainPageParam ? param : new NotesMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.NOTES_EDITOR) {
+      NotesEditorPageBuilder(
+        param instanceof NotesEditorPageParam ? param : new NotesEditorPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.SECURITY_CENTER) {
+      SecurityCenterPageBuilder(
+        param instanceof SecurityCenterPageParam ? param : new SecurityCenterPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PROCESS_LIST) {
+      ProcessListPageBuilder(
+        param instanceof ProcessListPageParam ? param : new ProcessListPageParam()
+      )
+    } else if (name === AppRouter.MONITOR_PAGE) {
+      MonitorPageBuilder(
+        param instanceof MonitorPageParam ? param : new MonitorPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.TERMINAL_PAGE) {
+      TerminalPageBuilder(
+        param instanceof TerminalMainPageParam ? param : new TerminalMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.USER_MANAGEMENT) {
+      UserManagementPageBuilder(
+        param instanceof UserManagementPageParam ? param : new UserManagementPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.USER_DETAIL) {
+      UserDetailPageBuilder(
+        param instanceof UserDetailPageParam ? param : new UserDetailPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.TRANSMISSION_PAGE) {
+      TransmissionMainPageBuilder(
+        param instanceof TransmissionMainPageParam ? param : new TransmissionMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.FILE_MOUNT) {
+      FileMountPageBuilder(
+        param instanceof FileMountPageParam ? param : new FileMountPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.FILE_MOUNT_EDIT) {
+      FileMountEditPageBuilder(
+        param instanceof FileMountEditPageParam ? param : new FileMountEditPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.OPENLIST_MOUNT_EDIT) {
+      OpenlistMountEditPageBuilder(
+        param instanceof OpenlistMountEditPageParam ? param : new OpenlistMountEditPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.SHARE_SERVER_MAIN) {
+      ShareServerMainPageBuilder(
+        param instanceof ShareServerMainPageParam ? param : new ShareServerMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.SHARE_PORTS) {
+      SharePortsPageBuilder(
+        param instanceof SharePortsPageParam ? param : new SharePortsPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.SERVICE_MAIN) {
+      ServiceMainPageBuilder(
+        param instanceof ServiceMainPageParam ? param : new ServiceMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.ENCRYPTED_SPACE_MAIN) {
+      EncryptedSpaceMainPageBuilder(
+        param instanceof EncryptedSpaceMainPageParam ? param : new EncryptedSpaceMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.ENCRYPTED_SPACE_DETAIL) {
+      EncryptedSpaceDetailPageBuilder(
+        param instanceof EncryptedSpaceDetailPageParam ? param : new EncryptedSpaceDetailPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.ENCRYPTED_SPACE_VIEWER) {
+      EncryptedSpaceViewerPageBuilder(
+        param instanceof EncryptedSpaceViewerPageParam ? param : new EncryptedSpaceViewerPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.FILE_BACKUP) {
+      FileBackupPageBuilder(
+        param instanceof FileBackupPageParam ? param : new FileBackupPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.FILE_BACKUP_EDIT) {
+      FileBackupEditPageBuilder(
+        param instanceof FileBackupEditPageParam ? param : new FileBackupEditPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_ENTRY) {
+      MediaToolEntryPageBuilder(
+        param instanceof MediaToolEntryPageParam ? param : new MediaToolEntryPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_IMAGE_COMPRESS) {
+      MediaToolImageCompressPageBuilder(
+        param instanceof MediaToolImageCompressPageParam ? param : new MediaToolImageCompressPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_IMG_BATCH_COMPRESS) {
+      MediaToolImgBatchCompressPageBuilder(
+        param instanceof MediaToolImgBatchCompressPageParam ? param : new MediaToolImgBatchCompressPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_VIDEO_TRANS) {
+      MediaToolVideoTransPageBuilder(
+        param instanceof MediaToolVideoTransPageParam ? param : new MediaToolVideoTransPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_AUDIO_TRANS) {
+      MediaToolAudioTransPageBuilder(
+        param instanceof MediaToolAudioTransPageParam ? param : new MediaToolAudioTransPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.MEDIA_TOOL_MEDIA_ARRANGE) {
+      MediaToolMediaArrangePageBuilder(
+        param instanceof MediaToolMediaArrangePageParam ? param : new MediaToolMediaArrangePageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     }
   }
 
@@ -563,4 +792,139 @@ function BookComicReaderPageBuilder(param: BookComicReaderParam, popPage: () => 
 @Builder
 function BookWebReaderPageBuilder(param: BookWebReaderParam, popPage: () => void) {
   BookWebReaderPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function NotesMainPageBuilder(param: NotesMainPageParam, popPage: () => void) {
+  NotesMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function NotesEditorPageBuilder(param: NotesEditorPageParam, popPage: () => void) {
+  NotesEditorPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function SecurityCenterPageBuilder(param: SecurityCenterPageParam, popPage: () => void) {
+  SecurityCenterPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function ProcessListPageBuilder(param: ProcessListPageParam) {
+  ProcessListPage({ param: param })
+}
+
+@Builder
+function MonitorPageBuilder(param: MonitorPageParam, popPage: () => void) {
+  MonitorPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function TerminalPageBuilder(param: TerminalMainPageParam, popPage: () => void) {
+  TerminalPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function TransmissionMainPageBuilder(param: TransmissionMainPageParam, popPage: () => void) {
+  TransmissionMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function DockerMainPageBuilder(param: DockerMainPageParam, popPage: () => void) {
+  DockerMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function UserManagementPageBuilder(param: UserManagementPageParam, popPage: () => void) {
+  UserManagementPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function UserDetailPageBuilder(param: UserDetailPageParam, popPage: () => void) {
+  UserDetailPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function FileMountPageBuilder(param: FileMountPageParam, popPage: () => void) {
+  FileMountPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function FileMountEditPageBuilder(param: FileMountEditPageParam, popPage: () => void) {
+  FileMountEditPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function OpenlistMountEditPageBuilder(param: OpenlistMountEditPageParam, popPage: () => void) {
+  OpenlistMountEditPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function ShareServerMainPageBuilder(param: ShareServerMainPageParam, popPage: () => void) {
+  ShareServerMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function SharePortsPageBuilder(param: SharePortsPageParam, popPage: () => void) {
+  SharePortsSettingsPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function ServiceMainPageBuilder(param: ServiceMainPageParam, popPage: () => void) {
+  ServiceMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function EncryptedSpaceMainPageBuilder(param: EncryptedSpaceMainPageParam, popPage: () => void) {
+  EncryptedSpaceMainPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function EncryptedSpaceDetailPageBuilder(param: EncryptedSpaceDetailPageParam, popPage: () => void) {
+  EncryptedSpaceDetailPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function EncryptedSpaceViewerPageBuilder(param: EncryptedSpaceViewerPageParam, popPage: () => void) {
+  EncryptedSpaceViewerPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function FileBackupPageBuilder(param: FileBackupPageParam, popPage: () => void) {
+  FileBackupPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function FileBackupEditPageBuilder(param: FileBackupEditPageParam, popPage: () => void) {
+  FileBackupEditPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolEntryPageBuilder(param: MediaToolEntryPageParam, popPage: () => void) {
+  MediaToolEntryPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolImageCompressPageBuilder(param: MediaToolImageCompressPageParam, popPage: () => void) {
+  MediaToolImageCompressPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolImgBatchCompressPageBuilder(param: MediaToolImgBatchCompressPageParam, popPage: () => void) {
+  MediaToolImgBatchCompressPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolVideoTransPageBuilder(param: MediaToolVideoTransPageParam, popPage: () => void) {
+  MediaToolVideoTransPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolAudioTransPageBuilder(param: MediaToolAudioTransPageParam, popPage: () => void) {
+  MediaToolAudioTransPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function MediaToolMediaArrangePageBuilder(param: MediaToolMediaArrangePageParam, popPage: () => void) {
+  MediaToolMediaArrangePage({ param: param, popPage: popPage })
 }

@@ -1,0 +1,23 @@
+{
+  "terminal_title": "Terminal",
+  "terminal_connecting": "Verbindung wird hergestellt...",
+  "terminal_input_hint": "Befehl eingeben",
+  "terminal_connection_failed": "Terminalverbindung fehlgeschlagen",
+  "terminal_disconnected": "Getrennt",
+  "terminal_access_denied": "Terminalzugriff verweigert",
+  "terminal_taken_over": "Terminal ist auf einer anderen Seite geöffnet",
+  "terminal_settings_title": "Terminaleinstellungen",
+  "terminal_restore_defaults": "Standards wiederherstellen",
+  "terminal_pick_color": "Farbe wählen",
+  "terminal_color_hint": "#RRGGBB oder #AARRGGBB",
+  "terminal_font_color": "Schriftfarbe",
+  "terminal_bg_color": "Hintergrundfarbe",
+  "terminal_cursor_color": "Cursorfarbe",
+  "terminal_font_size": "Schriftgröße (@px)",
+  "terminal_line_height": "Zeilenhöhe (@value)",
+  "terminal_cursor_style": "Cursorstil",
+  "terminal_cursor_block": "Block",
+  "terminal_cursor_underline": "Unterstrich",
+  "terminal_cursor_bar": "Balken",
+  "terminal_cursor_blink": "Cursor blinken"
+}

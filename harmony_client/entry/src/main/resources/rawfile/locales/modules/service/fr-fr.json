@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Limite du nombre d'appareils liés au compte dépassée",
+  "P2P.ERR_DEVICE_NOT_BIND": "Appareil non lié",
+  "P2P.ERR_NEED_VIP": "Cette fonctionnalité nécessite un abonnement",
+  "copied": "Copié",
+  "service.PAIR_CODE_RESET_FAILED": "Échec réinitialisation code d'appairage"
+}

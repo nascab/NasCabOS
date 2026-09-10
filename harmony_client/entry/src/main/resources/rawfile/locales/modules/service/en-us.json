@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Account device binding limit exceeded",
+  "P2P.ERR_DEVICE_NOT_BIND": "Device not bound",
+  "P2P.ERR_NEED_VIP": "This feature requires a membership",
+  "copied": "Copied",
+  "service.PAIR_CODE_RESET_FAILED": "Failed to reset pair code"
+}

@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "تم تجاوز حد أجهزة الحساب",
+  "P2P.ERR_DEVICE_NOT_BIND": "الجهاز غير مرتبط",
+  "P2P.ERR_NEED_VIP": "هذه الميزة تتطلب عضوية",
+  "copied": "تم النسخ",
+  "service.PAIR_CODE_RESET_FAILED": "فشل إعادة تعيين رمز الاقتران"
+}

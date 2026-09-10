@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "계정에 연결된 기기 수가 제한을 초과했습니다",
+  "P2P.ERR_DEVICE_NOT_BIND": "기기가 바인딩되지 않았습니다",
+  "P2P.ERR_NEED_VIP": "이 기능은 회원만 사용할 수 있습니다",
+  "copied": "복사됨",
+  "service.PAIR_CODE_RESET_FAILED": "페어링 코드 재설정 실패"
+}

@@ -28,6 +28,13 @@ export class L10n {
 
   static readonly appName: string = 'NasCabOS';
 
+  /** 模块级语言包目录：迁移模块各自维护 locales/modules/<module>/<code>.json，避免并行开发冲突 */
+  private static readonly moduleLocales: string[] = [
+    'process', 'monitor', 'security', 'terminal',
+    'user', 'transmission', 'file_mount', 'share_server',
+    'service', 'encrypted_space', 'docker', 'file_backup', 'media_tool'
+  ];
+
   /** 启动时加载全部语言包（与 Flutter 非 Web 端策略一致） */
   static async init(rm: resourceManager.ResourceManager): Promise<void> {
     const codes: string[] = [
@@ -47,6 +54,25 @@ export class L10n {
         L10n.locales.set(code.replace('-', '_'), inner);
       } catch (e) {
         console.error(`[L10N] load failed for ${code}: ${e}`);
+      }
+    }
+    // 追加加载模块级语言包（合并进主包；缺文件时静默跳过，回退中文）
+    for (const mod of L10n.moduleLocales) {
+      for (const code of codes) {
+        try {
+          const raw = await rm.getRawFileContent(`locales/modules/${mod}/${code}.json`);
+          const text = L10n.decodeUtf8(raw);
+          const map = JsonCodec.parseStr<Record<string, string>>(text);
+          const inner = L10n.locales.get(code.replace('-', '_'));
+          if (inner) {
+            const keys = Object.keys(map);
+            for (const k of keys) {
+              inner.set(k, map[k]);
+            }
+          }
+        } catch (_e) {
+          // 模块未提供该语言包时忽略
+        }
       }
     }
     // 初始化响应式语言包（默认中文）

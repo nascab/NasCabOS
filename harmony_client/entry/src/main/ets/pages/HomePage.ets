@@ -19,6 +19,20 @@ import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 import { VideoMainPageParam } from '../video/views/VideoMainPage';
 import { MusicMainPageParam } from '../modules/music/router/MusicRoutes';
 import { BookMainPageParam } from '../modules/book/router/BookRoutes';
+import { NotesMainPageParam } from '../modules/notes/router/NotesRoutes';
+import { EncryptedSpaceMainPageParam } from '../modules/encrypted_space/router/EncryptedSpaceRoutes';
+import { SecurityCenterPageParam } from '../modules/security/router/SecurityRoutes';
+import { ProcessListPageParam } from '../modules/process/router/ProcessRoutes';
+import { MonitorPageParam } from '../modules/monitor/router/MonitorRoutes';
+import { TerminalMainPageParam } from '../modules/terminal/router/TerminalRoutes';
+import { TransmissionMainPageParam } from '../modules/transmission/router/TransmissionRoutes';
+import { UserManagementPageParam } from '../modules/user/router/UserRoutes';
+import { FileMountPageParam } from '../modules/file_mount/router/FileMountRoutes';
+import { ShareServerMainPageParam } from '../modules/share_server/router/ShareServerRoutes';
+import { ServiceMainPageParam } from '../modules/service/router/ServiceRoutes';
+import { DockerMainPageParam } from '../modules/docker/router/DockerRoutes';
+import { FileBackupPageParam } from '../modules/file_backup/router/FileBackupRoutes';
+import { MediaToolEntryPageParam } from '../modules/media_tool/router/MediaToolRoutes';
 
 /** 首页：对应 Flutter AppHomePage */
 @ComponentV2
@@ -103,6 +117,34 @@ export struct HomePage {
         this.pushPage(AppRouter.MUSIC_MAIN, new MusicMainPageParam());
       } else if (app === 'book') {
         this.pushPage(AppRouter.BOOK_MAIN, new BookMainPageParam());
+      } else if (app === 'note') {
+        this.pushPage(AppRouter.NOTES_MAIN, new NotesMainPageParam());
+      } else if (app === 'transmission') {
+        this.pushPage(AppRouter.TRANSMISSION_PAGE, new TransmissionMainPageParam());
+      } else if (app === 'nascab_service') {
+        this.pushPage(AppRouter.SERVICE_MAIN, new ServiceMainPageParam());
+      } else if (app === 'docker') {
+        this.pushPage(AppRouter.DOCKER_PAGE, new DockerMainPageParam());
+      } else if (app === 'encrypted') {
+        this.pushPage(AppRouter.ENCRYPTED_SPACE_MAIN, new EncryptedSpaceMainPageParam());
+      } else if (app === 'security') {
+        this.pushPage(AppRouter.SECURITY_CENTER, new SecurityCenterPageParam());
+      } else if (app === 'process') {
+        this.pushPage(AppRouter.PROCESS_LIST, new ProcessListPageParam());
+      } else if (app === 'monitor') {
+        this.pushPage(AppRouter.MONITOR_PAGE, new MonitorPageParam());
+      } else if (app === 'terminal') {
+        this.pushPage(AppRouter.TERMINAL_PAGE, new TerminalMainPageParam());
+      } else if (app === 'user') {
+        this.pushPage(AppRouter.USER_MANAGEMENT, new UserManagementPageParam());
+      } else if (app === 'mounts') {
+        this.pushPage(AppRouter.FILE_MOUNT, new FileMountPageParam());
+      } else if (app === 'share' || app === 'file_share_server') {
+        this.pushPage(AppRouter.SHARE_SERVER_MAIN, new ShareServerMainPageParam());
+      } else if (app === 'backup') {
+        this.pushPage(AppRouter.FILE_BACKUP, new FileBackupPageParam());
+      } else if (app === 'media_tool') {
+        this.pushPage(AppRouter.MEDIA_TOOL_ENTRY, new MediaToolEntryPageParam());
       }
       return;
     }

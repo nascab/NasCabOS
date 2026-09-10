@@ -1,0 +1,23 @@
+{
+  "terminal_title": "Терминал",
+  "terminal_connecting": "Подключение...",
+  "terminal_input_hint": "Введите команду",
+  "terminal_connection_failed": "Ошибка подключения терминала",
+  "terminal_disconnected": "Отключено",
+  "terminal_access_denied": "Доступ к терминалу запрещён",
+  "terminal_taken_over": "Терминал открыт на другой странице",
+  "terminal_settings_title": "Настройки терминала",
+  "terminal_restore_defaults": "Восстановить по умолчанию",
+  "terminal_pick_color": "Выбрать цвет",
+  "terminal_color_hint": "#RRGGBB или #AARRGGBB",
+  "terminal_font_color": "Цвет шрифта",
+  "terminal_bg_color": "Цвет фона",
+  "terminal_cursor_color": "Цвет курсора",
+  "terminal_font_size": "Размер шрифта (@px)",
+  "terminal_line_height": "Высота строки (@value)",
+  "terminal_cursor_style": "Стиль курсора",
+  "terminal_cursor_block": "Блок",
+  "terminal_cursor_underline": "Подчёркивание",
+  "terminal_cursor_bar": "Вертикальная черта",
+  "terminal_cursor_blink": "Мигание курсора"
+}

@@ -165,6 +165,48 @@ export class HomeViewModel {
     if (app === 'book') {
       return true; // 图书馆已迁移（Flutter 端 app id 为 book），由页面接线路由
     }
+    if (app === 'note') {
+      return true; // 笔记已迁移（Flutter 端 app id 为 note），由页面接线路由
+    }
+    if (app === 'security') {
+      return true; // 安全中心已迁移，由页面接线路由
+    }
+    if (app === 'process') {
+      return true; // 进程管理已迁移（仅管理员可见），由页面接线路由
+    }
+    if (app === 'monitor') {
+      return true; // 系统监控已迁移，由页面接线路由
+    }
+    if (app === 'terminal') {
+      return true; // 终端已迁移，由页面接线路由
+    }
+    if (app === 'transmission') {
+      return true; // Transmission 已迁移，由页面接线路由
+    }
+    if (app === 'docker') {
+      return true; // Docker 已迁移，由页面接线路由
+    }
+    if (app === 'user') {
+      return true; // 用户管理已迁移（仅管理员），由页面接线路由
+    }
+    if (app === 'mounts') {
+      return true; // 远程挂载已迁移，由页面接线路由
+    }
+    if (app === 'share' || app === 'file_share_server') {
+      return true; // 分享管理已迁移（Flutter 移动端/桌面端 app id 不同，均接入），由页面接线路由
+    }
+    if (app === 'backup') {
+      return true; // 磁盘间备份已迁移（仅管理员可见），由页面接线路由
+    }
+    if (app === 'media_tool') {
+      return true; // 媒体工具已迁移，由页面接线路由
+    }
+    if (app === 'encrypted') {
+      return true; // 加密空间已迁移（Flutter 端 app id 为 encrypted），由页面接线路由
+    }
+    if (app === 'nascab_service') {
+      return true; // 服务模块已迁移（NasCab 账号/远程访问/DDNS），由页面接线路由
+    }
     return false;
   }
 

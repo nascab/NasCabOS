@@ -1,0 +1,23 @@
+{
+  "terminal_title": "طرفية",
+  "terminal_connecting": "جارٍ الاتصال...",
+  "terminal_input_hint": "أدخل الأمر",
+  "terminal_connection_failed": "فشل اتصال الطرفية",
+  "terminal_disconnected": "غير متصل",
+  "terminal_access_denied": "تم رفض الوصول إلى الطرفية",
+  "terminal_taken_over": "الطرفية مفتوحة في صفحة أخرى",
+  "terminal_settings_title": "إعدادات الطرفية",
+  "terminal_restore_defaults": "استعادة الافتراضيات",
+  "terminal_pick_color": "اختر لونًا",
+  "terminal_color_hint": "#RRGGBB أو #AARRGGBB",
+  "terminal_font_color": "لون الخط",
+  "terminal_bg_color": "لون الخلفية",
+  "terminal_cursor_color": "لون المؤشر",
+  "terminal_font_size": "حجم الخط (@px)",
+  "terminal_line_height": "ارتفاع السطر (@value)",
+  "terminal_cursor_style": "نمط المؤشر",
+  "terminal_cursor_block": "كتلة",
+  "terminal_cursor_underline": "تسطير",
+  "terminal_cursor_bar": "شريط",
+  "terminal_cursor_blink": "وميض المؤشر"
+}

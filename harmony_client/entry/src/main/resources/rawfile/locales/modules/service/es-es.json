@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Se ha excedido el límite de dispositivos vinculados a la cuenta",
+  "P2P.ERR_DEVICE_NOT_BIND": "Dispositivo no vinculado",
+  "P2P.ERR_NEED_VIP": "Esta función requiere membresía",
+  "copied": "Copiado",
+  "service.PAIR_CODE_RESET_FAILED": "Error al restablecer el código de emparejamiento"
+}

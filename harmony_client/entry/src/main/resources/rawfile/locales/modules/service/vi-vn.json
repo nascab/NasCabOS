@@ -1,0 +1,7 @@
+{
+  "P2P.ERR_DEVICE_COUNT_LIMIT": "Vượt quá giới hạn thiết bị liên kết tài khoản",
+  "P2P.ERR_DEVICE_NOT_BIND": "Thiết bị chưa được liên kết",
+  "P2P.ERR_NEED_VIP": "Tính năng này yêu cầu thành viên",
+  "copied": "Đã sao chép",
+  "service.PAIR_CODE_RESET_FAILED": "Đặt lại mã ghép đôi thất bại"
+}
