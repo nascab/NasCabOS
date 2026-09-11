@@ -455,6 +455,13 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.DOCKER_PAGE) {
+      DockerMainPageBuilder(
+        param instanceof DockerMainPageParam ? param : new DockerMainPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     } else if (name === AppRouter.FILE_MOUNT) {
       FileMountPageBuilder(
         param instanceof FileMountPageParam ? param : new FileMountPageParam(),

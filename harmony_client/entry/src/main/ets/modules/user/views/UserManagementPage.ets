@@ -122,6 +122,17 @@ export struct UserManagementPage {
     .height('100%')
   }
 
+  /** 顶栏动作（对齐 AppBar add 动作 → CustomUserFormDialog） */
+  @Builder
+  HeaderActions() {
+    BorderedIconButton({
+      icon: $r('sys.symbol.plus'),
+      onTap: (): void => {
+        this.openCreateDialog();
+      }
+    })
+  }
+
   build() {
     PageScaffold({
       title: L10n.t('user_mgmt_title', '用户管理'),
@@ -129,12 +140,7 @@ export struct UserManagementPage {
         this.popPage();
       },
       actions: (): void => {
-        BorderedIconButton({
-          icon: $r('sys.symbol.plus'),
-          onTap: (): void => {
-            this.openCreateDialog();
-          }
-        })
+        this.HeaderActions()
       },
       content: (): void => {
         this.Content()
