@@ -636,6 +636,7 @@ export struct SettingsPage {
         () => {
           this.showThemeSelectDialog();
         },
+        '',
         false
       )
       Divider().color(AppTheme.current().divider).margin({ left: 52 })
@@ -646,6 +647,7 @@ export struct SettingsPage {
         () => {
           this.showLanguageSelectDialog();
         },
+        '',
         false
       )
       Divider().color(AppTheme.current().divider).margin({ left: 52 })
@@ -656,6 +658,7 @@ export struct SettingsPage {
         () => {
           this.openLegal(L10n.authUserAgreement, true);
         },
+        '',
         false
       )
       Divider().color(AppTheme.current().divider).margin({ left: 52 })
@@ -666,6 +669,7 @@ export struct SettingsPage {
         () => {
           this.openLegal(L10n.authPrivacyPolicy, false);
         },
+        '',
         false
       )
       if (this.userStore.isAdmin) {
@@ -683,7 +687,8 @@ export struct SettingsPage {
               }
             );
           },
-          this.loadingCacheSize
+          'clearCache',
+          true
         )
         Divider().color(AppTheme.current().divider).margin({ left: 52 })
         this.SettingsItem(
@@ -699,7 +704,8 @@ export struct SettingsPage {
               }
             );
           },
-          this.restartingService
+          'restartService',
+          false
         )
       }
     }
@@ -713,8 +719,14 @@ export struct SettingsPage {
     return this.cacheSizeBytes >= 0 ? ` (${this.formatBytes(this.cacheSizeBytes)})` : '';
   }
 
+  /**
+   * 通用设置行。loadingId 用于在 Builder 内按 id 响应式读取 loading 状态
+   * （按值传参不会随状态刷新，直接读 this 状态才能让 spinner 实时消失）；
+   * showCacheSize 仅清理缓存行传 true，避免所有行都带缓存容量后缀。
+   */
   @Builder
-  SettingsItem(titleKey: string, subtitleKey: string, icon: Resource, onTap: () => void, showLoading: boolean) {
+  SettingsItem(titleKey: string, subtitleKey: string, icon: Resource, onTap: () => void,
+    loadingId: string, showCacheSize: boolean) {
     Row({ space: 12 }) {
       SymbolGlyph(icon)
         .fontSize(22)
@@ -725,14 +737,15 @@ export struct SettingsPage {
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
           .fontColor(AppTheme.current().onSurface)
-        Text(L10n.t(subtitleKey) + this.cacheSizeSuffix())
+        Text(L10n.t(subtitleKey) + (showCacheSize ? this.cacheSizeSuffix() : ''))
           .fontSize(12)
           .fontColor(AppTheme.current().subText)
           .margin({ top: 2 })
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
-      if (showLoading) {
+      if ((loadingId === 'clearCache' && this.loadingCacheSize)
+        || (loadingId === 'restartService' && this.restartingService)) {
         LoadingProgress()
           .width(18)
           .height(18)

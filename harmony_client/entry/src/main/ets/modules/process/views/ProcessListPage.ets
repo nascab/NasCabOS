@@ -137,7 +137,7 @@ export struct ProcessListPage {
         ListItem() {
           this.ProcessCard(item)
         }
-        .margin({ bottom: 2 })
+        .margin({ bottom: 10 })
       }, (item: WorkerProcessItem) => `${item.pid}_${item.startedAt}_${item.workerPath}`)
     }
     .width('100%')
