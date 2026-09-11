@@ -20,6 +20,9 @@ export struct PageScaffold {
   @Param showBack: boolean = true;
   /** 自定义状态栏背景色（默认取 appBarBg；文件页等内容型页面可传入内容区背景色） */
   @Param statusBarBg: string = '';
+  /** 底部导航条安全区背景色（默认取 pageBg；带底部标签栏的页面传 surfaceBg 与标签栏同色，
+   *  对齐照片主页背景层模式：窗口 navigationBarColor 属性在鸿蒙上不生效，靠应用内渲染层延伸） */
+  @Param bottomSafeAreaBg: string = '';
   @Param onBack: () => void = () => {
   };
   /** 自定义返回拦截：返回 true 表示已消费（用于 Web 页回退历史等） */
@@ -47,8 +50,8 @@ export struct PageScaffold {
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     this.clearRetryTimer();
-    // 恢复透明状态栏背景 + 白色文字（首页/登录等深色沉浸页面）
-    PageScaffold.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
+    // 恢复透明状态栏/导航条背景 + 白色文字（首页/登录等深色沉浸页面）
+    PageScaffold.setSystemBars(getContext(this), '#FFFFFF', '#00000000', '#00000000');
   }
 
   /** push 转场会回滚窗口布局写入（实测，对齐沉浸页 scheduleFullScreenRetry）：延迟重设纠正 */
@@ -74,15 +77,18 @@ export struct PageScaffold {
   private applyStatusBar(): void {
     const p = AppTheme.current();
     const bg = this.statusBarBg.length > 0 ? this.statusBarBg : p.appBarBg;
-    PageScaffold.setStatusBar(getContext(this), p.statusBarContent, bg);
+    // 底部导航条颜色与底部标签栏底色（surfaceBg）一致，避免导航条区域露出系统默认色
+    PageScaffold.setSystemBars(getContext(this), p.statusBarContent, bg, p.surfaceBg);
   }
 
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
+  private static setSystemBars(ctx: Context, contentColor: string, bgColor: string, navBgColor: string): void {
     try {
       window.getLastWindow(ctx).then((w) => {
         w.setWindowSystemBarProperties({
           statusBarContentColor: contentColor,
-          statusBarColor: bgColor
+          statusBarColor: bgColor,
+          navigationBarContentColor: contentColor,
+          navigationBarColor: navBgColor
         });
       });
     } catch (_e) {
@@ -107,6 +113,15 @@ export struct PageScaffold {
           .height('100%')
           .backgroundColor(this.palette().pageBg)
           .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+
+        // 底部安全区背景层：与底部标签栏同底色（照片主页同款模式）
+        if (this.bottomSafeAreaBg.length > 0) {
+          Column()
+            .width('100%')
+            .height('100%')
+            .backgroundColor(this.bottomSafeAreaBg)
+            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
+        }
 
         // 内容层：默认位于安全区内（标题栏紧贴状态栏下方）
         Column() {
@@ -135,6 +150,8 @@ export struct PageScaffold {
       // 每次显示都确保非全屏避让布局（从沉浸页返回/push 进入均覆盖）
       PageScaffold.setFullScreen(getContext(this), false);
       this.scheduleAvoidRetry();
+      // 从子页返回时子页已恢复透明系统栏，这里重新应用本页配色
+      this.applyStatusBar();
     })
     .onHidden((): void => {
       // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面

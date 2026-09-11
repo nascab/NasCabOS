@@ -112,6 +112,8 @@ export struct ShareServerMainPage {
   build() {
     PageScaffold({
       title: this.titleFor(this.ctrl.currentPageKey),
+      // 底部导航条安全区与标签栏同底色（对齐照片主页背景层模式）
+      bottomSafeAreaBg: this.palette().surfaceBg,
       onBack: (): void => {
         this.popPage();
       },

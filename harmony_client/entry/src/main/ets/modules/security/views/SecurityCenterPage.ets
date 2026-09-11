@@ -67,6 +67,8 @@ export struct SecurityCenterPage {
   build() {
     PageScaffold({
       title: L10n.t('app_security', '安全中心'),
+      // 底部导航条安全区与标签栏同底色（对齐照片主页背景层模式）
+      bottomSafeAreaBg: this.palette().surfaceBg,
       onBack: (): void => {
         this.popPage();
       },

@@ -132,7 +132,8 @@ export struct FileMountPage {
     PageScaffold({
       title: this.pageTitle(),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
+      // 底部导航条安全区与标签栏同底色（对齐照片主页背景层模式）
+      bottomSafeAreaBg: AppTheme.current().surfaceBg,
       onBack: (): void => {
         this.popPage();
       },
