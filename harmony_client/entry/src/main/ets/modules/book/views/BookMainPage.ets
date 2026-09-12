@@ -6,7 +6,6 @@ import { AppEventBus } from '../../../common/AppEventBus';
 import { WindowStore } from '../../../common/WindowStore';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
-import { EmptyState } from '../../../common/components/EmptyState';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { BookMainPageParam } from '../router/BookRoutes';
@@ -18,6 +17,8 @@ import { BookCustomListView } from './BookCustomListView';
 import { BookCollectionView } from './BookCollectionView';
 import { BookMultiSelectBar } from '../components/BookMultiSelectBar';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
+import { FolderViewBody } from '../../../modules/folder_view/views/FolderViewBody';
+import { FolderViewModuleType } from '../../../modules/folder_view/models/FolderViewModuleType';
 
 /**
  * 图书馆主页（对齐 Flutter AppBookMainView 移动端布局）：
@@ -185,12 +186,9 @@ export struct BookMainPage {
                 }
               })
             } else {
-              // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入（同照片/影音/音乐主页处理方式）
-              Column() {
-                EmptyState({ message: L10n.t('not_implemented_yet', '敬请期待') })
-              }
-              .width('100%')
-              .height('100%')
+              // 文件视图（对齐 Flutter AppFolderViewPage，book 模块）
+              // 嵌入沉浸式全屏主页，需避让状态栏
+              FolderViewBody({ moduleType: FolderViewModuleType.Book, statusBarHeight: this.statusBarHeight })
             }
           }
           .width('100%')

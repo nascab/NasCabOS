@@ -8,9 +8,10 @@ import { AppRouter } from '../../../router/AppRouter';
 import { WindowStore } from '../../../common/WindowStore';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { SearchInputBar } from '../../../common/components/SearchInputBar';
-import { EmptyState } from '../../../common/components/EmptyState';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
+import { FolderViewBody } from '../../../modules/folder_view/views/FolderViewBody';
+import { FolderViewModuleType } from '../../../modules/folder_view/models/FolderViewModuleType';
 import { TimelineController } from '../../controllers/TimelineController';
 import { PhotoTimelineView } from '../timeline/PhotoTimelineView';
 import { PhotoTimelineYearView } from '../timeline/PhotoTimelineYearView';
@@ -235,12 +236,8 @@ export struct PhotoMainPage {
               } else if (this.currentTab === 3) {
                 PhotoAiHomeView()
               } else {
-                // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入
-                Column() {
-                  EmptyState({ message: L10n.t('feature_coming_soon', '敬请期待') })
-                }
-                .width('100%')
-                .height('100%')
+                // 文件视图（对齐 Flutter AppFolderViewPage，photo 模块）
+                FolderViewBody({ moduleType: FolderViewModuleType.Photo })
               }
             }
             .width('100%')

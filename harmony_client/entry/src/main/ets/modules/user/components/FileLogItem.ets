@@ -10,6 +10,8 @@ import { FileOperationLog, formatLogTime } from '../models/UserModels';
 @ComponentV2
 export struct FileLogItem {
   @Require @Param log: FileOperationLog;
+  /** 取消回调（对齐 Flutter onCancel：传入且进行中时显示取消按钮） */
+  @Param onCancel: ((log: FileOperationLog) => void) | undefined = undefined;
 
   private palette(): ThemePalette {
     return AppTheme.current();
@@ -113,6 +115,19 @@ export struct FileLogItem {
 
         if (this.log.state === 'PROCESSING') {
           this.ProgressRing()
+        }
+
+        // 取消按钮（进行中且传入 onCancel 时显示，对齐 Flutter _buildCancelButton）
+        if (this.log.state === 'PROCESSING' && this.onCancel !== undefined) {
+          SymbolGlyph($r('sys.symbol.xmark_circle'))
+            .fontSize(20)
+            .fontColor([this.palette().subText])
+            .margin({ left: 4 })
+            .onClick((): void => {
+              if (this.onCancel !== undefined) {
+                this.onCancel(this.log);
+              }
+            })
         }
 
         if (this.log.createTime > 0) {

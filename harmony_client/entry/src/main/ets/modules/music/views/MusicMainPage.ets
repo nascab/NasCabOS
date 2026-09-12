@@ -7,7 +7,6 @@ import { WindowStore } from '../../../common/WindowStore';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
-import { EmptyState } from '../../../common/components/EmptyState';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { MusicMainPageParam } from '../router/MusicRoutes';
@@ -20,6 +19,8 @@ import { MusicAlbumArtistPage } from './MusicAlbumArtistPage';
 import { MusicPlayListPage } from './MusicPlayListPage';
 import { MusicCollectionPage } from './MusicCollectionPage';
 import { MusicFloatingBar } from '../components/MusicFloatingBar';
+import { FolderViewBody } from '../../../modules/folder_view/views/FolderViewBody';
+import { FolderViewModuleType } from '../../../modules/folder_view/models/FolderViewModuleType';
 
 /**
  * 音乐主页（对齐 Flutter AppMusicMainFrameView + AppMusicMainView 移动端布局）：
@@ -231,12 +232,9 @@ export struct MusicMainPage {
     } else if (this.activeTab === 2) {
       MusicCollectionPage({ statusBarHeight: this.statusBarHeight })
     } else {
-      // 文件视图（对齐 Flutter AppFolderViewPage）后续任务接入（同照片/影音主页处理方式）
-      Column() {
-        EmptyState({ message: L10n.t('feature_coming_soon', '敬请期待') })
-      }
-      .width('100%')
-      .height('100%')
+      // 文件视图（对齐 Flutter AppFolderViewPage，music 模块）
+      // 嵌入沉浸式全屏主页，需避让状态栏
+      FolderViewBody({ moduleType: FolderViewModuleType.Music, statusBarHeight: this.statusBarHeight })
     }
   }
 

@@ -23,4 +23,16 @@ export class NavUtil {
       NavUtil.stack.pop();
     }
   }
+
+  /** 连续弹出栈顶同名页面直到栈顶不是该名称（对齐 Flutter Navigator.popUntil 反向关闭子页） */
+  static popUntilTopNot(name: string): void {
+    if (!NavUtil.stack) {
+      return;
+    }
+    const names = NavUtil.stack.getAllPathName();
+    while (names.length > 0 && names[names.length - 1] === name) {
+      NavUtil.stack.pop();
+      names.pop();
+    }
+  }
 }

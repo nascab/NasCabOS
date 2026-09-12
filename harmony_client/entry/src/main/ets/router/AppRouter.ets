@@ -8,7 +8,9 @@ export class AppRouter {
   static readonly SETTINGS: string = 'SettingsPage';
   static readonly LEGAL: string = 'LegalPage';
   static readonly FILES: string = 'FileBrowserPage';
+  static readonly FOLDER_VIEW: string = 'FolderViewPage';
   static readonly UPLOAD_CENTER: string = 'UploadCenterPage';
+  static readonly TASK_CENTER: string = 'TaskCenterPage';
   static readonly PHOTO_TIMELINE: string = 'PhotoTimelinePage';
   static readonly PHOTO_MAIN: string = 'PhotoMainPage';
   static readonly PHOTO_TRASH: string = 'PhotoTrashPage';

@@ -11,7 +11,10 @@ import { HomePage } from './HomePage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { LegalPage, LegalPageParam } from './LegalPage';
 import { FileBrowserPage, FileBrowserParam } from '../files/views/FileBrowserPage';
+import { FolderViewPage } from '../modules/folder_view/views/FolderViewPage';
+import { FolderViewPageParam } from '../modules/folder_view/router/FolderViewRoutes';
 import { UploadCenterPage, UploadCenterParam } from '../transfer/views/UploadCenterPage';
+import { TaskCenterPage, TaskCenterPageParam } from '../transfer/views/TaskCenterPage';
 import { PhotoTimelinePage, PhotoTimelinePageParam } from '../photo/views/timeline/PhotoTimelinePage';
 import { PhotoMainPage, PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 import { PhotoTrashPage, PhotoTrashPageParam } from '../photo/views/trash/PhotoTrashPage';
@@ -170,12 +173,26 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.FOLDER_VIEW) {
+      FolderViewPageBuilder(
+        param instanceof FolderViewPageParam ? param : new FolderViewPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     } else if (name === AppRouter.UPLOAD_CENTER) {
       UploadCenterPageBuilder(
         param instanceof UploadCenterParam ? param : new UploadCenterParam(),
         (n: string, p?: object): void => {
           this.pageStack.pushPathByName(n, p ?? new Object());
         },
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.TASK_CENTER) {
+      TaskCenterPageBuilder(
+        param instanceof TaskCenterPageParam ? param : new TaskCenterPageParam(),
         (): void => {
           this.pageStack.pop();
         }
@@ -638,9 +655,19 @@ function FileBrowserPageBuilder(param: FileBrowserParam, pushPage: (name: string
 }
 
 @Builder
+function FolderViewPageBuilder(param: FolderViewPageParam, popPage: () => void) {
+  FolderViewPage({ param: param, popPage: popPage })
+}
+
+@Builder
 function UploadCenterPageBuilder(param: UploadCenterParam, pushPage: (name: string, param?: object) => void,
   popPage: () => void) {
   UploadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
+}
+
+@Builder
+function TaskCenterPageBuilder(param: TaskCenterPageParam, popPage: () => void) {
+  TaskCenterPage({ param: param, popPage: popPage })
 }
 
 @Builder

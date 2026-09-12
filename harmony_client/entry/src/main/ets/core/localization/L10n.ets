@@ -32,7 +32,8 @@ export class L10n {
   private static readonly moduleLocales: string[] = [
     'process', 'monitor', 'security', 'terminal',
     'user', 'transmission', 'file_mount', 'share_server',
-    'service', 'encrypted_space', 'docker', 'file_backup', 'media_tool'
+    'service', 'encrypted_space', 'docker', 'file_backup', 'media_tool',
+    'folder_view'
   ];
 
   /** 启动时加载全部语言包（与 Flutter 非 Web 端策略一致） */
