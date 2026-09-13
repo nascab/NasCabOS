@@ -1,3 +1,4 @@
+const dns = require('dns');
 const Logger = require('../../utils/logger');
 const apiConfig = require('../../config/apiConfig');
 const tableConfig = require('../../db/table/tableConfig');
@@ -67,6 +68,9 @@ async function fetchPublicIp({ knex, family }) {
   const r = await nascabAccountUtil.remoteRequestWithAutoRefresh(knex, tableConfig, apiConfig, {
     method: 'GET',
     url,
+    // apiConfig 全局 axios.defaults.family=4 会强制 IPv4，导致 AAAA-only 域名解析失败
+    family,
+    lookup: dns.lookup,
   });
   logDebug('fetchPublicIp', { url, family, ok: !!(r && r.ok), status: r && r.status, expired: !!(r && r.expired) });
   return r;
@@ -79,6 +83,9 @@ async function updateRemoteDdns({ knex, deviceId, family }) {
     method: 'POST',
     url,
     data: { deviceId },
+    // 同上：ipv6 域名仅有 AAAA 记录，必须按 family 解析连接
+    family,
+    lookup: dns.lookup,
   });
   return r;
 }

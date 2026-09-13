@@ -1,3 +1,4 @@
+const dns = require('dns');
 const ResponseUtil = require('../../../apiUtils/responseUtil');
 const apiConfig = require('../../../../config/apiConfig');
 const tableConfig = require('../../../../db/table/tableConfig');
@@ -25,6 +26,16 @@ function getDdnsBaseUrlByType(ddnsType, apiConfig) {
   const t = normalizeDdnsType(ddnsType);
   if (t === 'ipv6') return apiConfig.apiDdnsIpv6BaseUrl || apiConfig.apiP2pBaseUrl;
   return apiConfig.apiDdnsIpv4BaseUrl || apiConfig.apiP2pBaseUrl;
+}
+
+function getDdnsFamily(ddnsType) {
+  return normalizeDdnsType(ddnsType) === 'ipv6' ? 6 : 4;
+}
+
+// apiConfig 全局 axios.defaults.family=4 会强制 IPv4，导致 AAAA-only 的 ipv6 DDNS 域名解析失败；
+// 走 family 专属域名（如 ipv6.nas.cab）的请求必须按对应 family 解析连接
+function getDdnsRequestOptions(ddnsType) {
+  return { family: getDdnsFamily(ddnsType), lookup: dns.lookup };
 }
 
 function isNasCabLoggedInByToken(token) {
@@ -116,6 +127,7 @@ module.exports = {
     const r2 = await nascabAccountUtil.remoteRequestWithAutoRefresh(req.dbMain, tableConfig, apiConfig, {
       url: `${ddnsIpBase}/api/ddns/ip`,
       method: 'GET',
+      ...getDdnsRequestOptions(local.ddnsType),
     });
     if (r2.ok && r2.status === 200 && r2.json && Number(r2.json.code) === 0) {
       remoteIp = r2.json.data || null;
@@ -194,6 +206,7 @@ module.exports = {
       url: `${ddnsCallBase}/api/ddns/domain`,
       method: 'POST',
       data: { deviceId: did, ddnsDomain },
+      ...getDdnsRequestOptions(currentTypeRaw),
     });
     console.log("调用设置DDN域名",`${ddnsCallBase}/api/ddns/domain`,ddnsDomain,deviceId)
     console.log("remote",remote)
@@ -257,6 +270,7 @@ module.exports = {
       url: `${ddnsCallBase}/api/ddns/type`,
       method: 'POST',
       data: { deviceId: did, ddnsType },
+      ...getDdnsRequestOptions(ddnsType),
     });
     if (!remote.ok && remote.expired) {
       await setDdnsErrorAndStop('service.NASCAB_SESSION_EXPIRED').catch(() => {});
