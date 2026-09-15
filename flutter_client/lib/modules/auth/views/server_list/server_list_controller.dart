@@ -386,7 +386,7 @@ class ServerListController extends GetxController {
         // ═══════════════════════════════════════════════════
         // Phase 1: 局域网直连（WiFi/有线网络）
         // ═══════════════════════════════════════════════════
-        if (network.onWifi && hasDirectUrl) {
+        if (hasDirectUrl) {
           // 蜂窝网络 + 私有 IP → 必然不可达，跳过直连
           final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
           if (!(network.isCellular && isPrivateLanServerUrl)) {

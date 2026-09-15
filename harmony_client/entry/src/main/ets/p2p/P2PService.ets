@@ -103,6 +103,8 @@ export class P2PService implements P2pRequestSender {
   lastError: string | undefined = undefined;
   relayAddress: string = '';
   transportKind: P2pTransportKind = P2pTransportKind.UNKNOWN;
+  /** 本次连接的 ICE 偏好（对齐 Flutter _p2pIcePreference，relayOnly 传给 RTC 栈） */
+  icePreference: P2pIcePreference = P2pIcePreference.AUTO;
 
   private sessionId: string = '';
   private signaling: WebSocketSignaling | undefined = undefined;
@@ -120,7 +122,8 @@ export class P2PService implements P2pRequestSender {
     return P2PService.instance;
   }
 
-  async connectByPairCode(code: string, _icePreference: P2pIcePreference = P2pIcePreference.AUTO): Promise<void> {
+  async connectByPairCode(code: string, icePreference: P2pIcePreference = P2pIcePreference.AUTO): Promise<void> {
+    this.icePreference = icePreference;
     if (this.connectSerialPromise) {
       await this.connectSerialPromise;
     }
@@ -297,7 +300,7 @@ export class P2PService implements P2pRequestSender {
 
     const rtc = new WebRTCClient(sessionId, iceServers, (msg: SignalingOfferMsg) => {
       ws.sendOffer(msg);
-    });
+    }, this.icePreference === P2pIcePreference.RELAY_ONLY);
     this.rtcClient = rtc;
 
     // ICE 候选上行：对齐 Flutter 端 webrtc:candidate 信令

@@ -55,6 +55,8 @@ export type SignalingSendCallback = (msg: SignalingOfferMsg) => void;
 export class WebRTCClient {
   sessionId: string;
   iceServers: Object[];
+  /** ICE 传输策略：true 时仅走中继（对齐 Flutter relayOnly → iceTransportPolicy: relay） */
+  relayOnly: boolean;
   sendOffer: SignalingSendCallback;
   private pcHandle: number = -1;
   private channels: Map<P2pRtcChannel, ChannelState> = new Map();
@@ -66,9 +68,11 @@ export class WebRTCClient {
   private pendingRemoteIce: IceCandidateJson[] = [];
   private heartbeatTimerId: number = -1;
 
-  constructor(sessionId: string, iceServers: Object[], sendOffer: SignalingSendCallback) {
+  constructor(sessionId: string, iceServers: Object[], sendOffer: SignalingSendCallback,
+    relayOnly: boolean = false) {
     this.sessionId = sessionId;
     this.iceServers = iceServers;
+    this.relayOnly = relayOnly;
     this.sendOffer = sendOffer;
     WebRTCNativeBridge.init(
       (channelHandle, data) => this.onBinaryMessage(channelHandle, data),
@@ -78,7 +82,7 @@ export class WebRTCClient {
 
   async start(requestedChannels: P2pRtcChannel[]): Promise<void> {
     console.error(`[P2P] start: channels=${requestedChannels.join(',')}, iceServers=${JSON.stringify(this.iceServers)}`);
-    this.pcHandle = WebRTCNativeBridge.createPeerConnection(this.iceServers);
+    this.pcHandle = WebRTCNativeBridge.createPeerConnection(this.iceServers, this.relayOnly);
     this.pendingReadyCount = requestedChannels.length;
     this.readyPromise = new Promise<void>((resolve, reject) => {
       this.readyResolve = resolve;

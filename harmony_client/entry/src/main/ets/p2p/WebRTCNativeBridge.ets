@@ -38,14 +38,16 @@ export class WebRTCNativeBridge {
     WebRTCNativeBridge.iceHandler = handler;
   }
 
-  static createPeerConnection(iceServers: Object[]): number {
+  static createPeerConnection(iceServers: Object[], relayOnly: boolean = false): number {
     const factory = WebRTCNativeBridge.factory;
     if (!factory) {
       return -1;
     }
-    // ICE 服务器传入 WebRTC 栈（对齐 Flutter：RTCPeerConfiguration.iceServers）
+    // ICE 服务器传入 WebRTC 栈（对齐 Flutter：RTCPeerConfiguration.iceServers）；
+    // relayOnly 对齐 Flutter iceTransportPolicy: relay（强制 P2P 中继，SDK 仅支持 all|relay）
     const config: webrtc.RTCConfiguration = {
-      iceServers: iceServers as webrtc.RTCIceServer[]
+      iceServers: iceServers as webrtc.RTCIceServer[],
+      iceTransportPolicy: relayOnly ? 'relay' : 'all'
     } as webrtc.RTCConfiguration;
     const pc: webrtc.RTCPeerConnection = factory.createPeerConnection(config);
     const handle = WebRTCNativeBridge.nextHandle++;
