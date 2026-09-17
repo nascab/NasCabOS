@@ -388,8 +388,8 @@ class ServerListController extends GetxController {
         // ═══════════════════════════════════════════════════
         if (hasDirectUrl) {
           // 蜂窝网络 + 私有 IP → 必然不可达，跳过直连
-          final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
-          if (!(network.isCellular && isPrivateLanServerUrl)) {
+          // final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
+          // if (!(network.isCellular && isPrivateLanServerUrl)) {
             await ApiController.instance.disconnectP2p().catchError((_) {});
             ApiController.instance.setBaseUrl(serverItem.serverUrl);
             status = await AuthApiService.instance.checkServerStatus(
@@ -397,7 +397,7 @@ class ServerListController extends GetxController {
               timeout: const Duration(seconds: 2),
               maxRetries: 0,
             );
-          }
+          // }
 
           // serverUrl 失败，尝试 lanIpv4（避免重复探测相同 URL）
           if ((status == null || !status.success || !status.isNasCabServer) &&
