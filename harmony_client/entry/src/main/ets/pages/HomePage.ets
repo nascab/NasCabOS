@@ -32,6 +32,7 @@ import { ShareServerMainPageParam } from '../modules/share_server/router/ShareSe
 import { ServiceMainPageParam } from '../modules/service/router/ServiceRoutes';
 import { DockerMainPageParam } from '../modules/docker/router/DockerRoutes';
 import { FileBackupPageParam } from '../modules/file_backup/router/FileBackupRoutes';
+import { PhotoBackupPageParam } from '../modules/photo_backup/router/PhotoBackupRoutes';
 import { MediaToolEntryPageParam } from '../modules/media_tool/router/MediaToolRoutes';
 
 /** 首页：对应 Flutter AppHomePage */
@@ -143,6 +144,8 @@ export struct HomePage {
         this.pushPage(AppRouter.SHARE_SERVER_MAIN, new ShareServerMainPageParam());
       } else if (app === 'backup') {
         this.pushPage(AppRouter.FILE_BACKUP, new FileBackupPageParam());
+      } else if (app === 'photo_backup') {
+        this.pushPage(AppRouter.PHOTO_BACKUP, new PhotoBackupPageParam());
       } else if (app === 'media_tool') {
         this.pushPage(AppRouter.MEDIA_TOOL_ENTRY, new MediaToolEntryPageParam());
       }
@@ -233,7 +236,12 @@ export struct HomePage {
               this.openApp('upload');
               return;
             }
-            // 下载/相册备份模块迁移后接入路由
+            if (action === 'photo_backup') {
+              // 相册备份已迁移，接入路由
+              this.openApp('photo_backup');
+              return;
+            }
+            // 下载模块迁移后接入路由
             this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
           }
         })

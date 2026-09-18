@@ -163,7 +163,7 @@ export class UploadTransferHelper {
   /** 组装上传分块 multipart 的文本字段（对齐 Flutter chunk 字段集） */
   static chunkFields(sessionHash: string, remotePath: string, chunkSize: number, fileName: string,
     totalChunks: number, nameStrategy: string, index: number, mtimeMs: number,
-    saveType: string): Array<[string, string]> {
+    saveType: string, relativePath: string = '', birthtimeMs: number = 0): Array<[string, string]> {
     const fields: Array<[string, string]> = [
       ['hash', sessionHash],
       ['targetDir', remotePath],
@@ -173,8 +173,14 @@ export class UploadTransferHelper {
       ['nameStrategy', nameStrategy],
       ['index', `${index}`]
     ];
+    if (relativePath.length > 0) {
+      fields.push(['relativePath', relativePath]);
+    }
     if (mtimeMs > 0) {
       fields.push(['mtimeMs', `${mtimeMs}`]);
+    }
+    if (birthtimeMs > 0) {
+      fields.push(['birthtimeMs', `${birthtimeMs}`]);
     }
     if (saveType.length > 0) {
       fields.push(['saveType', saveType]);
@@ -184,7 +190,8 @@ export class UploadTransferHelper {
 
   /** 上传检查请求体（对齐 Flutter check body） */
   static checkBody(sessionHash: string, targetDir: string, chunkSize: number, fileName: string,
-    totalChunks: number, nameStrategy: string, mtimeMs: number, saveType: string): Record<string, Object> {
+    totalChunks: number, nameStrategy: string, mtimeMs: number, saveType: string,
+    relativePath: string = '', birthtimeMs: number = 0): Record<string, Object> {
     const body: Record<string, Object> = {
       'hash': sessionHash,
       'targetDir': targetDir,
@@ -193,8 +200,14 @@ export class UploadTransferHelper {
       'nameStrategy': nameStrategy,
       'totalChunks': totalChunks
     };
+    if (relativePath.length > 0) {
+      body['relativePath'] = relativePath;
+    }
     if (mtimeMs > 0) {
       body['mtimeMs'] = mtimeMs;
+    }
+    if (birthtimeMs > 0) {
+      body['birthtimeMs'] = birthtimeMs;
     }
     if (saveType.length > 0) {
       body['saveType'] = saveType;

@@ -5,6 +5,7 @@ import { CurrentUserStore } from '../core/user/CurrentUserStore';
 import { AppsService } from './AppsService';
 import { AppsJson, JsonCodec } from '../common/JsonTypes';
 import { L10n } from '../core/localization/L10n';
+import { PhotoBackupController } from '../modules/photo_backup/controllers/PhotoBackupController';
 
 /** 首页控制器：对应 Flutter AppHomeController */
 @ObservedV2
@@ -94,6 +95,9 @@ export class HomeViewModel {
       }
       const msg = (response.data?.newMessage ?? response.data?.message ?? '').trim();
       this.serverMessage = msg;
+      // 冷启动或切服后：首页接口成功说明当前连接可用，再触发「APP 打开时自动开启备份」
+      // （对齐 Flutter AppHomeController._loadHomeConfig → PhotoBackupController.onConnectionConfirmed）
+      void PhotoBackupController.getInstance().onConnectionConfirmed();
     } catch (_e) {
       this.serverMessage = '';
     }
@@ -152,6 +156,9 @@ export class HomeViewModel {
     }
     if (app === 'upload') {
       return true; // 快速上传已迁移，由页面接线路由
+    }
+    if (app === 'photo_backup') {
+      return true; // 相册备份已迁移（Flutter 端 app id 为 photo_backup），由页面接线路由
     }
     if (app === 'photo') {
       return true; // 照片管理已迁移（Phase1：时间线视图），由页面接线路由

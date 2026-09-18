@@ -29,6 +29,10 @@ export class ProcessFileParams {
   nameStrategy: string = 'skip';
   saveType: string = '';
   mtimeMs: number = 0;
+  /** 相对子路径（相册备份按来源分目录，非空时随分块上送） */
+  relativePath: string = '';
+  /** 创建时间毫秒（实况照片视频轨使用，>0 时随分块上送） */
+  birthtimeMs: number = 0;
   chunkSizeOverride: number = 0;
   onProgress: (increment: number) => void = (_n: number): void => {
   };
@@ -102,7 +106,7 @@ export class UploadCore {
     let uploadedChunks: number[] = [];
     try {
       const body = UploadTransferHelper.checkBody(sessionHash, task.remotePath, chunkSize,
-        task.name, totalChunks, p.nameStrategy, p.mtimeMs, saveType);
+        task.name, totalChunks, p.nameStrategy, p.mtimeMs, saveType, p.relativePath, p.birthtimeMs);
       const res = await api.apiPost<Object>('/api/file/upload/check', body, undefined,
         isP2p ? 120000 : undefined, isP2p ? 0 : undefined, (d: Object, _c: number) => d);
       if (!res.success) {
@@ -151,7 +155,7 @@ export class UploadCore {
         try {
           UploadCore.throwIfCancelled(p.cancelToken);
           const fields = UploadTransferHelper.chunkFields(sessionHash, task.remotePath, chunkSize,
-            task.name, totalChunks, p.nameStrategy, i, p.mtimeMs, saveType);
+            task.name, totalChunks, p.nameStrategy, i, p.mtimeMs, saveType, p.relativePath, p.birthtimeMs);
           const chunkBytes = UriReader.readRange(task.localUri, start, length);
           UploadCore.throwIfCancelled(p.cancelToken);
           const boundary = `----nascabformdata${Date.now()}`;

@@ -60,6 +60,9 @@ export class AppRouter {
   static readonly SHARE_PORTS: string = 'SharePortsSettingsPage';
   static readonly FILE_BACKUP: string = 'FileBackupPage';
   static readonly FILE_BACKUP_EDIT: string = 'FileBackupEditPage';
+  static readonly PHOTO_BACKUP: string = 'PhotoBackupPage';
+  static readonly PHOTO_BACKUP_EDIT: string = 'PhotoBackupTaskFormPage';
+  static readonly PHOTO_BACKUP_ALBUM_PICKER: string = 'PhotoBackupAlbumPickerPage';
   static readonly MEDIA_TOOL_ENTRY: string = 'MediaToolEntryPage';
   static readonly MEDIA_TOOL_IMAGE_COMPRESS: string = 'MediaToolImageCompressPage';
   static readonly MEDIA_TOOL_IMG_BATCH_COMPRESS: string = 'MediaToolImgBatchCompressPage';

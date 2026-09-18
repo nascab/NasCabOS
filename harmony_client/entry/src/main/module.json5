@@ -45,7 +45,16 @@
           "abilities": ["EntryAbility"],
           "when": "inuse"
         }
-      }
+      },
+      // TODO(acl 审批通过后恢复)：READ_IMAGEVIDEO 为受限权限，需 ACL 审批通过后才能安装
+      // {
+      //   "name": "ohos.permission.READ_IMAGEVIDEO",
+      //   "reason": "$string:permission_read_imagevideo_reason",
+      //   "usedScene": {
+      //     "abilities": ["EntryAbility"],
+      //     "when": "inuse"
+      //   }
+      // }
     ],
     "abilities": [
       {

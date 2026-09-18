@@ -27,6 +27,10 @@
     {
       "name": "permission_background_audio_reason",
       "value": "音乐后台播放与锁屏控制需要保持后台运行"
+    },
+    {
+      "name": "permission_read_imagevideo_reason",
+      "value": "相册备份需要读取设备上的图片和视频"
     }
   ]
 }

@@ -397,6 +397,7 @@ class ServerListController extends GetxController {
               timeout: const Duration(seconds: 2),
               maxRetries: 0,
             );
+            print('✅ 直连服务器状态: $status');
           // }
 
           // serverUrl 失败，尝试 lanIpv4（避免重复探测相同 URL）

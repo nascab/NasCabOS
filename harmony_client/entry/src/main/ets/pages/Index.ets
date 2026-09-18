@@ -101,6 +101,12 @@ import { NavUtil } from '../common/NavUtil';
 import { FileBackupPage } from '../modules/file_backup/views/FileBackupPage';
 import { FileBackupPageParam, FileBackupEditPageParam } from '../modules/file_backup/router/FileBackupRoutes';
 import { FileBackupEditPage } from '../modules/file_backup/views/FileBackupEditPage';
+import { PhotoBackupPage } from '../modules/photo_backup/views/PhotoBackupPage';
+import {
+  PhotoBackupPageParam, PhotoBackupTaskFormPageParam, PhotoBackupAlbumPickerPageParam
+} from '../modules/photo_backup/router/PhotoBackupRoutes';
+import { PhotoBackupTaskFormPage } from '../modules/photo_backup/views/PhotoBackupTaskFormPage';
+import { PhotoBackupAlbumPickerPage } from '../modules/photo_backup/views/PhotoBackupAlbumPickerPage';
 import { MediaToolEntryPage } from '../modules/media_tool/views/MediaToolEntryPage';
 import {
   MediaToolEntryPageParam, MediaToolImageCompressPageParam, MediaToolImgBatchCompressPageParam,
@@ -556,6 +562,27 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.PHOTO_BACKUP) {
+      PhotoBackupPageBuilder(
+        param instanceof PhotoBackupPageParam ? param : new PhotoBackupPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_BACKUP_EDIT) {
+      PhotoBackupTaskFormPageBuilder(
+        param instanceof PhotoBackupTaskFormPageParam ? param : new PhotoBackupTaskFormPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.PHOTO_BACKUP_ALBUM_PICKER) {
+      PhotoBackupAlbumPickerPageBuilder(
+        param instanceof PhotoBackupAlbumPickerPageParam ? param : new PhotoBackupAlbumPickerPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     } else if (name === AppRouter.MEDIA_TOOL_ENTRY) {
       MediaToolEntryPageBuilder(
         param instanceof MediaToolEntryPageParam ? param : new MediaToolEntryPageParam(),
@@ -931,6 +958,21 @@ function FileBackupPageBuilder(param: FileBackupPageParam, popPage: () => void) 
 @Builder
 function FileBackupEditPageBuilder(param: FileBackupEditPageParam, popPage: () => void) {
   FileBackupEditPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoBackupPageBuilder(param: PhotoBackupPageParam, popPage: () => void) {
+  PhotoBackupPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoBackupTaskFormPageBuilder(param: PhotoBackupTaskFormPageParam, popPage: () => void) {
+  PhotoBackupTaskFormPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function PhotoBackupAlbumPickerPageBuilder(param: PhotoBackupAlbumPickerPageParam, popPage: () => void) {
+  PhotoBackupAlbumPickerPage({ param: param, popPage: popPage })
 }
 
 @Builder

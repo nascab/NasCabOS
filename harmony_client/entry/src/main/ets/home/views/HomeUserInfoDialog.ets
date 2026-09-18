@@ -8,6 +8,7 @@ import { AppIconMap } from '../AppIconMap';
 import { P2PService } from '../../p2p/P2PService';
 import { P2pTransportKind } from '../../p2p/P2pProtocol';
 import { DevConnectMode } from '../../core/network/DevConnectMode';
+import { PhotoBackupController } from '../../modules/photo_backup/controllers/PhotoBackupController';
 import { ConnectChannelManager } from '../../core/network/ConnectChannelManager';
 import { ToastUtil } from '../../common/ToastUtil';
 
@@ -180,6 +181,8 @@ export struct HomeUserInfoDialog {
     }
     this.isLoggingOut = true;
     try {
+      // 登出前取消进行中的相册备份上传（对齐 Flutter user_info_dialog → cancelAllRunning）
+      PhotoBackupController.getInstance().cancelAllRunning();
       await AuthService.getInstance().logout();
       this.onLoggedOut();
     } finally {
