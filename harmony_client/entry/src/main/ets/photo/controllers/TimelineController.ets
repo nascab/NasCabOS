@@ -416,6 +416,13 @@ export class TimelineController {
       this.hasMoreUp = range.startIndex > 0;
       this.hasMoreDown = range.endIndex < this.dateList.length - 1;
 
+      // 第一页已以目标日期为开头（offset=0 即目标 header），先让出一帧把目标日渲染出来，
+      // 再向上补页。对齐 Flutter 体验：用户松手后 ~1 帧即看到目标日，补页在其上方无感插入；
+      // 否则两次请求间隔太短（<1 帧），目标日首帧从未上屏，体感为“卡住后才跳”。
+      await new Promise<void>((resolve): void => {
+        setTimeout((): void => resolve(), 16);
+      });
+
       if (this.flat.length > 0 && this.hasMoreUp) {
         // 锚点取“目标页实际第一条 header”的稳定 key（对齐 Flutter saveAnchorItem 在 offset=0
         // 时保存的 item 身份），不要用侧边栏日期串拼 h_ —— 跨字段格式只要有差异锚点就永远找不到。

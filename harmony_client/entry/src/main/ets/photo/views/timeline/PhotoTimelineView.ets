@@ -40,7 +40,10 @@ class TimelineRowsDataSource implements IDataSource {
 
   sync(ctrl: TimelineController): void {
     const next: TimelineEntry[] = [];
-    if (ctrl.isLoadingUp) {
+    // 程序化定位（jumpToDate 向上补页）期间不插入顶部 loading 哨兵：
+    // 哨兵的插入/移除会触发两次全量 onDataReloaded，打断 LazyForEach 布局与
+    // maintainVisibleContentPosition 的位置保持，表现为补页后画面停在最新日期近 1 秒再跳。
+    if (ctrl.isLoadingUp && !ctrl.programmaticScroll) {
       next.push(TimelineEntry.topLoading());
     }
     for (const r of ctrl.rows) {
@@ -53,13 +56,109 @@ class TimelineRowsDataSource implements IDataSource {
     if (ctrl.isLoadingDown || !ctrl.hasMoreDown) {
       next.push(TimelineEntry.footer());
     }
+    // key 序列与行对象引用完全相同则短路（如程序化补页开始时 isLoadingUp 置位但不插哨兵的
+    // 那次刷新）：rebuildRows 总会生成全新 row 对象，因此任何真实数据变化都不会被误跳过
+    if (next.length === this.entries.length) {
+      let same = true;
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].key !== this.entries[i].key) {
+          same = false;
+          break;
+        }
+        // 数据行还要求 row 引用一致（哨兵/footer 每次新建，只比 key）
+        if (next[i].kind === 1 && next[i].row !== this.entries[i].row) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        return;
+      }
+    }
+    // 程序化定位的“向上补页”是纯头部插入：用增量通知替代全量刷新，
+    // 配合 List.maintainVisibleContentPosition 让目标日自动保持在原位（可见项下标
+    // 自动前移），无需 scrollTo——远距 scrollTo 会触发上千行按需布局，阻塞主线程近 1 秒。
+    if (ctrl.programmaticScroll && this.applyPrependIfMatched(next)) {
+      return;
+    }
+    // 全量替换：全程只使用 onDatasetChange（ArkUI 约束：同一 listener 一旦用过
+    // onDatasetChange，就不能再混用 onDataReloaded 等其他通知接口，否则运行时崩溃 401）
+    const oldLen = this.entries.length;
     this.entries = next;
-    this.notifyReload();
+    const ops: DataOperation[] = [];
+    if (oldLen > 0) {
+      ops.push({ type: DataOperationType.DELETE, index: 0, count: oldLen });
+    }
+    ops.push({ type: DataOperationType.ADD, index: 0, count: next.length });
+    this.notifyDatasetChange(ops);
   }
 
-  private notifyReload(): void {
+  /**
+   * 检测 next 相对当前 entries 是否为“头部插入若干行 + 至多删除 1 个重合 header”，
+   * 命中则发增量删除/插入通知并返回 true；形态不符返回 false 由调用方全量刷新。
+   */
+  private applyPrependIfMatched(next: TimelineEntry[]): boolean {
+    const old = this.entries;
+    if (old.length === 0 || next.length <= old.length) {
+      return false;
+    }
+    // 尾部哨兵序列必须一致（程序化期间无顶部哨兵）
+    const oldSentinelCount = old.length - this.lastDataIndex(old) - 1;
+    const nextSentinelCount = next.length - this.lastDataIndex(next) - 1;
+    if (oldSentinelCount !== nextSentinelCount || oldSentinelCount > 1) {
+      return false;
+    }
+    for (let k = 1; k <= oldSentinelCount; k++) {
+      if (old[old.length - k].key !== next[next.length - k].key) {
+        return false;
+      }
+    }
+    const oldDataLen = old.length - oldSentinelCount;
+    const nextDataLen = next.length - nextSentinelCount;
+    // 最长公共后缀
+    let common = 0;
+    while (common < oldDataLen && common < nextDataLen
+      && old[oldDataLen - 1 - common].key === next[nextDataLen - 1 - common].key) {
+      common++;
+    }
+    if (common === 0) {
+      return false;
+    }
+    const removed = oldDataLen - common;
+    const inserted = nextDataLen - common;
+    if (inserted <= 0 || removed > 1) {
+      return false;
+    }
+    // 删除的只允许是边界重合的 header（mergeIncomingPhotos 的唯一删除形态）
+    if (removed === 1 && !old[0].key.startsWith('h_')) {
+      return false;
+    }
+    this.entries = next;
+    const ops: DataOperation[] = [];
+    if (removed > 0) {
+      ops.push({ type: DataOperationType.DELETE, index: 0, count: removed });
+    }
+    // 单次批量插入区间，避免逐条 onDataAdd 触发上百次增量布局（实测可阻塞主线程近 0.9s）
+    ops.push({ type: DataOperationType.ADD, index: 0, count: inserted });
+    // TODO(diag) 跳转整天丢失排查，定位后删除
+    console.info(`[TimelineJump] prependIncremental inserted=${inserted} removed=${removed}`);
+    this.notifyDatasetChange(ops);
+    return true;
+  }
+
+  private lastDataIndex(list: TimelineEntry[]): number {
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].kind === 1) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /** 统一通知出口：全工程只允许使用 onDatasetChange，不可混用其他 DataChangeListener 接口 */
+  private notifyDatasetChange(ops: DataOperation[]): void {
     for (const l of this.listeners) {
-      l.onDataReloaded();
+      l.onDatasetChange(ops);
     }
   }
 
@@ -156,10 +255,6 @@ export struct PhotoTimelineView {
   private disposed: boolean = false;
   /** onScrollIndex 实际上报的首个可见项下标，用于定位后反馈校正 */
   private observedFirst: number = 0;
-  /** 行主轴尺寸常量（必须与 ListContent/TimelineRowView 的实际高度一致，单位 vp） */
-  private static readonly HEADER_EXTENT: number = 54;
-  private static readonly TOP_LOADING_EXTENT: number = 56;
-  private static readonly ITEM_SPACE: number = 1;
 
   aboutToAppear(): void {
     this.ctrl.onRowsChanged = (): void => {
@@ -208,36 +303,10 @@ export struct PhotoTimelineView {
     }, 120);
   }
 
-  /** 各条目主轴高度（vp）：顶部加载 56 / header 54 / 照片行 cellExtent；footer 在目标之后不参与 */
-  private entryExtent(e: TimelineEntry): number {
-    if (e.kind === 0) {
-      return PhotoTimelineView.TOP_LOADING_EXTENT;
-    }
-    if (e.kind === 1) {
-      return e.row.isHeader ? PhotoTimelineView.HEADER_EXTENT : this.ctrl.cellExtent;
-    }
-    return 0;
-  }
-
   /**
-   * 目标条目相对列表顶部的精确偏移（对齐 Flutter _calculateScrollOffsetForIndex：
-   * 前面每项高度 + 每项后的 space 间隙）。不能用 scrollToIndex —— 它对 LazyForEach
-   * 未布局区域按“估算行高”跳转，混合行高（header 54 / 照片行 ~90）下会越过目标 header，
-   * 表现为稳定地多滚到前一天。
-   */
-  private offsetOfIndex(index: number): number {
-    let offset = 0;
-    const bound = Math.min(Math.max(index, 0), this.ds.totalCount());
-    for (let i = 0; i < bound; i++) {
-      offset += this.entryExtent(this.ds.getData(i)) + PhotoTimelineView.ITEM_SPACE;
-    }
-    return Math.max(0, offset);
-  }
-
-  /**
-   * 数据整体刷新（onDataReloaded）后定位：用“绝对偏移 scrollTo”，并以 onScrollIndex
-   * 实际上报的首项下标做反馈校正——懒加载列表在远端内容未布局时滚动范围会被夹住，
-   * 因此逐帧重试直到 observedFirst == 目标；epoch 代次保证旧指令链立即失效。
+   * 数据整体刷新（onDataReloaded）后定位到指定下标。
+   * scrollToIndex 由系统按真实布局定位，不会因混合行高的像素估算而过冲。
+   * epoch 代次保证旧指令链立即失效。
    */
   private scrollToIndexAfterLayout(index: number, attempt: number, epoch: number): void {
     setTimeout((): void => {
@@ -253,7 +322,7 @@ export struct PhotoTimelineView {
         return;
       }
       if (this.observedFirst !== index) {
-        this.scroller.scrollTo({ xOffset: 0, yOffset: this.offsetOfIndex(index), animation: false });
+        this.scroller.scrollToIndex(index, false, ScrollAlign.START);
       }
       if (this.observedFirst !== index) {
         if (attempt < 10) {
@@ -264,7 +333,7 @@ export struct PhotoTimelineView {
       } else {
         this.endProgrammaticScroll(epoch);
       }
-    }, attempt === 0 ? 20 : 30);
+    }, 16);
   }
 
   private scrollToAnchorAfterLayout(anchor: string, attempt: number, epoch: number): void {
@@ -283,22 +352,23 @@ export struct PhotoTimelineView {
         }
         return;
       }
-      if (this.observedFirst !== index) {
-        // 主路径：精确偏移跳转（等价 Flutter jumpTo(newOffset)）
-        this.scroller.scrollTo({ xOffset: 0, yOffset: this.offsetOfIndex(index), animation: false });
+      if (this.observedFirst === index) {
+        // 头部增量插入后 maintainVisibleContentPosition 已把目标保持在原位
+        this.endProgrammaticScroll(epoch);
+        return;
       }
-      if (this.observedFirst !== index) {
-        if (attempt < 10) {
-          this.scrollToAnchorAfterLayout(anchor, attempt + 1, epoch);
-        } else {
-          // 兜底：极端情况下 scrollTo 被夹住时再试一次索引定位
-          this.scroller.scrollToIndex(index, false, ScrollAlign.START);
-          this.endProgrammaticScroll(epoch);
-        }
+      // 前两拍（~32ms）只观察不滚动：位置保持的 onScrollIndex 上报可能滞后一两帧，
+      // 抢跑会把已正确保持的画面拖走（实测像素估算抢跑导致 285→126→131 连续跳动）。
+      if (attempt >= 2) {
+        // 系统按真实布局定位，目标精确、不过冲；配合反馈环重试即可收敛
+        this.scroller.scrollToIndex(index, false, ScrollAlign.START);
+      }
+      if (attempt < 12) {
+        this.scrollToAnchorAfterLayout(anchor, attempt + 1, epoch);
       } else {
         this.endProgrammaticScroll(epoch);
       }
-    }, attempt === 0 ? 20 : 30);
+    }, 16);
   }
 
   @Monitor('ctrl.isLoadingUp', 'ctrl.isLoadingDown', 'ctrl.hasMoreDown', 'ctrl.isLoadingDates')
