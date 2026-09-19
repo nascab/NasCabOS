@@ -1,11 +1,10 @@
-import { window } from '@kit.ArkUI';
 import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
+import { SystemBars, PageWindowStyle } from '../../../common/SystemBars';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
-import { WindowStore } from '../../../common/WindowStore';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { SearchInputBar } from '../../../common/components/SearchInputBar';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
@@ -90,71 +89,30 @@ export struct PhotoMainPage {
   @Local yearMode: boolean = false;
   /** 主题变化刷新计数（AppTheme.current() 非响应式，依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
-  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
-  private retryTimer: number = -1;
   private ctrl: TimelineController = new TimelineController();
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, this.windowStyle());
   };
 
   aboutToAppear(): void {
     this.ctrl.configure('timeline', 0, 0, 0, 0, '', false, '', 0, true);
     void this.ctrl.refreshTimeline();
-    this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 常规页强制非全屏避让布局：来源可能是沉浸页（壁纸首页等），窗口布局需显式恢复
-    this.setFullScreen(false);
-    this.scheduleAvoidRetry();
+    // 常规页统一非全屏避让布局 + 主题配色系统栏（从沉浸页 push 过来时由样式栈恢复，含转场重试）
+    SystemBars.activate(this, this.windowStyle());
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    // 恢复透明状态栏背景 + 白色文字（对齐 PageScaffold 行为）
-    PhotoMainPage.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
+    // 出栈后自动恢复上一页窗口样式，无需手动重置
+    SystemBars.deactivate(this);
   }
 
-  /** 全屏布局开关（窗口主窗口同步单例，写顺序=调用顺序） */
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w !== undefined) {
-      w.setWindowLayoutFullScreen(full);
-    }
-  }
-
-  /** push 转场会回滚窗口布局写入（实测，对齐沉浸页 scheduleFullScreenRetry）：延迟重设纠正 */
-  private scheduleAvoidRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      this.setFullScreen(false);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
-
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w: window.Window) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  private applyStatusBar(): void {
+  /** 常规页窗口样式：非全屏避让布局，状态栏/导航条跟随主题底色 */
+  private windowStyle(): PageWindowStyle {
     const p = AppTheme.current();
-    PhotoMainPage.setStatusBar(getContext(this), p.statusBarContent, p.surfaceBg);
+    return { colors: SystemBars.colors(p.statusBarContent, p.surfaceBg), fullscreen: false };
   }
 
   /** 点击搜索时确保 tab=照片 且非年视图/年份筛选，再走控制器搜索（对齐 Flutter _ensureSearchContext） */
@@ -288,13 +246,8 @@ export struct PhotoMainPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      // 每次显示都确保非全屏避让布局（push 进入/从子页返回均覆盖）
-      this.setFullScreen(false);
-      this.scheduleAvoidRetry();
-    })
-    .onHidden((): void => {
-      // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面
-      this.clearRetryTimer();
+      // 每次显示重新激活本页样式（从沉浸子页返回时由样式栈统一恢复并做转场重试）
+      SystemBars.activate(this, this.windowStyle());
     })
     .onBackPressed((): boolean => {
       // 多选模式下返回先退出多选（对齐 Flutter PopScope）

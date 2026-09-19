@@ -1,6 +1,7 @@
 import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../core/localization/L10n';
+import { SystemBars } from '../../common/SystemBars';
 import { WindowStore } from '../../common/WindowStore';
 import { VideoPlayerController } from '../VideoPlayerController';
 import { PlayerPlaylistItem } from '../models/PlayerModels';
@@ -45,49 +46,20 @@ export struct VideoPlayerPage {
   @Local scrubPreviewMs: number = -1;
   @Local scrubCancelZone: boolean = false;
   private scrubOriginMs: number = 0;
-  private retryTimer: number = -1;
   private xcController: XComponentController = new XComponentController();
   private playlistOpened: boolean = false;
 
   aboutToAppear(): void {
-    this.setFullScreen(true);
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     this.fetchSafeArea();
-    VideoPlayerPage.setStatusBar('#FFFFFF', '#00000000');
   }
 
   aboutToDisappear(): void {
-    this.clearRetryTimer();
+    SystemBars.deactivate(this);
     void this.ctrl.close();
   }
 
   // ================================ 窗口 ================================
-
-  /** 全屏沉浸布局：同步调用，写顺序=调用顺序 */
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      hilog.error(0x0000, TAG, 'mainWindow undefined');
-      return;
-    }
-    w.setWindowLayoutFullScreen(full).catch((e: Object): void => {
-      hilog.error(0x0000, TAG, 'setFullScreen failed: %{public}s', JSON.stringify(e));
-    });
-  }
-
-  /** onShown 后延迟重设全屏：纠正 push 转场期间系统对全屏设置的回滚 */
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
 
   private fetchSafeArea(): void {
     const w = WindowStore.getMainWindow();
@@ -98,20 +70,6 @@ export struct VideoPlayerPage {
     this.statusBarHeight = px2vp(system.topRect.height);
     const nav = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navBarHeight = px2vp(nav.bottomRect.height);
-  }
-
-  private static setStatusBar(contentColor: string, bgColor: string): void {
-    try {
-      const ctx = getContext() as Context;
-      window.getLastWindow(ctx).then((w: window.Window): void => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
   }
 
   // ================================ 退出 ================================
@@ -671,11 +629,8 @@ export struct VideoPlayerPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
+      // 转场动画完成后再次激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     })
     .onBackPressed((): boolean => {
       void this.exitPlayer();

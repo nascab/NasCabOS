@@ -1,6 +1,6 @@
 import { window } from '@kit.ArkUI';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../core/localization/L10n';
+import { SystemBars } from '../../common/SystemBars';
 import { WindowStore } from '../../common/WindowStore';
 import { AppRouter } from '../../router/AppRouter';
 import { NavUtil } from '../../common/NavUtil';
@@ -12,7 +12,6 @@ import { GalleryItem, GalleryPageParam } from '../models/GalleryModels';
 import { GalleryInfoPanel } from '../components/GalleryInfoPanel';
 import { LivePhotoInlinePlayer } from '../components/LivePhotoInlinePlayer';
 
-const TAG = 'GalleryPage';
 const GALLERY_WHITE = '#FFFFFF';
 const GALLERY_BLUE = '#2196F3';
 
@@ -66,12 +65,10 @@ export struct GalleryPage {
   @Local statusBarHeight: number = 0;
   @Local navBarHeight: number = 0;
   private swiperController: SwiperController = new SwiperController();
-  private retryTimer: number = -1;
 
   aboutToAppear(): void {
-    this.setFullScreen(true);
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     this.fetchSafeArea();
-    GalleryPage.setStatusBar('#FFFFFF', '#00000000');
     this.ctrl.gotoPage = (index: number): void => {
       this.swiperController.changeIndex(index, false);
     };
@@ -84,39 +81,11 @@ export struct GalleryPage {
   }
 
   aboutToDisappear(): void {
-    this.clearRetryTimer();
+    SystemBars.deactivate(this);
     this.ctrl.destroy();
-    // 返回目标是常规页（照片首页/AI 相似页等 PageScaffold 页），退出时恢复避让布局，
-    // 否则下层页面不重建、aboutToAppear 不会再执行，窗口停留在全屏导致安全区丢失
-    this.setFullScreen(false);
   }
 
   // ================================ 窗口 ================================
-
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      hilog.error(0x0000, TAG, 'mainWindow undefined');
-      return;
-    }
-    w.setWindowLayoutFullScreen(full).catch((e: Object): void => {
-      hilog.error(0x0000, TAG, 'setFullScreen failed: %{public}s', JSON.stringify(e));
-    });
-  }
-
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
 
   private fetchSafeArea(): void {
     const w = WindowStore.getMainWindow();
@@ -127,20 +96,6 @@ export struct GalleryPage {
     this.statusBarHeight = px2vp(system.topRect.height);
     const nav = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navBarHeight = px2vp(nav.bottomRect.height);
-  }
-
-  private static setStatusBar(contentColor: string, bgColor: string): void {
-    try {
-      const ctx = getContext() as Context;
-      window.getLastWindow(ctx).then((w: window.Window): void => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
   }
 
   // ================================ 交互 ================================
@@ -519,11 +474,8 @@ export struct GalleryPage {
     .hideTitleBar(true)
     .backgroundColor('#000000')
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
+      // 转场动画完成后再次激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     })
     .onBackPressed((): boolean => {
       this.popPage();

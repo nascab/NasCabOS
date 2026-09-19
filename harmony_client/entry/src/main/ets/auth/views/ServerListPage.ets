@@ -1,6 +1,8 @@
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { L10n } from '../../core/localization/L10n';
+import { SystemBars } from '../../common/SystemBars';
+import { WindowStore } from '../../common/WindowStore';
 import { AppRouter } from '../../router/AppRouter';
 import { ServerInfo } from '../models/ServerInfo';
 import { ServerListViewModel, validatePairCodeText } from './server_list/ServerListViewModel';
@@ -28,11 +30,17 @@ import {
 export struct ServerListPage {
   @Local vm: ServerListViewModel = new ServerListViewModel();
   @Local isRefreshing: boolean = false;
+  /** 状态栏高度（vp）：沉浸式布局下顶部内容避让（卡片背景仍顶格延伸） */
+  @Local statusBarHeight: number = 0;
   @Param onNavigateHome: () => void = () => {
   };
   @Param pageStack: NavPathStack = new NavPathStack();
 
   aboutToAppear(): void {
+    this.fetchStatusBarHeight();
+    // 认证模块固定深色沉浸：透明系统栏 + 白色图标；登出清空导航栈回到本页时，
+    // 本页作为样式栈底自动恢复（其他页面 deactivate 出栈），无需监听会话过期事件
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: false });
     this.vm.onLoginSuccess = () => this.onNavigateHome();
     // 打开添加服务器独立页面（预填服务器通过 vm.selectedServer 传递）
     this.vm.onOpenAddServer = (_server: ServerInfo | undefined) => {
@@ -50,6 +58,16 @@ export struct ServerListPage {
 
   aboutToDisappear(): void {
     this.vm.destroy();
+    SystemBars.deactivate(this);
+  }
+
+  private fetchStatusBarHeight(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const area = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(area.topRect.height);
   }
 
   build() {
@@ -288,6 +306,8 @@ export struct ServerListPage {
     .width('100%')
     .height('100%')
     .backgroundColor(AuthTheme.cardBg)
+    // 内容避让顶部状态栏：AuthHeader 自带 20vp 顶部内边距，这里补偿为状态栏 + 10vp
+    .padding({ top: Math.max(this.statusBarHeight - 10, 0) })
     // 背景色延伸到状态栏/导航栏后面，实现完全沉浸（内容仍在安全区内）
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
@@ -351,6 +371,8 @@ export struct ServerListPage {
       Image(platformIconResource(server.serverPlatform))
         .width(50)
         .height(50)
+        // mac 图标资源为 133x100 非正方形，Contain 完整显示避免左右被裁切（对齐 Flutter scaleDown）
+        .objectFit(ImageFit.Contain)
 
       Column() {
         Row({ space: 6 }) {

@@ -1,4 +1,6 @@
+import { window } from '@kit.ArkUI';
 import { L10n } from '../../../core/localization/L10n';
+import { WindowStore } from '../../../common/WindowStore';
 import { ServerListViewModel } from '../server_list/ServerListViewModel';
 import { ServerAddViewModel } from './ServerAddViewModel';
 import { AuthBackground, AuthButton, AuthHeader, AuthTextField, AuthTheme, ConfirmDialogView, DialogOverlay, TwofaDialogView } from '../common/AuthUi';
@@ -11,11 +13,23 @@ export struct ServerAddPage {
   };
   // 占位实例；aboutToAppear 中用真实的 listVm 重建（@Param 在字段初始化之后才赋值）
   @Local vm: ServerAddViewModel = new ServerAddViewModel(new ServerListViewModel());
+  /** 状态栏高度（vp）：沉浸式布局下顶部内容避让（卡片背景仍顶格延伸） */
+  @Local statusBarHeight: number = 0;
 
   aboutToAppear(): void {
+    this.fetchStatusBarHeight();
     this.vm = new ServerAddViewModel(this.listVm);
     // 注入返回回调（pop 回到服务器列表）
     this.vm.onExit = () => this.onBack();
+  }
+
+  private fetchStatusBarHeight(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const area = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(area.topRect.height);
   }
 
   build() {
@@ -152,6 +166,8 @@ export struct ServerAddPage {
           .width('100%')
           .height('100%')
           .backgroundColor(AuthTheme.cardBg)
+          // 内容避让顶部状态栏：AuthHeader 自带 20vp 顶部内边距，这里补偿为状态栏 + 10vp
+          .padding({ top: Math.max(this.statusBarHeight - 10, 0) })
           // 背景色延伸到状态栏/导航栏后面，实现完全沉浸（内容仍在安全区内）
           .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
         }

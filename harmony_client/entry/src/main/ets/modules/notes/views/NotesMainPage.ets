@@ -3,6 +3,7 @@ import { L10n } from '../../../core/localization/L10n';
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
+import { SystemBars, PageWindowStyle } from '../../../common/SystemBars';
 import { WindowStore } from '../../../common/WindowStore';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
@@ -43,26 +44,29 @@ export struct NotesMainPage {
   @Local navigationBarHeight: number = 0;
   /** 切到删除页前记忆的普通分组（对齐 _lastNormalGroupId） */
   private lastNormalGroupId: string = 'all';
-  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
-  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, this.windowStyle());
   };
 
   aboutToAppear(): void {
-    this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     // 沉浸全屏布局（对齐影音/音乐主页）：页面自管安全区避让
-    this.setFullScreen(true);
+    SystemBars.activate(this, this.windowStyle());
     this.fetchSafeAreas();
     void this.initSession();
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    this.applyStatusBar();
+    // 出栈后自动恢复上一页窗口样式，无需手动重置
+    SystemBars.deactivate(this);
+  }
+
+  /** 沉浸页窗口样式：全屏布局，状态栏/导航条跟随主题底色 */
+  private windowStyle(): PageWindowStyle {
+    const p = AppTheme.current();
+    return { colors: SystemBars.colors(p.statusBarContent, p.surfaceBg), fullscreen: true };
   }
 
   /** 会话初始化（对齐 initState：若停在删除页则回到普通分组） */
@@ -74,30 +78,6 @@ export struct NotesMainPage {
     this.lastNormalGroupId = this.ctrl.selectedGroupId;
   }
 
-  /** 全屏布局开关（窗口主窗口同步单例，写顺序=调用顺序） */
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w !== undefined) {
-      w.setWindowLayoutFullScreen(full);
-    }
-  }
-
-  /** push 转场会回滚窗口布局写入（实测）：延迟重设纠正 */
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
-
   private fetchSafeAreas(): void {
     const w = WindowStore.getMainWindow();
     if (w === undefined) {
@@ -107,24 +87,6 @@ export struct NotesMainPage {
     this.statusBarHeight = Math.min(Math.max(px2vp(top.topRect.height), 0), 140);
     const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navigationBarHeight = Math.min(Math.max(px2vp(bottom.bottomRect.height), 0), 60);
-  }
-
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w: window.Window) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  private applyStatusBar(): void {
-    const p = AppTheme.current();
-    NotesMainPage.setStatusBar(getContext(this), p.statusBarContent, p.surfaceBg);
   }
 
   // ===== 交互（对齐 _selectBottomTab / _selectGroup / _handleCreateNote / _handleOpenNote） =====
@@ -347,13 +309,9 @@ export struct NotesMainPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
+      // 每次显示重新激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, this.windowStyle());
       this.fetchSafeAreas();
-      this.applyStatusBar();
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
     })
     .onBackPressed((): boolean => {
       this.popPage();

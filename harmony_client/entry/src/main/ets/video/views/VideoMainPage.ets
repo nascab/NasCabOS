@@ -1,9 +1,9 @@
 import { window } from '@kit.ArkUI';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { ThemeManager } from '../../core/theme/ThemeManager';
 import { AppEventBus } from '../../common/AppEventBus';
+import { SystemBars } from '../../common/SystemBars';
 import { WindowStore } from '../../common/WindowStore';
 import { NavUtil } from '../../common/NavUtil';
 import { AppRouter } from '../../router/AppRouter';
@@ -35,56 +35,21 @@ export struct VideoMainPage {
   @Local statusBarHeight: number = 0;
   /** 底部导航条高度（vp）：全屏布局后底部标签栏用它避让 */
   @Local navigationBarHeight: number = 0;
-  /** 延迟重设全屏的定时器（push 转场期间系统可能回滚全屏设置，转场后纠正） */
-  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
   };
 
   aboutToAppear(): void {
-    this.applyStatusBar();
-    this.setFullScreen(true);
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     this.fetchSafeAreas();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    // 不恢复非全屏：唯一入口/出口是沉浸式首页（onShown 确保 true），在此切 false 会导致返回时布局跳动
-    this.applyStatusBar();
-  }
-
-  /** 全屏沉浸布局：同步调用，写顺序=调用顺序，杜绝异步竞态 */
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      hilog.error(0x0000, 'FullScreen', 'VideoMain mainWindow undefined');
-      return;
-    }
-    w.setWindowLayoutFullScreen(full).then((): void => {
-      hilog.info(0x0000, 'FullScreen', 'VideoMain set %{public}s ok, now=%{public}s',
-        `${full}`, `${w.getWindowProperties().isLayoutFullScreen}`);
-    }).catch((e: Object): void => {
-      hilog.error(0x0000, 'FullScreen', 'VideoMain set %{public}s failed: %{public}s',
-        `${full}`, JSON.stringify(e));
-    });
-  }
-
-  /** onShown 后延迟重设全屏：纠正系统在 push 转场期间对全屏设置的回滚 */
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
+    // 出栈后自动恢复上一页窗口样式，无需手动重置
+    SystemBars.deactivate(this);
   }
 
   private fetchSafeAreas(): void {
@@ -96,24 +61,6 @@ export struct VideoMainPage {
     this.statusBarHeight = px2vp(top.topRect.height);
     const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navigationBarHeight = px2vp(bottom.bottomRect.height);
-  }
-
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w: window.Window) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  private applyStatusBar(): void {
-    // 状态栏透明（对齐 Flutter edgeToEdge）：全屏布局时区域被内容覆盖，非全屏时透出深色内容观感一致
-    VideoMainPage.setStatusBar(getContext(this), '#FFFFFF', '#00000000');
   }
 
   private get isHomeMode(): boolean {
@@ -197,13 +144,8 @@ export struct VideoMainPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      // 转场动画完成后再次确保全屏（aboutToAppear 期间设置可能被转场覆盖）
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
-    })
-    .onHidden((): void => {
-      // 页面被覆盖（push 子页）时取消延迟重设，避免污染子页面的全屏状态
-      this.clearRetryTimer();
+      // 转场动画完成后再次激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     })
     .onBackPressed((): boolean => {
       this.popPage();

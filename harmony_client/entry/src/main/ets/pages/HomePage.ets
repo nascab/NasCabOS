@@ -5,6 +5,7 @@ import { APIClient } from '../core/network/APIClient';
 import { CurrentUserStore } from '../core/user/CurrentUserStore';
 import { AppEventBus } from '../common/AppEventBus';
 import { WindowStore } from '../common/WindowStore';
+import { SystemBars } from '../common/SystemBars';
 import { HomeViewModel } from '../home/HomeViewModel';
 import { WallpaperLoader } from '../home/WallpaperLoader';
 import { HomeServerInfoCard } from '../home/views/HomeServerInfoCard';
@@ -59,6 +60,8 @@ export struct HomePage {
   aboutToAppear(): void {
     this.vm.init();
     this.fetchStatusBarHeight();
+    // 首页为深色沉浸（壁纸顶格）：全屏布局 + 透明系统栏白字
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     void this.refreshWallpaper();
     AppEventBus.on(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
   }
@@ -74,6 +77,7 @@ export struct HomePage {
 
   aboutToDisappear(): void {
     AppEventBus.off(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
+    SystemBars.deactivate(this);
     void this.wallpaperPixelMap?.release();
     this.wallpaperPixelMap = undefined;
   }
@@ -166,11 +170,8 @@ export struct HomePage {
     .hideTitleBar(true)
     .mode(NavDestinationMode.STANDARD)
     .onShown((): void => {
-      // 首页为沉浸式（壁纸顶格）：每次显示确保全屏布局，从设置等常规页返回时零跳动
-      const w = WindowStore.getMainWindow();
-      if (w !== undefined) {
-        w.setWindowLayoutFullScreen(true);
-      }
+      // 首页为沉浸式（壁纸顶格）：每次显示重新激活全屏样式，从设置等常规页返回时零跳动
+      SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     })
     // 依赖 localeBump：切换语言后触发首页整体刷新
     .opacity(this.localeBump >= 0 ? 1 : 1)

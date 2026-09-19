@@ -5,6 +5,7 @@ import pasteboard from '@ohos.pasteboard';
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
+import { SystemBars, PageWindowStyle } from '../../../common/SystemBars';
 import { WindowStore } from '../../../common/WindowStore';
 import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
@@ -86,17 +87,14 @@ export struct TerminalPage {
   private webReady: boolean = false;
   /** Web 未就绪期间的输出缓冲（ready 后一次性写入） */
   private pendingWebData: string = '';
-  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
-  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, this.windowStyle());
   };
 
   aboutToAppear(): void {
-    this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.setFullScreen(true);
+    SystemBars.activate(this, this.windowStyle());
     this.fetchSafeAreas();
     this.bindBridge();
     this.ctrl.onTerminalData = (data: string): void => {
@@ -110,11 +108,17 @@ export struct TerminalPage {
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    this.applyStatusBar();
+    // 出栈后自动恢复上一页窗口样式，无需手动重置
+    SystemBars.deactivate(this);
     this.ctrl.onTerminalData = undefined;
     this.ctrl.onUiConfigChanged = undefined;
     this.ctrl.detach();
+  }
+
+  /** 沉浸页窗口样式：全屏布局，状态栏/导航条跟随主题底色 */
+  private windowStyle(): PageWindowStyle {
+    const p = AppTheme.current();
+    return { colors: SystemBars.colors(p.statusBarContent, p.surfaceBg), fullscreen: true };
   }
 
   // ===== Web 桥 =====
@@ -200,29 +204,6 @@ export struct TerminalPage {
 
   // ===== 沉浸式与状态栏（参考 NotesMainPage） =====
 
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w !== undefined) {
-      w.setWindowLayoutFullScreen(full);
-    }
-  }
-
-  /** push 转场会回滚窗口布局写入（实测）：延迟重设纠正 */
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
-
   private fetchSafeAreas(): void {
     const w = WindowStore.getMainWindow();
     if (w === undefined) {
@@ -232,24 +213,6 @@ export struct TerminalPage {
     this.statusBarHeight = Math.min(Math.max(px2vp(top.topRect.height), 0), 140);
     const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navigationBarHeight = Math.min(Math.max(px2vp(bottom.bottomRect.height), 0), 60);
-  }
-
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w: window.Window) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  private applyStatusBar(): void {
-    const p = AppTheme.current();
-    TerminalPage.setStatusBar(getContext(this), p.statusBarContent, p.surfaceBg);
   }
 
   private palette(): ThemePalette {
@@ -467,10 +430,9 @@ export struct TerminalPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
+      // 每次显示重新激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, this.windowStyle());
       this.fetchSafeAreas();
-      this.applyStatusBar();
       // 兜底自愈：页面可见但连接既未建立也未在连接中时，强制重连
       // （覆盖单例控制器状态残留、首次连接失败后自动重连被禁等场景）
       setTimeout((): void => {
@@ -478,9 +440,6 @@ export struct TerminalPage {
           this.ctrl.reconnectNow();
         }
       }, 600);
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
     })
     .onBackPressed((): boolean => {
       this.popPage();

@@ -3,6 +3,7 @@ import { L10n } from '../../../core/localization/L10n';
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 import { AppEventBus } from '../../../common/AppEventBus';
+import { SystemBars, PageWindowStyle } from '../../../common/SystemBars';
 import { WindowStore } from '../../../common/WindowStore';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { BottomTabBar, BottomTabItem } from '../../../common/components/BottomTabBar';
@@ -33,18 +34,15 @@ export struct ServiceMainPage {
   @Local navigationBarHeight: number = 0;
   /** 服务端版本过低提示只弹一次（对齐 Flutter _lowVersionDialogShown） */
   private lowVersionDialogShown: boolean = false;
-  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
-  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string): void => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, this.windowStyle());
   };
 
   aboutToAppear(): void {
-    this.applyStatusBar();
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
     // 沉浸全屏布局（对齐笔记主页等移动端页面）：页面自管安全区避让
-    this.setFullScreen(true);
+    SystemBars.activate(this, this.windowStyle());
     this.fetchSafeAreas();
     // 初始页签（对齐 Flutter ServiceMainView.initialPageKey）
     const initKey = this.param.initialPageKey.trim();
@@ -62,8 +60,14 @@ export struct ServiceMainPage {
   aboutToDisappear(): void {
     this.ctrl.stopPairCodePolling();
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    this.applyStatusBar();
+    // 出栈后自动恢复上一页窗口样式，无需手动重置
+    SystemBars.deactivate(this);
+  }
+
+  /** 沉浸页窗口样式：全屏布局，状态栏/导航条跟随主题底色 */
+  private windowStyle(): PageWindowStyle {
+    const p = AppTheme.current();
+    return { colors: SystemBars.colors(p.statusBarContent, p.surfaceBg), fullscreen: true };
   }
 
   private async initDdns(): Promise<void> {
@@ -124,30 +128,6 @@ export struct ServiceMainPage {
     ];
   }
 
-  /** 全屏布局开关（窗口主窗口同步单例，写顺序=调用顺序） */
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w !== undefined) {
-      w.setWindowLayoutFullScreen(full);
-    }
-  }
-
-  /** push 转场会回滚窗口布局写入（实测）：延迟重设纠正 */
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
-
   private fetchSafeAreas(): void {
     const w = WindowStore.getMainWindow();
     if (w === undefined) {
@@ -157,24 +137,6 @@ export struct ServiceMainPage {
     this.statusBarHeight = Math.min(Math.max(px2vp(top.topRect.height), 0), 140);
     const bottom = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
     this.navigationBarHeight = Math.min(Math.max(px2vp(bottom.bottomRect.height), 0), 60);
-  }
-
-  private static setStatusBar(ctx: Context, contentColor: string, bgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w: window.Window) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  private applyStatusBar(): void {
-    const p = AppTheme.current();
-    ServiceMainPage.setStatusBar(getContext(this), p.statusBarContent, p.surfaceBg);
   }
 
   /** 页签切换（对齐 Flutter ctrl.selectPage） */
@@ -224,13 +186,9 @@ export struct ServiceMainPage {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
+      // 每次显示重新激活本页样式（内部含 120ms 转场重试）
+      SystemBars.activate(this, this.windowStyle());
       this.fetchSafeAreas();
-      this.applyStatusBar();
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
     })
     .onBackPressed((): boolean => {
       this.popPage();

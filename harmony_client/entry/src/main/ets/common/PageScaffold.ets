@@ -1,8 +1,7 @@
-import { window } from '@kit.ArkUI';
 import { AppTheme, ThemePalette } from '../core/theme/AppTheme';
 import { ThemeManager } from '../core/theme/ThemeManager';
 import { AppEventBus } from './AppEventBus';
-import { WindowStore } from './WindowStore';
+import { SystemBars, PageWindowStyle } from './SystemBars';
 
 @Builder
 function PageScaffoldEmptyActions() {
@@ -33,75 +32,40 @@ export struct PageScaffold {
   @BuilderParam overlayContent: () => void = PageScaffoldEmptyActions;
   /** 主题变化刷新计数（依赖它触发整页重渲染） */
   @Local themeTick: number = 0;
-  /** 避让布局重试定时器（纠正 push 转场对窗口布局写入的回滚） */
-  private retryTimer: number = -1;
   private themeListener: (data: string) => void = (_data: string) => {
     this.themeTick++;
-    this.applyStatusBar();
+    SystemBars.update(this, this.windowStyle());
   };
 
   aboutToAppear(): void {
     AppEventBus.on(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    // 常规页面强制非全屏布局：从全屏沉浸页面（影音主页/详情页/图片浏览器）push 过来时恢复避让布局
-    PageScaffold.setFullScreen(getContext(this), false);
-    this.applyStatusBar();
+    // 常规页统一为非全屏避让布局 + 主题配色系统栏（从全屏沉浸页 push 过来时由样式栈恢复）
+    SystemBars.activate(this, this.windowStyle());
   }
 
   aboutToDisappear(): void {
     AppEventBus.off(ThemeManager.EVENT_THEME_CHANGED, this.themeListener);
-    this.clearRetryTimer();
-    // 恢复透明状态栏/导航条背景 + 白色文字（首页/登录等深色沉浸页面）
-    PageScaffold.setSystemBars(getContext(this), '#FFFFFF', '#00000000', '#00000000');
-  }
-
-  /** push 转场会回滚窗口布局写入（实测，对齐沉浸页 scheduleFullScreenRetry）：延迟重设纠正 */
-  private scheduleAvoidRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      PageScaffold.setFullScreen(getContext(this), false);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
+    // 出栈后自动恢复上一页窗口样式（首页/登录等沉浸页透明系统栏），无需手动重置
+    SystemBars.deactivate(this);
   }
 
   private palette(): ThemePalette {
     return AppTheme.current();
   }
 
-  private applyStatusBar(): void {
+  /** 常规页窗口样式：非全屏避让布局，状态栏跟随顶栏色，底部导航条跟随内容区底色 */
+  private windowStyle(): PageWindowStyle {
     const p = AppTheme.current();
-    const bg = this.statusBarBg.length > 0 ? this.statusBarBg : p.appBarBg;
-    // 底部导航条颜色与底部标签栏底色（surfaceBg）一致，避免导航条区域露出系统默认色
-    PageScaffold.setSystemBars(getContext(this), p.statusBarContent, bg, p.surfaceBg);
-  }
-
-  private static setSystemBars(ctx: Context, contentColor: string, bgColor: string, navBgColor: string): void {
-    try {
-      window.getLastWindow(ctx).then((w) => {
-        w.setWindowSystemBarProperties({
-          statusBarContentColor: contentColor,
-          statusBarColor: bgColor,
-          navigationBarContentColor: contentColor,
-          navigationBarColor: navBgColor
-        });
-      });
-    } catch (_e) {
-      // 状态栏设置失败不阻塞页面
-    }
-  }
-
-  /** 全屏布局开关：同步调用，写顺序=调用顺序（沉浸页面 onShown 设 true，常规页面强制 false） */
-  private static setFullScreen(_ctx: Context, full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w !== undefined) {
-      w.setWindowLayoutFullScreen(full);
-    }
+    const statusBg = this.statusBarBg.length > 0 ? this.statusBarBg : p.appBarBg;
+    return {
+      colors: {
+        statusBarContentColor: p.statusBarContent,
+        statusBarColor: statusBg,
+        navigationBarContentColor: p.statusBarContent,
+        navigationBarColor: p.surfaceBg
+      },
+      fullscreen: false
+    };
   }
 
   build() {
@@ -147,15 +111,8 @@ export struct PageScaffold {
     }
     .hideTitleBar(true)
     .onShown((): void => {
-      // 每次显示都确保非全屏避让布局（从沉浸页返回/push 进入均覆盖）
-      PageScaffold.setFullScreen(getContext(this), false);
-      this.scheduleAvoidRetry();
-      // 从子页返回时子页已恢复透明系统栏，这里重新应用本页配色
-      this.applyStatusBar();
-    })
-    .onHidden((): void => {
-      // push 子页时本页不销毁，清理重试定时器防止残留写入污染子页面
-      this.clearRetryTimer();
+      // 每次显示重新激活本页样式（从沉浸子页返回时由样式栈统一恢复并做转场重试）
+      SystemBars.activate(this, this.windowStyle());
     })
     .onBackPressed(() => {
       if (this.customBack()) {

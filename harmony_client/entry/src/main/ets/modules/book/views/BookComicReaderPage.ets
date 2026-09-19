@@ -1,7 +1,7 @@
 import { window } from '@kit.ArkUI';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { L10n } from '../../../core/localization/L10n';
+import { SystemBars } from '../../../common/SystemBars';
 import { WindowStore } from '../../../common/WindowStore';
 import { SheetUtil, SheetParamsBase, SheetHandle } from '../../../common/SheetUtil';
 import { DialogUtil } from '../../../common/DialogUtil';
@@ -16,7 +16,6 @@ import {
 } from '../controllers/BookComicReaderController';
 import { BookArchiveImage } from '../services/BookApiServices';
 
-const TAG = 'BookComicReader';
 const OVERLAY_BG = '#59000000';
 const PILL_BG = '#80000000';
 const PREVIEW_BG = '#F2000000';
@@ -76,7 +75,8 @@ export struct BookComicReaderPage {
   @Local isPhoneLayout: boolean = true;
   private swiperController: SwiperController = new SwiperController();
   private spreadSource: SpreadDataSource = new SpreadDataSource();
-  private retryTimer: number = -1;
+  /** 系统栏是否被阅读器隐藏（控制栏淡出时隐藏，重新显示时恢复） */
+  private barsHidden: boolean = false;
   private controlsTimer: number = -1;
   private didStartAutoHide: boolean = false;
 
@@ -87,11 +87,15 @@ export struct BookComicReaderPage {
       this.swiperController.changeIndex(displayIndex, false);
     };
     this.ctrl.applySystemBars = (hidden: boolean): void => {
-      this.setSystemBarsHidden(hidden);
+      this.barsHidden = hidden;
+      SystemBars.activate(this, {
+        colors: SystemBars.immersiveColors(),
+        fullscreen: true,
+        barsVisible: !hidden
+      });
     };
-    this.setFullScreen(true);
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true, barsVisible: true });
     this.fetchSafeArea();
-    BookComicReaderPage.applyReaderStatusBar();
     void this.ctrl.initLoad().then((): void => {
       this.reloadSpreadSource();
       const displayIdx = this.ctrl.takeInitialDisplayIndex();
@@ -109,12 +113,10 @@ export struct BookComicReaderPage {
   }
 
   aboutToDisappear(): void {
-    this.clearRetryTimer();
     this.clearControlsTimer();
     this.ctrl.destroy();
-    this.setSystemBarsHidden(false);
-    // 不写 setWindowLayoutFullScreen(false)：返回目标是沉浸式图书主页（其 onShown 确保 true），
-    // 此处写 false 会与主页 onShown 的 true 竞态，失败时主页停留避让布局被双重避让挤压
+    // 出栈后自动恢复图书主页的沉浸窗口样式（含系统栏可见性），无需手动重置
+    SystemBars.deactivate(this);
   }
 
   @Monitor('ctrl.fitMode', 'ctrl.pageLayout', 'ctrl.readingMode', 'ctrl.sideMarginPercent')
@@ -124,60 +126,6 @@ export struct BookComicReaderPage {
   }
 
   // ================================ 窗口 ================================
-
-  private setFullScreen(full: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      hilog.error(0x0000, TAG, 'mainWindow undefined');
-      return;
-    }
-    w.setWindowLayoutFullScreen(full).catch((e: Object): void => {
-      hilog.error(0x0000, TAG, 'setFullScreen failed: %{public}s', JSON.stringify(e));
-    });
-  }
-
-  private setSystemBarsHidden(hidden: boolean): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      return;
-    }
-    try {
-      w.setWindowSystemBarEnable(hidden ? [] : ['status', 'navigation'])
-        .catch((_e: Object): void => {
-        });
-    } catch (_e) {
-      // 系统条设置失败不阻塞阅读
-    }
-  }
-
-  private static applyReaderStatusBar(): void {
-    const w = WindowStore.getMainWindow();
-    if (w === undefined) {
-      return;
-    }
-    try {
-      w.setWindowSystemBarProperties({
-        statusBarContentColor: '#FFFFFF',
-        statusBarColor: '#00000000'
-      });
-    } catch (_e) {
-      // 忽略
-    }
-  }
-
-  private scheduleFullScreenRetry(): void {
-    this.clearRetryTimer();
-    this.retryTimer = setTimeout((): void => {
-      this.setFullScreen(true);
-    }, 120);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
-  }
 
   private fetchSafeArea(): void {
     const w = WindowStore.getMainWindow();
@@ -384,11 +332,12 @@ export struct BookComicReaderPage {
     .hideTitleBar(true)
     .backgroundColor(this.ctrl.backgroundColor)
     .onShown((): void => {
-      this.setFullScreen(true);
-      this.scheduleFullScreenRetry();
-    })
-    .onHidden((): void => {
-      this.clearRetryTimer();
+      // 转场后再次激活本页样式（内部含 120ms 转场重试），保持阅读器当前的系统栏显隐
+      SystemBars.activate(this, {
+        colors: SystemBars.immersiveColors(),
+        fullscreen: true,
+        barsVisible: !this.barsHidden
+      });
     })
     .onBackPressed((): boolean => {
       this.popPage();
