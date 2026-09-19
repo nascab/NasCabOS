@@ -149,7 +149,6 @@ export struct MediaToolImageCompressPage {
     PageScaffold({
       title: L10n.t('media_tool_menu_image_compress', '图片压缩转换'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },

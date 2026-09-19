@@ -38,9 +38,11 @@ export struct ServerListPage {
 
   aboutToAppear(): void {
     this.fetchStatusBarHeight();
-    // 认证模块固定深色沉浸：透明系统栏 + 白色图标；登出清空导航栈回到本页时，
-    // 本页作为样式栈底自动恢复（其他页面 deactivate 出栈），无需监听会话过期事件
-    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: false });
+    // 认证模块固定深色沉浸：全屏布局 + 透明系统栏白字，卡片手动 padding 仅避让一个状态栏高度。
+    // fullscreen 必须为 true：与首页保持同一窗口模式，pop 返回时不发生布局模式切换
+    // （false 会让系统在手动 padding 之外再叠加一层安全区，导致延迟下跳、顶部双倍空白）。
+    // 登出清空导航栈回到本页时，本页作为样式栈底自动恢复（其他页面 deactivate 出栈）。
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
     this.vm.onLoginSuccess = () => this.onNavigateHome();
     // 打开添加服务器独立页面（预填服务器通过 vm.selectedServer 传递）
     this.vm.onOpenAddServer = (_server: ServerInfo | undefined) => {

@@ -69,7 +69,6 @@ export struct MediaToolImgBatchCompressPage {
     PageScaffold({
       title: this.titleText(),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },

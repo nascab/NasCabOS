@@ -185,7 +185,6 @@ export struct FileBackupEditPage {
         ? L10n.t('file_backup_edit', '编辑任务')
         : L10n.t('file_backup_create', '新增任务'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       // 保存中阻止返回（对齐 Flutter WillPopScope onWillPop: !_saving）
       customBack: (): boolean => {
         return this.saving;

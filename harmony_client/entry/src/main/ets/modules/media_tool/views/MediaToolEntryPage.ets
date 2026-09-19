@@ -66,7 +66,6 @@ export struct MediaToolEntryPage {
     PageScaffold({
       title: L10n.t('app_media_tool', '媒体工具'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },

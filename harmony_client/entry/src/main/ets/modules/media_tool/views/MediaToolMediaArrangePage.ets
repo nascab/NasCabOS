@@ -66,7 +66,6 @@ export struct MediaToolMediaArrangePage {
     PageScaffold({
       title: this.titleText(),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },

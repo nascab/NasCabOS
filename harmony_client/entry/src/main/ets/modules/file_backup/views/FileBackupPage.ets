@@ -64,7 +64,6 @@ export struct FileBackupPage {
     PageScaffold({
       title: L10n.t('file_backup_menu_disk', '磁盘间备份'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },
