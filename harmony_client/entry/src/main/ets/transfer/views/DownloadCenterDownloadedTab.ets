@@ -1,6 +1,7 @@
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { EmptyState } from '../../common/components/EmptyState';
+import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../common/SheetUtil';
 import { FileFormat } from '../../files/models/FileModels';
 import { DownloadedFileEntry } from '../models/DownloadModels';
 import { DownloadService } from '../services/DownloadService';
@@ -20,27 +21,15 @@ function extLower(path: string): string {
 
 /**
  * 已完成 Tab（对齐 Flutter download_center_downloaded_files_tab.dart）：
- * 顶部目录说明条 + 下拉刷新 + 分页列表（触底自动加载更多）。
+ * 下拉刷新 + 分页列表（触底自动加载更多）；点击 item 弹底部操作菜单。
  */
 @ComponentV2
 export struct DownloadCenterDownloadedTab {
   @Param ctrl: DownloadCenterController = new DownloadCenterController();
   @Local refreshing: boolean = false;
 
-  private service: DownloadService = DownloadService.getInstance();
-
-  private palette() {
-    return AppTheme.current();
-  }
-
-  /** 下载保存根目录绝对路径（目录说明条使用） */
-  private get rootDir(): string {
-    return this.service.getDownloadRoot();
-  }
-
   build() {
     Column() {
-      this.DirCaption()
       Refresh({ refreshing: this.refreshing, offset: 40 }) {
         if (this.ctrl.downloadedFiles.length === 0) {
           this.EmptyList()
@@ -59,21 +48,6 @@ export struct DownloadCenterDownloadedTab {
     }
     .width('100%')
     .height('100%')
-  }
-
-  // ==================== 目录说明条 ====================
-
-  @Builder
-  DirCaption() {
-    if (this.rootDir.length > 0) {
-      Text(`${L10n.t('download_to', '下载至')} ${this.rootDir}`)
-        .fontSize(12)
-        .fontColor(this.palette().subText)
-        .maxLines(2)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .width('100%')
-        .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-    }
   }
 
   // ==================== 空态（可下拉刷新） ====================
@@ -113,7 +87,7 @@ export struct DownloadCenterDownloadedTab {
             LoadingProgress()
               .width(24)
               .height(24)
-              .color(this.palette().primary)
+              .color(AppTheme.current().primary)
           }
           .width('100%')
           .justifyContent(FlexAlign.Center)
@@ -133,7 +107,7 @@ export struct DownloadCenterDownloadedTab {
 
 /**
  * 已下载文件卡片（对齐 Flutter download_center_downloaded_file_item.dart）：
- * 缩略图 + 名称/文件已删除 + 远端路径 + 大小/完成时间 + 删除按钮。
+ * 缩略图 + 名称/文件已删除 + 远端路径 + 大小/完成时间；点击卡片弹底部操作菜单。
  */
 @ComponentV2
 struct DownloadedFileCard {
@@ -185,18 +159,33 @@ struct DownloadedFileCard {
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
-      SymbolGlyph($r('sys.symbol.trash'))
-        .fontSize(22)
-        .fontColor([this.palette().subText])
-        .onClick((): void => {
-          void this.ctrl.promptDeleteEntry(this.entry);
-        })
+      // 右侧箭头，提示卡片可点击
+      SymbolGlyph($r('sys.symbol.chevron_right'))
+        .fontSize(18)
+        .fontColor([this.palette().hint])
     }
     .alignItems(VerticalAlign.Center)
     .width('100%')
     .padding(12)
     .borderRadius(16)
     .backgroundColor(this.palette().surfaceBg)
+    .onClick((): void => {
+      this.showActions();
+    })
+  }
+
+  /** 弹出底部操作菜单：图片/视频可保存到图库，任意条目可删除 */
+  private showActions(): void {
+    const p: DownloadedItemSheetParams = new DownloadedItemSheetParams();
+    p.entry = this.entry;
+    p.showGallery = !this.entry.fileMissing && DownloadService.isSavableMedia(this.entry.name);
+    p.onSaveGallery = (): void => {
+      void this.ctrl.saveEntryToGallery(this.entry);
+    };
+    p.onDelete = (): void => {
+      void this.ctrl.promptDeleteEntry(this.entry);
+    };
+    SheetUtil.present(p, wrapBuilder(DownloadedItemSheetContent));
   }
 
   /** 缩略图：缺失=错误色文件图标；图片=本地图；视频=胶片+播放角标（对齐 Flutter） */
@@ -242,4 +231,57 @@ struct DownloadedFileCard {
     .backgroundColor(this.palette().inputFill)
     .alignContent(Alignment.Center)
   }
+}
+
+/** 已下载条目底部操作菜单参数 */
+class DownloadedItemSheetParams extends SheetParamsBase {
+  entry: DownloadedFileEntry = new DownloadedFileEntry();
+  /** 是否展示「保存到图库」（仅图片/视频且文件存在） */
+  showGallery: boolean = false;
+  onSaveGallery: () => void = (): void => {
+  };
+  onDelete: () => void = (): void => {
+  };
+}
+
+/** 已下载条目底部操作菜单：保存到图库（媒体）、删除 */
+@Builder
+function DownloadedItemSheetContent(p: DownloadedItemSheetParams) {
+  Column() {
+    SheetHandle()
+    // 文件名（菜单上下文）
+    Text(p.entry.name)
+      .fontSize(14)
+      .fontWeight(FontWeight.Medium)
+      .fontColor(AppTheme.current().subText)
+      .maxLines(2)
+      .textOverflow({ overflow: TextOverflow.Ellipsis })
+      .width('100%')
+      .padding({ left: 20, right: 20, top: 4, bottom: 10 })
+
+    if (p.showGallery) {
+      SheetListItem({
+        icon: $r('sys.symbol.rectangle_stack'),
+        title: L10n.t('save_to_gallery', '保存到图库'),
+        onSelect: (): void => {
+          p.close();
+          p.onSaveGallery();
+        }
+      })
+    }
+    SheetListItem({
+      icon: $r('sys.symbol.trash'),
+      title: L10n.t('delete', '删除'),
+      titleColor: AppTheme.current().error,
+      iconColor: AppTheme.current().error,
+      onSelect: (): void => {
+        p.close();
+        p.onDelete();
+      }
+    })
+  }
+  .width('100%')
+  .backgroundColor(AppTheme.current().surfaceBg)
+  .borderRadius({ topLeft: 20, topRight: 20 })
+  .padding({ bottom: 30 })
 }

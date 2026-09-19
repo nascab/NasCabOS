@@ -163,6 +163,19 @@ export class DownloadCenterController {
     this.downloadedFiles = remain;
   }
 
+  /** 手动将已下载的图片/视频保存到系统图库（由 item bottom 菜单触发） */
+  async saveEntryToGallery(entry: DownloadedFileEntry): Promise<void> {
+    if (entry.fileMissing) {
+      ToastUtil.show(L10n.t('file_not_found', '文件不存在'));
+      return;
+    }
+    const ok: boolean = await this.service.saveToGallery(entry.path, entry.name);
+    // 用户在系统对话框点取消时不提示失败（ok=false 同时涵盖取消与失败，保持静默更友好）
+    if (ok) {
+      ToastUtil.show(L10n.t('save_to_gallery_success', '已保存到图库'));
+    }
+  }
+
   /** 顶部「清理」：有活跃任务时拦截，否则弹窗确认清空（对齐 Flutter promptClearAllHistory） */
   async promptClearAllHistory(): Promise<void> {
     if (this.service.hasActiveTasks()) {
@@ -173,7 +186,7 @@ export class DownloadCenterController {
     const r: CheckConfirmResult | undefined = await showCheckConfirmDialog(
       L10n.t('download_history_clear_title', '清理下载记录'),
       L10n.t('download_history_clear_message',
-        '将清空全部下载记录；下载文件均保存在应用私有下载目录中，勾选后可一并删除。'),
+        '将清空全部下载记录。未勾选时仅移除记录、不删除文件；勾选「同时删除已下载的文件」时，会一并删除系统 Download 目录中本应用下载的文件，已保存到相册的图片/视频不受影响。'),
       L10n.t('delete_downloaded_local_file', '同时删除已下载的文件'),
       true);
     if (!r || !r.confirmed) {

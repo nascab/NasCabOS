@@ -1,11 +1,16 @@
 import { request } from '@kit.BasicServicesKit';
 import { notificationManager } from '@kit.NotificationKit';
+import { fileUri, fileShare, picker } from '@kit.CoreFileKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
 import { WindowStore } from '../../common/WindowStore';
 import { APIClient } from '../../core/network/APIClient';
 import { FileApiService } from '../../files/service/FileApiService';
 import { FileItem, FileModelAccess } from '../../files/models/FileModels';
 import { L10n } from '../../core/localization/L10n';
+import { PreferencesStore } from '../../core/storage/PreferencesStore';
+import { DialogUtil } from '../../common/DialogUtil';
+import { ToastUtil } from '../../common/ToastUtil';
 import { DownloadTarget, DownloadTaskItem } from '../models/DownloadModels';
 import { TransferStatus } from '../models/TransferModels';
 import { DownloadHistoryStorage } from '../storage/DownloadHistoryStorage';
@@ -16,6 +21,8 @@ const DOWNLOAD_DIR_NAME: string = 'NasCabDownload';
 const TMP_SUFFIX: string = '.nascab_tmp';
 /** 同时运行的系统下载任务数上限（其余排队等待） */
 const MAX_RUNNING: number = 2;
+/** 偏好：系统下载目录 URI（DOWNLOAD 模式返回，授权已持久化） */
+const PREF_SYSTEM_DIR_URI: string = 'dl_system_dir_uri';
 
 /**
  * 下载服务（单例）。
@@ -49,8 +56,12 @@ export class DownloadService {
   private running: Set<string> = new Set();
   /** 队列泵是否已在调度（避免重复调度） */
   private pumpInFlight: boolean = false;
-  /** 下载保存根目录绝对路径 */
-  private downloadRoot: string = '';
+  /** 下载暂存根目录（始终在应用沙箱，系统代理实际落盘位置） */
+  private stagingRoot: string = '';
+  /** 最终下载根目录绝对路径（系统 Download/包名 目录；UI 观察，未授权前为空串） */
+  @Trace downloadRoot: string = '';
+  /** 系统下载目录 URI（DOWNLOAD 模式返回，授权已持久化） */
+  private systemDirUri: string = '';
   /** 任务 id 自增序列（保证同毫秒创建的任务 id 唯一） */
   private seq: number = 0;
   /** 通知授权是否已请求（每次安装期内只请求一次） */
@@ -93,9 +104,14 @@ export class DownloadService {
       return 0;
     }
     try {
-      await this.ensureRoot();
+      await this.ensureStagingRoot();
     } catch (e) {
-      console.error('[Download] 初始化下载目录失败: ' + `${e}`);
+      console.error('[Download] 初始化暂存目录失败: ' + `${e}`);
+      return 0;
+    }
+    // 触发下载时检测系统下载目录授权，未授权则引导开通；用户取消则中止本次下载
+    const granted: boolean = await this.ensureSystemAccess();
+    if (!granted) {
       return 0;
     }
     void this.requestNotificationPermission();
@@ -142,11 +158,11 @@ export class DownloadService {
         it.status === TransferStatus.PAUSED));
   }
 
-  // ==================== 保存目录 / 通知授权 ====================
+  // ==================== 暂存目录 / 系统下载目录授权 ====================
 
-  /** 确保下载根目录 {filesDir}/NasCabDownload 存在 */
-  private async ensureRoot(): Promise<void> {
-    if (this.downloadRoot.length > 0) {
+  /** 确保暂存根目录 {filesDir}/NasCabDownload 存在（系统代理实际落盘位置，保证后台下载） */
+  private async ensureStagingRoot(): Promise<void> {
+    if (this.stagingRoot.length > 0) {
       return;
     }
     const ctx = WindowStore.appContext;
@@ -157,10 +173,134 @@ export class DownloadService {
     if (!fs.accessSync(root)) {
       fs.mkdirSync(root, true);
     }
-    this.downloadRoot = root;
+    this.stagingRoot = root;
   }
 
-  /** 下载根目录绝对路径（已完成页顶部目录说明使用） */
+  /**
+   * 确保已获得系统下载目录授权（每次下载触发时检测）：
+   * 1. 已有持久化 URI 且目录仍可访问 → 直接通过
+   * 2. 静默发起 DOWNLOAD 授权（正常无界面）
+   * 3. 仍失败 → 弹窗说明用途并引导用户「去开通」
+   *
+   * @returns 是否已获得授权（用户取消为 false，调用方应中止本次下载）
+   */
+  private async ensureSystemAccess(): Promise<boolean> {
+    // 1. 内存中的授权仍有效
+    if (this.systemDirUri.length > 0 && this.verifySystemDir(this.systemDirUri)) {
+      return true;
+    }
+    // 持久化的授权仍有效（checkPersistentPermission 确认重启后授权未失效）
+    const persistedUri: string =
+      PreferencesStore.getInstance().getString(PREF_SYSTEM_DIR_URI) ?? '';
+    if (persistedUri.length > 0 && this.verifySystemDir(persistedUri) &&
+      await DownloadService.isPermissionPersisted(persistedUri)) {
+      this.systemDirUri = persistedUri;
+      this.downloadRoot = DownloadService.uriToPath(persistedUri);
+      return true;
+    }
+
+    // 2. 静默尝试获取授权（DOWNLOAD 模式无选择界面，直接返回目录）
+    if (await this.acquireSystemDir()) {
+      return true;
+    }
+
+    // 3. 引导弹窗：说明用途，用户点「去开通」后再发起一次授权
+    const r = await DialogUtil.showConfirmDialog(
+      L10n.t('download_permission_guide_title', '需要下载目录权限'),
+      L10n.t('download_permission_guide_message',
+        '下载的文件将保存到系统「文件管理」的 Download/应用包名 目录中。需要您授权访问该目录，点击「去开通」完成授权。'),
+      undefined,
+      L10n.t('go_grant', '去开通'));
+    if (r === true) {
+      if (await this.acquireSystemDir()) {
+        return true;
+      }
+      ToastUtil.show(L10n.t('download_permission_grant_failed', '授权失败，请重试'));
+    }
+    return false;
+  }
+
+  /** 校验系统下载目录 URI 当前仍可访问 */
+  private verifySystemDir(uri: string): boolean {
+    try {
+      return fs.accessSync(DownloadService.uriToPath(uri));
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  /** 系统目录 URI → 物理路径（fileUri 转换，与官方示例一致） */
+  private static uriToPath(uri: string): string {
+    return new fileUri.FileUri(uri).path;
+  }
+
+  /** 查询 URI 是否已完成持久化授权（失败按未持久化处理，触发重新授权） */
+  private static async isPermissionPersisted(uri: string): Promise<boolean> {
+    try {
+      const policy: fileShare.PolicyInfo = {
+        uri,
+        operationMode: fileShare.OperationMode.READ_MODE | fileShare.OperationMode.WRITE_MODE
+      };
+      const results: boolean[] = await fileShare.checkPersistentPermission([policy]);
+      return results.length > 0 && results[0];
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  /**
+   * 将目录授权持久化（重启后仍可读写）。
+   * 部分设备/权限配置可能不支持，失败不阻断本次下载（临时授权在本次前台仍有效）。
+   */
+  private async persistDirPermission(uri: string): Promise<void> {
+    try {
+      const policy: fileShare.PolicyInfo = {
+        uri,
+        operationMode: fileShare.OperationMode.READ_MODE | fileShare.OperationMode.WRITE_MODE
+      };
+      await fileShare.persistPermission([policy]);
+    } catch (e) {
+      console.warn('[Download] 目录授权持久化失败，本次运行仍可下载: ' + `${e}`);
+    }
+  }
+
+  /**
+   * 通过 FilePicker DOWNLOAD 模式获取系统下载目录：
+   * 无需在 module.json5 声明权限、无文件选择界面；
+   * 返回 URI 自带持久化授权，目录为 Download/包名/。
+   * 成功时写入偏好并更新 downloadRoot。
+   */
+  private async acquireSystemDir(): Promise<boolean> {
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return false;
+    }
+    try {
+      const options: picker.DocumentSaveOptions = new picker.DocumentSaveOptions();
+      options.pickerMode = picker.DocumentPickerMode.DOWNLOAD;
+      const viewPicker: picker.DocumentViewPicker = new picker.DocumentViewPicker(ctx);
+      const result: string[] = await viewPicker.save(options);
+      if (result.length === 0 || result[0].length === 0) {
+        return false;
+      }
+      const uri: string = result[0];
+      const path: string = DownloadService.uriToPath(uri);
+      if (!fs.accessSync(path)) {
+        return false;
+      }
+      // 尝试将授权持久化（重启后免再授权；设备不支持时降级为本次临时授权）
+      await this.persistDirPermission(uri);
+      await PreferencesStore.getInstance().setString(PREF_SYSTEM_DIR_URI, uri);
+      this.systemDirUri = uri;
+      this.downloadRoot = path;
+      return true;
+    } catch (e) {
+      console.error('[Download] 获取系统下载目录授权失败: ' + `${e}`);
+      return false;
+    }
+  }
+
+  /** 最终下载根目录绝对路径（已完成页顶部目录说明使用；未授权前为空串） */
   getDownloadRoot(): string {
     return this.downloadRoot;
   }
@@ -314,8 +454,8 @@ export class DownloadService {
       // 访问失败则正常走下载
     }
 
-    // 确保目标目录存在（系统代理要求 filePath 父目录已存在）
-    const tmpPath: string = `${item.localPath}${TMP_SUFFIX}`;
+    // 确保暂存目录存在（系统代理要求 filePath 父目录已存在）
+    const tmpPath: string = this.stagingPathOf(item);
     try {
       const dir: string = DownloadService.dirName(tmpPath);
       if (!fs.accessSync(dir)) {
@@ -383,15 +523,18 @@ export class DownloadService {
     });
   }
 
-  /** 系统下载完成：临时文件 rename 去后缀（重名加 (1)(2)），写历史记录 */
+  /**
+   * 系统下载完成：暂存文件发布到最终目录（重名加 (1)(2)）。
+   * 最终目录与暂存目录跨文件系统时 rename 失败，自动降级 copy + 删除暂存。
+   */
   private async onSysComplete(item: DownloadTaskItem): Promise<void> {
-    const tmpPath: string = `${item.localPath}${TMP_SUFFIX}`;
+    const stagingPath: string = this.stagingPathOf(item);
     let finalPath: string = item.localPath;
     try {
-      if (fs.accessSync(tmpPath)) {
-        const actualSize: number = fs.statSync(tmpPath).size;
+      if (fs.accessSync(stagingPath)) {
+        const actualSize: number = fs.statSync(stagingPath).size;
         finalPath = this.uniqueFinalPath(item.localPath);
-        fs.renameSync(tmpPath, finalPath);
+        this.publishFile(stagingPath, finalPath);
         item.totalSize = actualSize;
         item.processedSize = actualSize;
       }
@@ -400,6 +543,34 @@ export class DownloadService {
       return;
     }
     await this.completeItem(item, finalPath);
+  }
+
+  /**
+   * 暂存文件 → 最终文件：优先 rename（同卷高效）；
+   * 跨卷/失败时 copy 后删除暂存文件。
+   */
+  private publishFile(stagingPath: string, finalPath: string): void {
+    // 确保最终目录存在（系统 Download 目录下的多级子目录）
+    const dir: string = DownloadService.dirName(finalPath);
+    if (!fs.accessSync(dir)) {
+      fs.mkdirSync(dir, true);
+    }
+    try {
+      fs.renameSync(stagingPath, finalPath);
+    } catch (_e) {
+      // 跨文件系统 rename 不支持：复制后清理暂存
+      fs.copyFileSync(stagingPath, finalPath);
+      try {
+        fs.unlinkSync(stagingPath);
+      } catch (_ignore) {
+        // 暂存清理失败不阻断完成
+      }
+    }
+  }
+
+  /** 任务暂存文件路径：{暂存根}/{展示名}.nascab_tmp */
+  private stagingPathOf(item: DownloadTaskItem): string {
+    return `${this.stagingRoot}/${item.name}${TMP_SUFFIX}`;
   }
 
   /** 置完成态并写入下载历史（历史库失败不影响任务完成） */
@@ -513,7 +684,7 @@ export class DownloadService {
         console.warn('[Download] 删除系统任务失败: ' + `${e}`);
       }
     } else {
-      const tmpPath: string = `${item.localPath}${TMP_SUFFIX}`;
+      const tmpPath: string = this.stagingPathOf(item);
       try {
         if (fs.accessSync(tmpPath)) {
           fs.unlinkSync(tmpPath);
@@ -538,7 +709,7 @@ export class DownloadService {
     await this.removeItem(item);
 
     if (isFolder) {
-      await this.ensureRoot();
+      await this.ensureStagingRoot();
       await this.expandFolder(remotePath, rootName.length > 0 ? rootName : displayName,
         rootName.length > 0 ? rootName : displayName);
       this.schedulePump();
@@ -646,5 +817,132 @@ export class DownloadService {
       return false;
     }
     return true;
+  }
+
+  /** 文件名后缀（小写、不含点；无后缀返回 ''） */
+  private static extOfName(name: string): string {
+    const i: number = name.lastIndexOf('.');
+    const ext: string = i > 0 ? name.substring(i + 1) : '';
+    return ext.trim().toLowerCase();
+  }
+
+  /** 去掉后缀的名称（写入图库时作为标题） */
+  private static stripExt(name: string): string {
+    const i: number = name.lastIndexOf('.');
+    return i > 0 ? name.substring(0, i) : name;
+  }
+
+  /** 判断媒体类型：1=图片，2=视频，0=非媒体（仅枚举图库支持的常见格式） */
+  private static mediaKind(name: string): number {
+    const ext: string = DownloadService.extOfName(name);
+    if (ext.length === 0) {
+      return 0;
+    }
+    const images: string[] =
+      ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif', 'avif', 'tif', 'tiff', 'dng'];
+    const videos: string[] =
+      ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', '3gp', '3g2', 'flv', 'ts', 'mpg', 'mpeg', 'rm', 'rmvb', 'f4v'];
+    if (images.indexOf(ext) >= 0) {
+      return 1;
+    }
+    if (videos.indexOf(ext) >= 0) {
+      return 2;
+    }
+    return 0;
+  }
+
+  /**
+   * 将已下载的图片/视频手动保存到系统图库（相册）。
+   *
+   * 鸿蒙中 Download 目录与图库天然隔离，需通过
+   * PhotoAccessHelper.showAssetsCreationDialog 弹出系统保存对话框，用户确认后
+   * 写入图库（无需申请 ACL 受限权限）。
+   *
+   * 官方约定（关键）：
+   * 1. 对话框的源文件 URI 必须是「应用沙箱路径」生成的 URI，公共目录路径不支持；
+   * 2. 对话框只负责创建空的媒体资源并返回目标 URI，文件内容需要应用自行
+   *    用 fs.copyFileSync(srcFd, desFd) 写入。
+   *
+   * @param srcPath     源文件绝对路径（系统 Download 目录内）
+   * @param displayName 文件名（含后缀，用于判断媒体类型与写入标题）
+   * @returns true=已保存；false=非媒体/文件缺失/用户取消/失败
+   */
+  async saveToGallery(srcPath: string, displayName: string): Promise<boolean> {
+    const kind: number = DownloadService.mediaKind(displayName);
+    if (kind === 0) {
+      return false;
+    }
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return false;
+    }
+    // 沙箱临时文件：{cacheDir}/gallery_publish/{文件名}
+    const tmpDir: string = `${ctx.cacheDir}/gallery_publish`;
+    const tmpPath: string = `${tmpDir}/${displayName}`;
+    let srcFile: fs.File | undefined = undefined;
+    let desFile: fs.File | undefined = undefined;
+    try {
+      if (!fs.accessSync(srcPath)) {
+        return false;
+      }
+      if (!fs.accessSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, true);
+      }
+      // 1. 复制到应用沙箱（公共目录文件 → 沙箱临时文件）
+      fs.copyFileSync(srcPath, tmpPath);
+
+      // 2. 弹出系统保存确认框（源 URI 必须是沙箱文件 URI）
+      const config: photoAccessHelper.PhotoCreationConfig = {
+        title: DownloadService.stripExt(displayName),
+        fileNameExtension: DownloadService.extOfName(displayName),
+        photoType: kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO
+      };
+      const srcUri: string = fileUri.getUriFromPath(tmpPath);
+      const helper: photoAccessHelper.PhotoAccessHelper =
+        photoAccessHelper.getPhotoAccessHelper(ctx);
+      const desUris: string[] = await helper.showAssetsCreationDialog([srcUri], [config]);
+      // 用户点取消：返回空列表
+      if (desUris.length === 0) {
+        return false;
+      }
+
+      // 3. 对话框只创建了空媒体资源，需自行把内容写入目标 URI
+      srcFile = fs.openSync(tmpPath, fs.OpenMode.READ_ONLY);
+      desFile = fs.openSync(desUris[0], fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+      fs.copyFileSync(srcFile.fd, desFile.fd);
+      console.info('[Download] 已保存到系统图库: ' + desUris[0]);
+      return true;
+    } catch (e) {
+      console.warn('[Download] 保存到图库失败: ' + `${e}`);
+      return false;
+    } finally {
+      if (srcFile) {
+        try {
+          fs.closeSync(srcFile);
+        } catch (_e) {
+          // 关闭失败忽略
+        }
+      }
+      if (desFile) {
+        try {
+          fs.closeSync(desFile);
+        } catch (_e) {
+          // 关闭失败忽略
+        }
+      }
+      // 清理沙箱临时文件
+      try {
+        if (fs.accessSync(tmpPath)) {
+          fs.unlinkSync(tmpPath);
+        }
+      } catch (_e) {
+        // 清理失败忽略
+      }
+    }
+  }
+
+  /** 是否为可保存到图库的图片/视频（bottom 菜单按此决定是否展示该项） */
+  static isSavableMedia(displayName: string): boolean {
+    return DownloadService.mediaKind(displayName) !== 0;
   }
 }
