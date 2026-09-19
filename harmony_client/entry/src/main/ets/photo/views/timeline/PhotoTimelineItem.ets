@@ -44,20 +44,14 @@ export struct PhotoTimelineItem {
 
   build() {
     Stack() {
-      if (this.tinyUrl.length > 0) {
-        AppImage({
-          url: this.tinyUrl,
-          objectFit: this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain,
-          imageRadius: 4
-        })
-      } else {
-        Image($rawfile('icons/no_data.png'))
-          .width('100%')
-          .height('100%')
-          .objectFit(this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain)
-          .borderRadius(4)
-          .draggable(false)
-      }
+      // 始终走缩略图加载器（tiny 接口 404/202 时内部退避重试）：
+      // tinyUrl 未解析完成时呈现中性灰块占位，避免把 no_data 当成“加载失败”的图片
+      AppImage({
+        url: this.tinyUrl,
+        objectFit: this.ctrl.isCoverMode ? ImageFit.Cover : ImageFit.Contain,
+        imageRadius: 4,
+        showLoadingSpin: false
+      })
 
       // 选中遮罩
       if (this.ctrl.isSelected(this.item.id)) {

@@ -15,6 +15,10 @@ import { L10n } from '../../core/localization/L10n';
 class MemoryEntry {
   pixelMap: PixelMap;
   bytes: number;
+  /** 是否仍驻留内存缓存；被淘汰但仍有组件展示时为 false */
+  cached: boolean = true;
+  /** 展示中组件的引用计数（缓存自身不计）；归零且已淘汰时释放 native 内存 */
+  refs: number = 0;
 
   constructor(pixelMap: PixelMap) {
     this.pixelMap = pixelMap;
@@ -25,8 +29,17 @@ class MemoryEntry {
 export class AppImageLoader {
   /** 内存上限 96MB（移动端设备预算） */
   private static readonly memoryMaxBytes: number = 96 * 1024 * 1024;
-  private static readonly memoryCache: Map<string, MemoryEntry> = new Map();
+  /**
+   * 全部已知条目：既包含驻留缓存的，也包含已被淘汰但仍被组件展示的。
+   * 淘汰的 PixelMap 不能立即 release（正在显示会黑屏/异常），引用计数归零才释放 native 内存。
+   */
+  private static readonly entries: Map<string, MemoryEntry> = new Map();
+  private static cachedBytes: number = 0;
   private static readonly inflight: Map<string, Promise<PixelMap>> = new Map();
+  /** 下载+解码并发上限，防止快速滚动/日期跳转时瞬时并发打满连接与内存导致缩略图失败 */
+  private static readonly maxJobs: number = 6;
+  private static activeJobs: number = 0;
+  private static waitQueue: (() => void)[] = [];
   private static cacheDir: string = '';
 
   /** tiny 缩略图退避重试配置（对齐 Flutter _kTiny404MaxRetries） */
@@ -70,12 +83,14 @@ export class AppImageLoader {
 
   /** 主入口：内存 → 磁盘 → 网络（带 Bearer header），同 URL 去重 */
   static load(url: string): Promise<PixelMap> {
-    const entry = AppImageLoader.memoryCache.get(url);
-    if (entry) {
-      // LRU touch：移到末尾
-      AppImageLoader.memoryCache.delete(url);
-      AppImageLoader.memoryCache.set(url, entry);
-      return Promise.resolve(entry.pixelMap);
+    const hit = AppImageLoader.entries.get(url);
+    if (hit !== undefined) {
+      // LRU touch：驻留缓存的条目移到末尾；已被淘汰但仍被持有的保持原位
+      if (hit.cached) {
+        AppImageLoader.entries.delete(url);
+        AppImageLoader.entries.set(url, hit);
+      }
+      return Promise.resolve(hit.pixelMap);
     }
     const running = AppImageLoader.inflight.get(url);
     if (running) {
@@ -85,20 +100,108 @@ export class AppImageLoader {
     AppImageLoader.inflight.set(url, task);
     task.then((pm: PixelMap): void => {
       AppImageLoader.inflight.delete(url);
-      AppImageLoader.cachePut(url, pm);
+      AppImageLoader.store(url, pm);
     }).catch((_e: Object): void => {
       AppImageLoader.inflight.delete(url);
     });
     return task;
   }
 
-  private static async doLoad(url: string): Promise<PixelMap> {
-    let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
-    if (!buffer || buffer.byteLength === 0) {
-      buffer = await AppImageLoader.download(url);
-      AppImageLoader.writeDisk(url, buffer);
+  /** 组件开始展示某 URL 的 PixelMap 时持有引用 */
+  static retain(url: string): void {
+    const e = AppImageLoader.entries.get(url);
+    if (e !== undefined) {
+      e.refs++;
     }
-    return AppImageLoader.decode(buffer);
+  }
+
+  /** 组件停止展示时释放引用；缓存已淘汰且无人持有时立即回收 native 内存 */
+  static release(url: string): void {
+    if (url.length === 0) {
+      return;
+    }
+    const e = AppImageLoader.entries.get(url);
+    if (e === undefined) {
+      return;
+    }
+    e.refs--;
+    if (e.refs <= 0 && !e.cached) {
+      try {
+        e.pixelMap.release();
+      } catch (_err) {
+        // 已释放则忽略
+      }
+      AppImageLoader.entries.delete(url);
+    }
+  }
+
+  private static async acquireJob(): Promise<void> {
+    if (AppImageLoader.activeJobs < AppImageLoader.maxJobs) {
+      AppImageLoader.activeJobs++;
+      return;
+    }
+    await new Promise<void>((resolve): void => {
+      AppImageLoader.waitQueue.push(resolve);
+    });
+    AppImageLoader.activeJobs++;
+  }
+
+  private static releaseJob(): void {
+    AppImageLoader.activeJobs--;
+    const next = AppImageLoader.waitQueue.shift();
+    if (next !== undefined) {
+      next();
+    }
+  }
+
+  private static store(url: string, pixelMap: PixelMap): void {
+    const entry = new MemoryEntry(pixelMap);
+    AppImageLoader.entries.set(url, entry);
+    AppImageLoader.cachedBytes += entry.bytes;
+    while (AppImageLoader.cachedBytes > AppImageLoader.memoryMaxBytes) {
+      if (!AppImageLoader.evictOldest()) {
+        break;
+      }
+    }
+  }
+
+  /** 淘汰最旧的驻留条目；返回是否找到可淘汰项 */
+  private static evictOldest(): boolean {
+    const iter = AppImageLoader.entries.keys();
+    let result = iter.next();
+    while (!result.done) {
+      const key = result.value;
+      const victim = AppImageLoader.entries.get(key);
+      if (victim !== undefined && victim.cached) {
+        victim.cached = false;
+        AppImageLoader.cachedBytes -= victim.bytes;
+        if (victim.refs <= 0) {
+          try {
+            victim.pixelMap.release();
+          } catch (_err) {
+            // 已释放则忽略
+          }
+          AppImageLoader.entries.delete(key);
+        }
+        return true;
+      }
+      result = iter.next();
+    }
+    return false;
+  }
+
+  private static async doLoad(url: string): Promise<PixelMap> {
+    await AppImageLoader.acquireJob();
+    try {
+      let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
+      if (!buffer || buffer.byteLength === 0) {
+        buffer = await AppImageLoader.download(url);
+        AppImageLoader.writeDisk(url, buffer);
+      }
+      return await AppImageLoader.decode(buffer);
+    } finally {
+      AppImageLoader.releaseJob();
+    }
   }
 
   private static async download(url: string): Promise<ArrayBuffer> {
@@ -188,40 +291,23 @@ export class AppImageLoader {
     }
   }
 
-  /** 解码：超过 2560px 的长边按比例缩小，控制内存 */
+  /** 解码：超过 2560px 的长边按比例缩小，控制内存；异常时确保释放 ImageSource */
   private static async decode(buffer: ArrayBuffer): Promise<PixelMap> {
     const source = image.createImageSource(buffer);
-    const info = await source.getImageInfo();
-    const maxEdge = Math.max(info.size.width, info.size.height);
-    const options: image.DecodingOptions = {};
-    if (maxEdge > 2560) {
-      const scale = 2560 / maxEdge;
-      options.desiredSize = {
-        width: Math.round(info.size.width * scale),
-        height: Math.round(info.size.height * scale)
-      };
-    }
-    const pixelMap = await source.createPixelMap(options);
-    source.release();
-    return pixelMap;
-  }
-
-  private static cachePut(url: string, pixelMap: PixelMap): void {
-    const entry = new MemoryEntry(pixelMap);
-    AppImageLoader.memoryCache.delete(url);
-    AppImageLoader.memoryCache.set(url, entry);
-    let total = 0;
-    AppImageLoader.memoryCache.forEach((e: MemoryEntry): void => {
-      total += e.bytes;
-    });
-    while (total > AppImageLoader.memoryMaxBytes && AppImageLoader.memoryCache.size > 1) {
-      const oldest = AppImageLoader.memoryCache.keys().next();
-      if (oldest.done === true) {
-        break;
+    try {
+      const info = await source.getImageInfo();
+      const maxEdge = Math.max(info.size.width, info.size.height);
+      const options: image.DecodingOptions = {};
+      if (maxEdge > 2560) {
+        const scale = 2560 / maxEdge;
+        options.desiredSize = {
+          width: Math.round(info.size.width * scale),
+          height: Math.round(info.size.height * scale)
+        };
       }
-      const old = AppImageLoader.memoryCache.get(oldest.value);
-      AppImageLoader.memoryCache.delete(oldest.value);
-      total -= old ? old.bytes : 0;
+      return await source.createPixelMap(options);
+    } finally {
+      source.release();
     }
   }
 }
@@ -249,18 +335,21 @@ export struct AppImage {
   /** tiny 404/202 退避重试计数与定时器（对齐 Flutter _tiny404RetryCount/_tiny404RetryTimer） */
   private retryCount: number = 0;
   private retryTimer: number = -1;
+  /** 当前组件持有展示权的图片 URL（与 AppImageLoader 引用计数配对） */
+  private heldUrl: string = '';
 
   aboutToAppear(): void {
     AppImageLoader.initCacheDir(getContext(this).cacheDir);
     void this.reload();
   }
 
-  /** 组件销毁时取消挂起的重试定时器（对齐 Flutter dispose cancel） */
+  /** 组件销毁时取消挂起的重试定时器并释放持有的 PixelMap 引用（对齐 Flutter dispose cancel） */
   aboutToDisappear(): void {
     if (this.retryTimer >= 0) {
       clearTimeout(this.retryTimer);
       this.retryTimer = -1;
     }
+    this.releaseHeld();
   }
 
   /** 组件复用时 url 变化重新加载（重置重试计数，对齐 Flutter didUpdateWidget） */
@@ -291,10 +380,18 @@ export struct AppImage {
     }, delay);
   }
 
+  private releaseHeld(): void {
+    if (this.heldUrl.length > 0) {
+      AppImageLoader.release(this.heldUrl);
+      this.heldUrl = '';
+    }
+  }
+
   private async reload(): Promise<void> {
     const seq = ++this.loadSeq;
     const target = this.url.trim();
     if (target.length === 0 || this.isLocal(target)) {
+      this.releaseHeld();
       this.pixelMap = undefined;
       this.failed = false;
       return;
@@ -304,23 +401,32 @@ export struct AppImage {
       if (seq !== this.loadSeq) {
         return;
       }
+      // 先持有新图、再释放旧图，保证缓存条目引用始终平衡
+      AppImageLoader.retain(target);
+      const previous = this.heldUrl;
+      this.heldUrl = target;
       this.pixelMap = pm;
       this.failed = false;
       this.retryCount = 0;
+      if (previous.length > 0 && previous !== target) {
+        AppImageLoader.release(previous);
+      }
       this.onLoaded(true);
     } catch (e) {
       if (seq !== this.loadSeq) {
         return;
       }
       if (AppImageLoader.isTinyPendingError(target, e as Object)) {
-        // 缩略图服务端生成中：保持加载占位，指数退避重试，重试耗尽才显示失败
+        // 缩略图服务端生成中：释放旧图、保持加载占位，指数退避重试，重试耗尽才显示失败
         if (this.retryCount < AppImageLoader.TINY_MAX_RETRIES) {
+          this.releaseHeld();
           this.pixelMap = undefined;
           this.failed = false;
           this.scheduleRetry();
           return;
         }
       }
+      this.releaseHeld();
       this.pixelMap = undefined;
       this.failed = true;
       this.onLoaded(false);

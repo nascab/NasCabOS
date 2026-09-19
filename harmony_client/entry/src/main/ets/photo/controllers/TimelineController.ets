@@ -47,6 +47,8 @@ export class TimelineRowItem {
   @Trace isHeader: boolean = false;
   @Trace date: string = '';
   @Trace photos: TimelinePhotoItem[] = [];
+  /** 稳定 key：header=h_日期；照片行=r_首张照片id（供 LazyForEach 复用，禁止用索引） */
+  key: string = '';
 }
 
 function startOfDayTs(dateStr: string): number {
@@ -158,6 +160,19 @@ export class TimelineController {
   private searchDebounce: number = -1;
   private lastScrollOffset: number = 0;
   private loadingTimeline: boolean = false;
+  /** 日期跳转进行中（防止拖拽连击导致并发拉取互相覆盖） */
+  private jumping: boolean = false;
+  /**
+   * 程序化滚动中（jumpToDate 定位）：此时 onListScroll 不得触发分页。
+   * 对齐 Flutter _onScroll 只在 userScrollDirection 为真实手势方向时才分页——
+   * 否则定位过程的中间滚动事件会误触发 loadMore，其锚点恢复会把列表顶到中途捕获的
+   * visibleFirstRowKey（表现为跳到目标日期的前一天）。
+   */
+  programmaticScroll: boolean = false;
+  /** 向上分页/跳转后需要恢复到的锚点：h_日期 或 id_照片id */
+  restoreAnchorKey: string = '';
+  /** 当前列表顶部可见行的稳定 key（向上分页前保存锚点用） */
+  private visibleFirstRowKey: string = '';
 
   /** 用初始上下文初始化（视图 aboutToAppear 调用一次） */
   configure(initialListType: string, albumId: number, collectionId: number, smartAlbumId: number,
@@ -358,8 +373,18 @@ export class TimelineController {
     }
   }
 
-  /** 侧边栏跳转日期 */
+  /** 侧边栏跳转日期（对齐 Flutter jumpToDate：先清列表回顶→拉目标页→向上补一页→恢复目标日期锚点） */
   async jumpToDate(date: string): Promise<void> {
+    // 防止拖拽连击/重复触发造成并发拉取互相覆盖（表现为“跳转失败”）
+    if (this.jumping) {
+      return;
+    }
+    this.jumping = true;
+    // 定位期间禁止滚动事件触发分页（视图在锚点恢复结束后会提前清掉，这里做兜底）
+    this.programmaticScroll = true;
+    setTimeout((): void => {
+      this.programmaticScroll = false;
+    }, 1500);
     this.showTimeline();
     this.hasMoreUp = true;
     this.hasMoreDown = true;
@@ -367,8 +392,15 @@ export class TimelineController {
     this.selectedIds = [];
     this.flat = [];
     this.rows = [];
+    this.restoreAnchorKey = '';
+    this.visibleFirstRowKey = '';
+    this.lastScrollOffset = 0;
+    this.notifyRowsChanged();
     this.isLoadingDown = true;
     try {
+      // 清空后先回到顶部，避免旧内容残留
+      this.notifyTimelineReset();
+
       const range = this.buildFetchRangeByMinCount(date, false, true);
       if (range === undefined) {
         this.hasMoreDown = false;
@@ -379,16 +411,35 @@ export class TimelineController {
       if (!hasData) {
         this.hasMoreDown = false;
         this.hasMoreUp = false;
+        return;
+      }
+      this.hasMoreUp = range.startIndex > 0;
+      this.hasMoreDown = range.endIndex < this.dateList.length - 1;
+
+      if (this.flat.length > 0 && this.hasMoreUp) {
+        // 锚点取“目标页实际第一条 header”的稳定 key（对齐 Flutter saveAnchorItem 在 offset=0
+        // 时保存的 item 身份），不要用侧边栏日期串拼 h_ —— 跨字段格式只要有差异锚点就永远找不到。
+        const anchor = this.firstHeaderKey();
+        // TODO(diag) 跳转整天丢失排查，定位后删除
+        console.info(`[TimelineJump] jumpToDate target=${date} capturedAnchor=${anchor} ` +
+          `flat0=${this.flat.length > 0 ? (this.flat[0] instanceof TimelineListDateHeader ? this.flat[0].date : 'photo') : '-'}`);
+        if (anchor.length > 0) {
+          // 向上补一页（更新的日期），完成后把目标日期 header 恢复到顶部
+          await this.loadMore(true, anchor);
+        } else {
+          this.restoreAnchorKey = '';
+          this.notifyTimelineReset();
+        }
       } else {
-        this.hasMoreUp = range.startIndex > 0;
-        this.hasMoreDown = range.endIndex < this.dateList.length - 1;
+        // 目标日期已在数据集最顶端：直接回顶即可
+        this.restoreAnchorKey = '';
+        this.notifyTimelineReset();
       }
-      if (this.rows.length > 0) {
-        await this.loadMore(true);
-      }
-      this.notifyTimelineReset();
+    } catch (_e) {
+      // 网络错误：保留已加载内容
     } finally {
       this.isLoadingDown = false;
+      this.jumping = false;
     }
   }
 
@@ -414,11 +465,19 @@ export class TimelineController {
 
   // ================= 分页 =================
 
-  private async loadMore(up: boolean): Promise<void> {
+  /**
+   * 分页加载。
+   * up=true 时先保存当前顶部行锚点（对齐 Flutter saveAnchorItem），数据合并后由视图
+   * 通过 onRestoreAnchor 滚回锚点（对齐 restoreScrollPosition）。
+   * anchorKey 可显式指定锚点（日期跳转用 h_日期）。
+   */
+  private async loadMore(up: boolean, anchorKey?: string): Promise<void> {
     if (up) {
       if (this.isLoadingUp || !this.hasMoreUp) {
         return;
       }
+      // 必须在拉取/合并前记录锚点
+      this.restoreAnchorKey = anchorKey ?? this.visibleFirstRowKey;
     } else {
       if (this.isLoadingDown || !this.hasMoreDown) {
         return;
@@ -500,6 +559,10 @@ export class TimelineController {
       }
     }
     const incoming = res.data.photoList;
+    // TODO(diag) 跳转整天丢失排查，定位后删除
+    console.info(`[TimelineJump] resp isUp=${isUp} clear=${clear} n=${incoming.length} ` +
+      `first=${incoming.length > 0 ? incoming[0].originalDate + '@' + incoming[0].originalTime : '-'} ` +
+      `last=${incoming.length > 0 ? incoming[incoming.length - 1].originalDate + '@' + incoming[incoming.length - 1].originalTime : '-'}`);
     if (clear) {
       const next: FlatItem[] = [];
       let currentDate = '';
@@ -539,6 +602,9 @@ export class TimelineController {
         const firstExisting = this.flat[0];
         if (firstExisting instanceof TimelineListDateHeader) {
           const lastNewPhoto = photos[photos.length - 1];
+          // TODO(diag) 跳转整天丢失排查，定位后删除
+          console.info(`[TimelineJump] mergeUp lastNew=${lastNewPhoto.originalDate} ` +
+            `firstExistingHeader=${firstExisting.date} overlap=${lastNewPhoto.originalDate === firstExisting.date}`);
           if (lastNewPhoto.originalDate === firstExisting.date) {
             // 日期重合：移除旧数据首 header
             this.flat.splice(0, 1);
@@ -569,8 +635,24 @@ export class TimelineController {
     this.rebuildRows();
   }
 
+  /** 当前行数据中第一条 header 的稳定 key（jumpToDate 锚点用） */
+  private firstHeaderKey(): string {
+    for (const r of this.rows) {
+      if (r.isHeader) {
+        return r.key;
+      }
+    }
+    return '';
+  }
+
   /** 由 flat 重建 rows（header 行 + 每行 crossAxisCount 个照片） */
   onRowsChanged: (() => void) | undefined = undefined;
+
+  private notifyRowsChanged(): void {
+    if (this.onRowsChanged !== undefined) {
+      this.onRowsChanged();
+    }
+  }
 
   private rebuildRows(): void {
     const cols = Math.max(1, this.crossAxisCount);
@@ -581,21 +663,31 @@ export class TimelineController {
         const h = new TimelineRowItem();
         h.isHeader = true;
         h.date = it.date;
+        h.key = `h_${it.date}`;
         next.push(h);
         current = undefined;
       } else {
         const p = (it as TimelineListPhoto).photo;
         if (current === undefined || current.photos.length >= cols) {
           current = new TimelineRowItem();
+          current.key = `r_${p.id}`;
           next.push(current);
         }
         current.photos.push(p);
       }
     }
     this.rows = next;
-    if (this.onRowsChanged !== undefined) {
-      this.onRowsChanged();
+    // TODO(diag) 跳转整天丢失排查，定位后删除
+    if (this.jumping) {
+      const headers: string[] = [];
+      for (const r of next) {
+        if (r.isHeader) {
+          headers.push(r.date);
+        }
+      }
+      console.info(`[TimelineJump] rebuildRows rows=${next.length} headers(${headers.length})=${headers.join(',')}`);
     }
+    this.notifyRowsChanged();
   }
 
   /** 带节流的触发分页 */
@@ -630,6 +722,18 @@ export class TimelineController {
       return undefined;
     }
     const range = new FetchRange();
+    // 关键：起止时间必须按“日历先后”归一化（对齐 Flutter _minDateStr/_maxDateStr）：
+    // startTime=较早日期 00:00:00.000，endTime=较晚日期 23:59:59.999。
+    // 不能按索引角色赋值——desc 排序下 startIndex 反而是较新日期，给它 BOD 会让服务端
+    // 交换边界后把该边界日全天排除（表现为跳转目标日整天照片缺失、落在前一天）。
+    const assignBounds = (i: number, j: number): void => {
+      const di = this.dateList[i].originalDate;
+      const dj = this.dateList[j].originalDate;
+      const minDate = di <= dj ? di : dj;
+      const maxDate = di >= dj ? di : dj;
+      range.startTime = startOfDayTs(minDate);
+      range.endTime = endOfDayTs(maxDate);
+    };
     if (up) {
       const from = anchorIndex - (includeAnchor ? 0 : 1);
       if (from < 0) {
@@ -645,10 +749,13 @@ export class TimelineController {
           break;
         }
       }
-      range.startTime = startOfDayTs(this.dateList[startIndex].originalDate);
-      range.endTime = endOfDayTs(this.dateList[endIndex].originalDate);
+      assignBounds(startIndex, endIndex);
       range.startIndex = startIndex;
       range.endIndex = endIndex;
+      // TODO(diag) 跳转整天丢失排查，定位后删除
+      console.info(`[TimelineJump] range up=${up} anchor=${anchorDate} idx=${anchorIndex} ` +
+        `from=${from} span=[${this.dateList[startIndex].originalDate}..${this.dateList[endIndex].originalDate}] ` +
+        `total=${total} startTs=${range.startTime} endTs=${range.endTime}`);
       return range;
     }
     const from = anchorIndex + (includeAnchor ? 0 : 1);
@@ -665,10 +772,13 @@ export class TimelineController {
         break;
       }
     }
-    range.startTime = startOfDayTs(this.dateList[startIndex].originalDate);
-    range.endTime = endOfDayTs(this.dateList[endIndex].originalDate);
+    assignBounds(startIndex, endIndex);
     range.startIndex = startIndex;
     range.endIndex = endIndex;
+    // TODO(diag) 跳转整天丢失排查，定位后删除
+    console.info(`[TimelineJump] range up=${up} anchor=${anchorDate} idx=${anchorIndex} ` +
+      `from=${from} span=[${this.dateList[startIndex].originalDate}..${this.dateList[endIndex].originalDate}] ` +
+      `total=${total} startTs=${range.startTime} endTs=${range.endTime}`);
     return range;
   }
 
@@ -1117,17 +1227,24 @@ export class TimelineController {
     this.showTimeline();
     if (this.rows.length === 0) {
       this.lastScrollOffset = offset;
+      this.visibleFirstRowKey = '';
       return;
     }
     const delta = offset - this.lastScrollOffset;
     this.lastScrollOffset = offset;
-    // 当前顶部日期
-    const row = this.rows[Math.min(firstIndex, this.rows.length - 1)];
+    // 当前顶部日期与顶部行锚点
+    const topIndex = Math.min(Math.max(firstIndex, 0), this.rows.length - 1);
+    const row = this.rows[topIndex];
     if (row !== undefined) {
+      this.visibleFirstRowKey = row.key;
       this.topDate = row.isHeader ? row.date
         : (row.photos.length > 0 ? row.photos[0].originalDate : '');
     }
     if (this.scrollLoadLock) {
+      return;
+    }
+    // 程序化定位中的滚动事件不得触发分页（对齐 Flutter userScrollDirection 判定）
+    if (this.programmaticScroll) {
       return;
     }
     if (delta < 0 && firstIndex <= 1) {

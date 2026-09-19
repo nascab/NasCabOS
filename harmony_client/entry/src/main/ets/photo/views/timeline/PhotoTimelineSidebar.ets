@@ -34,7 +34,8 @@ export struct PhotoTimelineSidebar {
   /** 拖动中光标位置与日期（空串表示未激活） */
   @Local cursorTop: number = -1;
   @Local cursorRawDate: string = '';
-  private panStartTop: number = 0;
+  /** 拖拽基准：手指按下点在侧栏坐标系中的 Y，过程中与 e.offsetY 相加得到光标中心 */
+  private dragRefY: number = 0;
 
   aboutToAppear(): void {
     this.recompute();
@@ -152,13 +153,14 @@ export struct PhotoTimelineSidebar {
       this.showCurrentDate();
     })
     .gesture(PanGesture({ fingers: 1, direction: PanDirection.Vertical, distance: 3 })
-      .onActionStart((_e: GestureEvent) => {
-        this.panStartTop = this.effectiveTop() + 20;
-        this.cursorTop = this.effectiveTop();
-        this.updateCursorByPan(0);
+      .onActionStart((e: GestureEvent) => {
+        // 以手指实际位置为基准（旧实现用 effectiveTop()+20，起点就偏 20vp，导致选错日期）
+        const localY = e.fingerList.length > 0 ? e.fingerList[0].localY : 20;
+        this.dragRefY = this.handleTop() + localY - e.offsetY;
+        this.setCursorTop(this.dragRefY + e.offsetY);
       })
       .onActionUpdate((e: GestureEvent) => {
-        this.updateCursorByPan(e.offsetY);
+        this.setCursorTop(this.dragRefY + e.offsetY);
       })
       .onActionEnd(() => {
         const date = this.cursorRawDate.trim();
@@ -186,10 +188,6 @@ export struct PhotoTimelineSidebar {
       return date.substring(0, 10).split('-').join('/');
     }
     return date;
-  }
-
-  private updateCursorByPan(offsetY: number): void {
-    this.setCursorTop(this.panStartTop + offsetY);
   }
 
   private setCursorTop(top: number): void {
