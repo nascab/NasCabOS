@@ -7,6 +7,8 @@ import { FileItem, FileModelAccess } from '../../models/FileModels';
 import { showFileMoreSheet } from '../FileSheets';
 import { DownloadService } from '../../../transfer/services/DownloadService';
 import { DownloadTarget } from '../../../transfer/models/DownloadModels';
+import { NavUtil } from '../../../common/NavUtil';
+import { AppRouter } from '../../../router/AppRouter';
 
 /**
  * 文件多选操作栏（通用组件，对齐 Flutter app_file_multi_select_bar）：
@@ -57,12 +59,15 @@ export struct FileMultiSelectBarView {
       };
       return target;
     });
+    // 立刻退出多选模式
+    this.ctrl.exitMultiSelectMode();
+    // 立刻进入下载中心（入队异步进行，授权引导等弹窗在下载中心页上继续）
+    NavUtil.push(AppRouter.DOWNLOAD_CENTER);
     void DownloadService.getInstance().enqueue(targets).then((count: number): void => {
       if (count > 0) {
         ToastUtil.show(L10n.t('task_added', '任务已添加'));
       }
     });
-    this.ctrl.clearSelect();
   }
 
   build() {
