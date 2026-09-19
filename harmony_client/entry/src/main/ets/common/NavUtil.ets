@@ -35,4 +35,34 @@ export class NavUtil {
       names.pop();
     }
   }
+
+  /**
+   * 从栈顶向下查找第一个满足 predicate 的页面，并一次性弹出其上方的所有页面
+   * （对齐 Flutter Navigator.popUntil，内部用 popToIndex 实现，仅一次转场动画）。
+   *
+   * @param predicate (页面名, 页面入栈参数) => 是否为目标页面
+   * @returns true=已回退到目标页面（目标即栈顶时也算成功）；false=未找到，栈未变动
+   */
+  static popToTopWhere(predicate: (name: string, param: Object | undefined) => boolean): boolean {
+    if (!NavUtil.stack) {
+      return false;
+    }
+    const names: string[] = NavUtil.stack.getAllPathName();
+    for (let i = names.length - 1; i >= 0; i--) {
+      let param: Object | undefined = undefined;
+      try {
+        param = NavUtil.stack.getParamByIndex(i) as Object;
+      } catch (_e) {
+        param = undefined;
+      }
+      if (predicate(names[i], param)) {
+        if (i === names.length - 1) {
+          return true;
+        }
+        NavUtil.stack.popToIndex(i);
+        return true;
+      }
+    }
+    return false;
+  }
 }

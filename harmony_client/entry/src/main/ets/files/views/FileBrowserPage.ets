@@ -115,6 +115,36 @@ export struct FileBrowserPage {
     return false;
   }
 
+  /**
+   * 叉号：关闭所有中间页面，直接回到文件根页（根目录）。
+   *
+   * 栈中文件页是否为「根页」的判定：
+   * - 入栈参数是 FileBrowserParam 且 isRootPage=true → 根页；
+   * - 入栈参数不是 FileBrowserParam（如普通 Object）→ Index 路由分发时会
+   *   回退构造 isRootPage=true 的根页，也视为根页；
+   * - FileBrowserParam(isRootPage=false) 仅由进入子目录时产生，是中间页。
+   */
+  private handleClose(): void {
+    if (this.ctrl.isMultiSelectMode) {
+      this.ctrl.exitMultiSelectMode();
+    }
+    const hit: boolean = NavUtil.popToTopWhere(
+      (name: string, p: Object | undefined): boolean => {
+        if (name !== AppRouter.FILES) {
+          return false;
+        }
+        if (p instanceof FileBrowserParam) {
+          return p.isRootPage;
+        }
+        // 非 FileBrowserParam 入栈 → 实际渲染为根页
+        return true;
+      });
+    if (!hit) {
+      // 栈中找不到根文件页时兜底：退回上一页
+      this.popPage();
+    }
+  }
+
   private openDir(path: string, folderName: string): void {
     const p = new FileBrowserParam();
     p.initialPath = path;
@@ -149,7 +179,7 @@ export struct FileBrowserPage {
           this.handleBack();
         },
         onClose: (): void => {
-          this.popPage();
+          this.handleClose();
         },
         onCreate: (): void => {
           showFileCreateSheet(this.ctrl, (n: string, p?: object): void => {
