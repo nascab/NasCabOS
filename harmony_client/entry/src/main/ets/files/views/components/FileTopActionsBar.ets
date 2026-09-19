@@ -3,8 +3,8 @@ import { BorderedIconButton } from '../../../common/components/BorderedIconButto
 
 /**
  * 文件浏览顶部操作栏（通用组件，对齐 Flutter app_file_top_actions_bar）：
- * - 根页（showBack=false）：[新建] 标题 [任务中心]
- * - 子页（showBack=true）：[返回] [关闭] 标题 [新建] [任务中心]
+ * - 根页（showBack=false）：[新建] 标题 [下载中心] [任务中心]
+ * - 子页（showBack=true）：[返回] [关闭] 标题 [新建] [下载中心] [任务中心]
  */
 @ComponentV2
 export struct FileTopActionsBar {
@@ -18,6 +18,8 @@ export struct FileTopActionsBar {
   @Param onCreate: () => void = (): void => {
   };
   @Param onTask: () => void = (): void => {
+  };
+  @Param onDownloadCenter: () => void = (): void => {
   };
 
   build() {
@@ -64,6 +66,13 @@ export struct FileTopActionsBar {
         })
           .margin({ left: 10 })
       }
+      BorderedIconButton({
+        icon: $r('sys.symbol.square_and_arrow_down'),
+        onTap: (): void => {
+          this.onDownloadCenter();
+        }
+      })
+        .margin({ left: 10 })
       BorderedIconButton({
         icon: $r('sys.symbol.checkmark_clipboard'),
         onTap: (): void => {

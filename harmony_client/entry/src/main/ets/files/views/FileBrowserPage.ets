@@ -159,6 +159,10 @@ export struct FileBrowserPage {
         onTask: (): void => {
           // 任务中心（管理员为文件操作日志，对齐 Flutter AppTaskCenterPage）
           NavUtil.push(AppRouter.TASK_CENTER, new TaskCenterPageParam());
+        },
+        onDownloadCenter: (): void => {
+          // 下载中心（下载任务与历史记录，对齐 Flutter AppDownloadCenterView）
+          NavUtil.push(AppRouter.DOWNLOAD_CENTER);
         }
       })
       // 搜索栏

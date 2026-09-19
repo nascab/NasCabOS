@@ -157,6 +157,9 @@ export class HomeViewModel {
     if (app === 'upload') {
       return true; // 快速上传已迁移，由页面接线路由
     }
+    if (app === 'download') {
+      return true; // 下载中心已迁移，由页面接线路由
+    }
     if (app === 'photo_backup') {
       return true; // 相册备份已迁移（Flutter 端 app id 为 photo_backup），由页面接线路由
     }

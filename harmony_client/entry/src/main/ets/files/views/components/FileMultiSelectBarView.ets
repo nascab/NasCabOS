@@ -3,7 +3,10 @@ import { L10n } from '../../../core/localization/L10n';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { FileController } from '../../controllers/FileController';
+import { FileItem, FileModelAccess } from '../../models/FileModels';
 import { showFileMoreSheet } from '../FileSheets';
+import { DownloadService } from '../../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../../transfer/models/DownloadModels';
 
 /**
  * 文件多选操作栏（通用组件，对齐 Flutter app_file_multi_select_bar）：
@@ -39,6 +42,29 @@ export struct FileMultiSelectBarView {
     }
   }
 
+  /** 批量下载选中项（依据当前列表项类型区分文件/文件夹） */
+  private startDownloadSelected(): void {
+    const paths: string[] = this.ctrl.getSelected();
+    if (paths.length === 0) {
+      return;
+    }
+    const targets: DownloadTarget[] = paths.map((p: string): DownloadTarget => {
+      const hit: FileItem | undefined =
+        this.ctrl.items.find((it: FileItem): boolean => FileModelAccess.path(it) === p);
+      const target: DownloadTarget = {
+        path: p,
+        isDirHint: hit !== undefined && FileModelAccess.isDir(hit)
+      };
+      return target;
+    });
+    void DownloadService.getInstance().enqueue(targets).then((count: number): void => {
+      if (count > 0) {
+        ToastUtil.show(L10n.t('task_added', '任务已添加'));
+      }
+    });
+    this.ctrl.clearSelect();
+  }
+
   build() {
     Row() {
       this.MultiSelectAction(
@@ -61,8 +87,7 @@ export struct FileMultiSelectBarView {
         $r('sys.symbol.square_and_arrow_down'),
         L10n.t('download', '下载'),
         this.ctrl.selected.length > 0, false, (): void => {
-          // 下载依赖传输模块（未迁移）
-          ToastUtil.show(L10n.featureComingSoon);
+          this.startDownloadSelected();
         })
       this.MultiSelectAction(
         $r('sys.symbol.trash'),

@@ -112,6 +112,8 @@ export struct HomePage {
         this.pushPage(AppRouter.FILES);
       } else if (app === 'upload') {
         this.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam());
+      } else if (app === 'download') {
+        this.pushPage(AppRouter.DOWNLOAD_CENTER);
       } else if (app === 'photo') {
         const param = new PhotoMainPageParam();
         param.title = L10n.t('app_photo', '照片管理');
@@ -237,12 +239,15 @@ export struct HomePage {
               this.openApp('upload');
               return;
             }
+            if (action === 'download') {
+              this.openApp('download');
+              return;
+            }
             if (action === 'photo_backup') {
               // 相册备份已迁移，接入路由
               this.openApp('photo_backup');
               return;
             }
-            // 下载模块迁移后接入路由
             this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
           }
         })

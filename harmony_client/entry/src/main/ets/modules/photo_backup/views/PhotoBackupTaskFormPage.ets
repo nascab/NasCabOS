@@ -152,7 +152,6 @@ export struct PhotoBackupTaskFormPage {
         ? L10n.t('photo_backup_edit', '编辑备份任务')
         : L10n.t('photo_backup_create', '创建备份任务'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       // 保存中阻止返回（对齐 Flutter 保存按钮禁用语义）
       customBack: (): boolean => {
         return this.saving;

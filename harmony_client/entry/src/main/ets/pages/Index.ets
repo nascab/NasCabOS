@@ -15,6 +15,7 @@ import { FolderViewPage } from '../modules/folder_view/views/FolderViewPage';
 import { FolderViewPageParam } from '../modules/folder_view/router/FolderViewRoutes';
 import { UploadCenterPage, UploadCenterParam } from '../transfer/views/UploadCenterPage';
 import { TaskCenterPage, TaskCenterPageParam } from '../transfer/views/TaskCenterPage';
+import { DownloadCenterPage, DownloadCenterParam } from '../transfer/views/DownloadCenterPage';
 import { PhotoTimelinePage, PhotoTimelinePageParam } from '../photo/views/timeline/PhotoTimelinePage';
 import { PhotoMainPage, PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
 import { PhotoTrashPage, PhotoTrashPageParam } from '../photo/views/trash/PhotoTrashPage';
@@ -199,6 +200,16 @@ struct Index {
     } else if (name === AppRouter.TASK_CENTER) {
       TaskCenterPageBuilder(
         param instanceof TaskCenterPageParam ? param : new TaskCenterPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.DOWNLOAD_CENTER) {
+      DownloadCenterPageBuilder(
+        param instanceof DownloadCenterParam ? param : new DownloadCenterParam(),
+        (n: string, p?: object): void => {
+          this.pageStack.pushPathByName(n, p ?? new Object());
+        },
         (): void => {
           this.pageStack.pop();
         }
@@ -690,6 +701,12 @@ function FolderViewPageBuilder(param: FolderViewPageParam, popPage: () => void) 
 function UploadCenterPageBuilder(param: UploadCenterParam, pushPage: (name: string, param?: object) => void,
   popPage: () => void) {
   UploadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
+}
+
+@Builder
+function DownloadCenterPageBuilder(param: DownloadCenterParam,
+  pushPage: (name: string, param?: object) => void, popPage: () => void) {
+  DownloadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
 }
 
 @Builder

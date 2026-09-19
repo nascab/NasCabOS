@@ -55,7 +55,6 @@ export struct PhotoBackupPage {
     PageScaffold({
       title: L10n.homePhotoBackup,
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },

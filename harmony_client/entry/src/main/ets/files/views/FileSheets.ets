@@ -9,6 +9,8 @@ import { FileFormat, FileItem, FileModelAccess, FileStats } from '../models/File
 import { FileStatsService } from '../service/FileStatsService';
 import { AppRouter } from '../../router/AppRouter';
 import { UploadCenterParam } from '../../transfer/views/UploadCenterPage';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 
 /** 筛选类型选项（对齐 Flutter _appFileFilterOptions） */
 const FILTER_OPTIONS: string[][] = [
@@ -639,6 +641,20 @@ struct FileItemMenuSheetInner {
     return type.trim().toLowerCase() === 'txt' || ext === 'txt';
   }
 
+  /** 发起真实下载（文件/文件夹自动识别），入队后提示「任务已添加」 */
+  private startDownload(): void {
+    const target: DownloadTarget = {
+      path: this.path,
+      isDirHint: FileModelAccess.isDir(this.p.item)
+    };
+    void DownloadService.getInstance().enqueue([target]).then((count: number): void => {
+      if (count > 0) {
+        ToastUtil.show(L10n.t('task_added', '任务已添加'));
+      }
+    });
+    this.p.ctrl.clearSelect();
+  }
+
   build() {
     Scroll() {
       Column() {
@@ -700,9 +716,7 @@ struct FileItemMenuSheetInner {
             title: L10n.t('download', '下载'),
             onSelect: (): void => {
               this.p.close();
-              // 下载依赖传输模块（未迁移）
-              ToastUtil.show(L10n.featureComingSoon);
-              this.p.ctrl.clearSelect();
+              this.startDownload();
             }
           })
           SheetListItem({

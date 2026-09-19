@@ -63,7 +63,6 @@ export struct PhotoBackupAlbumPickerPage {
     PageScaffold({
       title: L10n.t('photo_album_select', '选择相册'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },
