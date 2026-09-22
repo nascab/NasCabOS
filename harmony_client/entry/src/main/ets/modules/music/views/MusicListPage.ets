@@ -67,13 +67,14 @@ export struct MusicListPage {
     return Math.min(Math.max(n, 2), 10);
   }
 
-  private gridColumnsTemplate(): string {
+  /** 按当前列数把卡片切成行（供懒加载 List 使用） */
+  private rowChunks(): MusicListItem[][] {
     const n = this.gridColumns();
-    const arr: string[] = [];
-    for (let i = 0; i < n; i++) {
-      arr.push('1fr');
+    const rows: MusicListItem[][] = [];
+    for (let i = 0; i < this.ctrl.items.length; i += n) {
+      rows.push(this.ctrl.items.slice(i, i + n));
     }
-    return arr.join(' ');
+    return rows;
   }
 
   private showSortSheet(): void {
@@ -145,44 +146,52 @@ export struct MusicListPage {
         .justifyContent(FlexAlign.Center)
       } else {
         Stack() {
-          // Grid + GridItem（对齐视频模块已验证模式）：FlowItem 内百分比/自适应宽度解析不可靠，
-          // 会导致 item 撑满整屏宽、封面溢出
-          Scroll() {
-            Column() {
-              Grid() {
-                ForEach(this.ctrl.items, (item: MusicListItem) => {
-                  GridItem() {
-                    MusicItemCard({
-                      controller: this.ctrl,
-                      item: item,
-                      selectionMode: this.ctrl.isMultiSelectMode,
-                      selected: this.ctrl.selectedItems.has(item.id),
-                      onToggleSelected: (): void => {
-                        this.ctrl.toggleSelection(item.id);
-                      },
-                      onOpenSeries: (it: MusicListItem): void => {
-                        this.onOpenSeries(it);
-                      }
-                    })
-                  }
-                }, (item: MusicListItem) => `${item.id}`)
+          // 按“行”分组的 List：List 只构建/回收可视行（每行 N 张卡片），等价于
+          // Flutter CustomScrollView + SliverGrid 的懒构建；footer 为普通 ListItem。
+          // 切勿改成 Scroll→Column→Grid：同向外层 Scroll 会令 Grid 主轴高度无界，
+          // 被迫一次性挂载全部卡片（数百首歌同时建组件+请求封面）。
+          List({ space: 4 }) {
+            ForEach(this.rowChunks(), (row: MusicListItem[]) => {
+              ListItem() {
+                Row({ space: 4 }) {
+                  ForEach(row, (item: MusicListItem) => {
+                    Column() {
+                      MusicItemCard({
+                        controller: this.ctrl,
+                        item: item,
+                        selectionMode: this.ctrl.isMultiSelectMode,
+                        selected: this.ctrl.selectedItems.has(item.id),
+                        onToggleSelected: (): void => {
+                          this.ctrl.toggleSelection(item.id);
+                        },
+                        onOpenSeries: (it: MusicListItem): void => {
+                          this.onOpenSeries(it);
+                        }
+                      })
+                    }
+                    .layoutWeight(1)
+                  }, (item: MusicListItem) => `${item.id}`)
+                }
+                .width('100%')
               }
-              .columnsTemplate(this.gridColumnsTemplate())
-              .columnsGap(4)
-              .rowsGap(4)
-              .width('100%')
-              .padding({ left: 16, right: 16, top: 8, bottom: 24 })
-              .onAreaChange((_o: Area, n: Area) => {
-                this.gridWidth = Number(n.width);
-              })
+            }, (row: MusicListItem[], rowIdx: number): string =>
+              `${rowIdx}_${row.map((e: MusicListItem): number => e.id).join('-')}`)
 
+            // 底部加载状态
+            ListItem() {
               this.ListFooter()
             }
-            .width('100%')
           }
-          .scrollBar(BarState.Auto)
           .width('100%')
           .height('100%')
+          .padding({ left: 16, right: 16, top: 8, bottom: 24 })
+          .scrollBar(BarState.Auto)
+          .edgeEffect(EdgeEffect.Spring)
+          // 视口外预渲染 2 行，滑动时封面提前加载（Flutter cacheExtent 等价物）
+          .cachedCount(2)
+          .onAreaChange((_o: Area, n: Area) => {
+            this.gridWidth = Number(n.width);
+          })
           .onReachEnd(() => {
             this.ctrl.loadMore();
           })

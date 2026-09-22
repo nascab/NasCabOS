@@ -69,13 +69,14 @@ export struct MusicAlbumArtistPage {
     return Math.min(Math.max(n, 2), 10);
   }
 
-  private gridColumnsTemplate(): string {
+  /** 按当前列数把卡片切成行（供懒加载 List 使用） */
+  private rowChunks(): MusicListItem[][] {
     const n = this.gridColumns();
-    const arr: string[] = [];
-    for (let i = 0; i < n; i++) {
-      arr.push('1fr');
+    const rows: MusicListItem[][] = [];
+    for (let i = 0; i < this.ctrl.items.length; i += n) {
+      rows.push(this.ctrl.items.slice(i, i + n));
     }
-    return arr.join(' ');
+    return rows;
   }
 
   private selectedLetter(): string {
@@ -110,40 +111,48 @@ export struct MusicAlbumArtistPage {
           .height('100%')
           .justifyContent(FlexAlign.Center)
         } else {
-          Scroll() {
-            Column() {
-              Grid() {
-                ForEach(this.ctrl.items, (item: MusicListItem) => {
-                  GridItem() {
-                    MusicAlbumArtistCard({
-                      item: item,
-                      badgeLabel: this.ctrl.badgeLabel,
-                      onTap: (): void => {
-                        this.openSubList(item.filename);
-                      },
-                      onAddToPlayList: (): void => {
-                        void this.addToPlayList(item);
-                      }
-                    })
-                  }
-                }, (item: MusicListItem) => `${item.showType}_${item.filename}`)
+          // 按“行”分组的懒加载 List（仅构建可视行，对齐 Flutter SliverGrid），
+          // footer 为普通 ListItem；勿在同向外层 Scroll 里放 Grid
+          List({ space: 4 }) {
+            ForEach(this.rowChunks(), (row: MusicListItem[]) => {
+              ListItem() {
+                Row({ space: 4 }) {
+                  ForEach(row, (item: MusicListItem) => {
+                    Column() {
+                      MusicAlbumArtistCard({
+                        item: item,
+                        badgeLabel: this.ctrl.badgeLabel,
+                        onTap: (): void => {
+                          this.openSubList(item.filename);
+                        },
+                        onAddToPlayList: (): void => {
+                          void this.addToPlayList(item);
+                        }
+                      })
+                    }
+                    .layoutWeight(1)
+                  }, (item: MusicListItem): string => `${item.showType}_${item.filename}`)
+                }
+                .width('100%')
+                .padding({ right: 12 })
               }
-              .columnsTemplate(this.gridColumnsTemplate())
-              .columnsGap(4)
-              .rowsGap(4)
-              .width('100%')
-              .padding({ left: 16, right: 28, top: 8, bottom: 20 })
-              .onAreaChange((_o: Area, n: Area) => {
-                this.gridWidth = Number(n.width);
-              })
+            }, (row: MusicListItem[], rowIdx: number): string =>
+              `${rowIdx}_${row.map((e: MusicListItem): string => e.filename).join('-')}`)
 
+            // 底部加载状态
+            ListItem() {
               this.GridFooter()
             }
-            .width('100%')
           }
-          .scrollBar(BarState.Auto)
           .width('100%')
           .height('100%')
+          .padding({ left: 16, right: 16, top: 8, bottom: 20 })
+          .scrollBar(BarState.Auto)
+          .edgeEffect(EdgeEffect.Spring)
+          .cachedCount(2)
+          .onAreaChange((_o: Area, n: Area) => {
+            this.gridWidth = Number(n.width);
+          })
           .onReachEnd(() => {
             void this.ctrl.loadMore(true);
           })
