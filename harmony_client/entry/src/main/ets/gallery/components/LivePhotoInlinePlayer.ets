@@ -25,7 +25,11 @@ export struct LivePhotoInlinePlayer {
   private avPlayer: media.AVPlayer | null = null;
   private surfaceId: string = '';
   private xcController: XComponentController = new XComponentController();
+  /** 每次播放组件实例唯一的 surface 标识，快速反复播放时避免 XComponent id 冲突 */
+  private surfaceViewId: string = `nascab_livephoto_surface_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
   private released: boolean = false;
+  /** 是否已向播放器设置 url（surfaceId 就绪后只配置一次，消除 surface/player 竞态） */
+  private configured: boolean = false;
 
   aboutToAppear(): void {
     this.released = false;
@@ -52,9 +56,13 @@ export struct LivePhotoInlinePlayer {
         }
         this.playerState = state;
         if (state === 'initialized') {
-          if (this.surfaceId.length > 0) {
-            player.surfaceId = this.surfaceId;
+          // surfaceId 必须在 initialized 状态设置；url 已被推迟到 surface 就绪后再赋值，
+          // 因此这里一定可以设置，避免 5400102（surfaceID 只能在 initialized 状态设置）
+          if (this.surfaceId.length === 0) {
+            this.fail('surface not ready');
+            return;
           }
+          player.surfaceId = this.surfaceId;
           player.prepare().catch((e: Object): void => {
             this.fail(`prepare failed: ${JSON.stringify(e)}`);
           });
@@ -73,10 +81,23 @@ export struct LivePhotoInlinePlayer {
       player.on('error', (err: BusinessError): void => {
         this.fail(`${err.code}: ${err.message}`);
       });
-      player.url = this.videoUrl;
+      // surfaceId 可能在 createAVPlayer 期间已就绪（XComponent onLoad 先返回）
+      this.configureUrlIfReady();
     } catch (e) {
       this.fail(`create failed: ${JSON.stringify(e)}`);
     }
+  }
+
+  /** surfaceId 与播放器都就绪后才设置 url（驱动 idle→initialized），两者只配一次 */
+  private configureUrlIfReady(): void {
+    if (this.configured || this.released) {
+      return;
+    }
+    if (this.surfaceId.length === 0 || this.avPlayer === null) {
+      return;
+    }
+    this.configured = true;
+    this.avPlayer.url = this.videoUrl;
   }
 
   private fail(msg: string): void {
@@ -122,15 +143,15 @@ export struct LivePhotoInlinePlayer {
 
   build() {
     Stack({ alignContent: Alignment.Center }) {
-      XComponent({ id: 'nascab_livephoto_surface', type: 'surface', controller: this.xcController })
+      XComponent({ id: this.surfaceViewId, type: 'surface', controller: this.xcController })
         .width(this.fitWidth())
         .height(this.fitHeight())
         .onLoad((): void => {
           try {
             this.surfaceId = this.xcController.getXComponentSurfaceId();
-            if (this.avPlayer !== null && this.surfaceId.length > 0) {
-              this.avPlayer.surfaceId = this.surfaceId;
-            }
+            // surface 就绪后再驱动播放器配置（url→initialized→setSurface→prepare→play），
+            // 绝不在 initialized 之外的状态写 surfaceId
+            this.configureUrlIfReady();
           } catch (e) {
             hilog.error(0x0000, TAG, 'getSurfaceId failed: %{public}s', JSON.stringify(e));
           }
