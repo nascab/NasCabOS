@@ -106,6 +106,8 @@ export struct VideoListPage {
     PageScaffold({
       title: this.embedded ? '' : this.param.title,
       showBack: !this.embedded,
+      // 嵌入影音主页浮动模式时不接管窗口样式，宿主全程保持全屏沉浸
+      embedded: this.embedded,
       onBack: (): void => {
         this.popPage();
       },

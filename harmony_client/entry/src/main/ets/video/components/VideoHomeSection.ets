@@ -75,6 +75,8 @@ export struct VideoHomeSection {
       }
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
+      // 数量不足一屏时内容靠左（Scroll 默认居中），对齐 Flutter ListView 横向排列
+      .align(Alignment.Start)
       .width('100%')
       .height(this.posterWidth() * 1.5 + 54)
       .onAreaChange((_o: Area, n: Area) => {

@@ -353,6 +353,8 @@ export struct VideoAlbumsHomePage {
     }
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
+    // 数量不足一屏时靠左（Scroll 默认居中）
+    .align(Alignment.Start)
     .width('100%')
     .height(this.cardSize()[1])
   }
