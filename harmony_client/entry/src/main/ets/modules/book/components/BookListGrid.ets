@@ -7,8 +7,10 @@ import { BookItemCard } from './BookItemCard';
 
 /**
  * 图书网格（对齐 Flutter BookListGrid 移动端布局）：
- * Scroll > Column > Grid + GridItem 项目已验证模式；列数按去 padding 内容宽计算；
+ * 用按“行”分组的 List 实现懒加载（仅构建可视行 + cachedCount 预渲染），
  * 底部 footer：加载中转圈 / 没有更多 / 失败重试按钮；触底自动 loadMore。
+ * 切勿改回 Scroll > Column > Grid：同向外层 Scroll 会令 Grid 主轴高度无界，
+ * 被迫一次性挂载全部卡片（数百本书同时建组件 + 请求封面）。
  */
 @ComponentV2
 export struct BookListGrid {
@@ -20,8 +22,6 @@ export struct BookListGrid {
   @Param selectionMode: boolean = false;
   @Param selectedIds: Set<number> = new Set<number>();
   @Param isInCustomList: boolean = false;
-  /** 底部额外留白（主界面悬浮 chips 条高度） */
-  @Param bottomPadding: number = 92;
   @Param onLoadMore: () => void = (): void => {
   };
   @Param onToggleSelected: (item: BookListItem) => void = (_i: BookListItem): void => {
@@ -51,55 +51,70 @@ export struct BookListGrid {
     return Math.min(Math.max(n, 2), 12);
   }
 
-  build() {
-    Scroll() {
-      Column() {
-        if (this.loading && this.items.length === 0) {
-          Column() {
-            LoadingProgress()
-              .width(36)
-              .height(36)
-              .color(AppTheme.current().primary)
-          }
-          .width('100%')
-          .margin({ top: 80 })
-        } else if (this.items.length === 0) {
-          Column() {
-            EmptyState({ message: L10n.t('no_data', '暂无数据') })
-          }
-          .width('100%')
-          .margin({ top: 80 })
-        } else {
-          Grid() {
-            ForEach(this.items, (item: BookListItem) => {
-              GridItem() {
-                BookItemCard({
-                  item: item,
-                  selectionMode: this.selectionMode,
-                  selected: this.selectedIds.has(item.id),
-                  isInCustomList: this.isInCustomList,
-                  onToggleSelected: (i: BookListItem): void => {
-                    this.onToggleSelected(i);
-                  },
-                  onToggleFavorite: (i: BookListItem): void => {
-                    this.onToggleFavorite(i);
-                  },
-                  onMore: (i: BookListItem): void => {
-                    this.onMore(i);
-                  },
-                  onOpen: (i: BookListItem): void => {
-                    this.onOpen(i);
-                  }
-                })
-              }
-            }, (item: BookListItem) => `${item.id}_${item.isFavorite ? 1 : 0}_${item.coverState}`)
-          }
-          .columnsTemplate(this.repeatTemplate())
-          .columnsGap(this.spacing())
-          .rowsGap(this.spacing())
-          .width('100%')
+  /** 按当前列数把卡片切成行（供懒加载 List 使用） */
+  private rowChunks(): BookListItem[][] {
+    const n = this.columnCount();
+    const rows: BookListItem[][] = [];
+    for (let i = 0; i < this.items.length; i += n) {
+      rows.push(this.items.slice(i, i + n));
+    }
+    return rows;
+  }
 
-          // footer
+  build() {
+    if (this.loading && this.items.length === 0) {
+      Column() {
+        LoadingProgress()
+          .width(36)
+          .height(36)
+          .color(AppTheme.current().primary)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+    } else if (this.items.length === 0) {
+      Column() {
+        EmptyState({ message: L10n.t('no_data', '暂无数据') })
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+    } else {
+      List({ space: this.spacing() }) {
+        ForEach(this.rowChunks(), (row: BookListItem[]) => {
+          ListItem() {
+            Row({ space: this.spacing() }) {
+              ForEach(row, (item: BookListItem) => {
+                Column() {
+                  BookItemCard({
+                    item: item,
+                    selectionMode: this.selectionMode,
+                    selected: this.selectedIds.has(item.id),
+                    isInCustomList: this.isInCustomList,
+                    onToggleSelected: (i: BookListItem): void => {
+                      this.onToggleSelected(i);
+                    },
+                    onToggleFavorite: (i: BookListItem): void => {
+                      this.onToggleFavorite(i);
+                    },
+                    onMore: (i: BookListItem): void => {
+                      this.onMore(i);
+                    },
+                    onOpen: (i: BookListItem): void => {
+                      this.onOpen(i);
+                    }
+                  })
+                }
+                .layoutWeight(1)
+              }, (item: BookListItem) => `${item.id}_${item.isFavorite ? 1 : 0}_${item.coverState}`)
+            }
+            .width('100%')
+          }
+        }, (row: BookListItem[], rowIdx: number): string =>
+          `${rowIdx}_${row.map((e: BookListItem): number => e.id).join('-')}`)
+
+        // footer：加载中转圈 / 没有更多 / 失败重试
+        ListItem() {
           if (this.loadingMore) {
             Row() {
               LoadingProgress()
@@ -129,57 +144,28 @@ export struct BookListGrid {
               })
           }
         }
-
-        // 底部留白（悬浮 chips / 多选栏）
-        Column()
-          .width('100%')
-          .height(this.bottomPadding)
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 0, bottom: 16 })
+      .height('100%')
+      .padding({ left: 16, right: 16, top: 16 })
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring)
+      // 视口外预渲染 2 行，滑动时封面提前加载（Flutter cacheExtent 等价物）
+      .cachedCount(2)
       .onAreaChange((_o: Area, n: Area) => {
         // 去掉左右 padding 的内容宽（onAreaChange 返回含 padding 的组件宽度）
         this.contentWidth = n.width as number - 32;
       })
-    }
-    .width('100%')
-    .height('100%')
-    .scrollBar(BarState.Off)
-    .align(Alignment.Top)
-    .onDidScroll((): void => {
-      // 触底自动加载（对齐 Flutter 距底 360 触发，节流 800ms）
-      const now = Date.now();
-      if (now - this.lastLoadMoreAt < 800) {
-        return;
-      }
-      if (!this.hasMore || this.loadingMore || this.loading || this.autoLoadFailed) {
-        return;
-      }
-      // Scroll 组件无暴露的可达底部距离，用接近底部近似：footer 节点渲染后由 footer 点击兜底，
-      // 这里仅在内容不足一屏时自动补一页（与 Flutter autoLoad 行为对齐）
-      if (this.items.length > 0 && this.items.length < 24) {
+      .onReachEnd((): void => {
+        const now = Date.now();
+        if (now - this.lastLoadMoreAt < 800) {
+          return;
+        }
         this.lastLoadMoreAt = now;
-        this.onLoadMore();
-      }
-    })
-    .onReachEnd((): void => {
-      const now = Date.now();
-      if (now - this.lastLoadMoreAt < 800) {
-        return;
-      }
-      this.lastLoadMoreAt = now;
-      if (this.hasMore && !this.loadingMore && !this.loading) {
-        this.onLoadMore();
-      }
-    })
-  }
-
-  private repeatTemplate(): string {
-    const n = this.columnCount();
-    const arr: string[] = [];
-    for (let i = 0; i < n; i++) {
-      arr.push('1fr');
+        if (this.hasMore && !this.loadingMore && !this.loading) {
+          this.onLoadMore();
+        }
+      })
     }
-    return arr.join(' ');
   }
 }

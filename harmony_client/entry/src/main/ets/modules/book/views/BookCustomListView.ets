@@ -222,44 +222,37 @@ export struct BookCustomListView {
           .width('100%')
           .height('100%')
         } else {
-          Scroll() {
-            Column() {
-              Grid() {
-                ForEach(this.ctrl.items, (item: BookCustomListItem) => {
-                  GridItem() {
-                    BookAlbumCard({
-                      covers: this.coversOf(item),
-                      title: item.name,
-                      onOpen: (): void => {
-                        this.openDetail(item);
-                      },
-                      onMore: (): void => {
-                        this.showItemMore(item);
-                      }
-                    })
-                      .aspectRatio(this.gridColumnCount() === 1 ? 1.55 : 0.65)
+          // Grid 自身滚动并按可视区懒加载/回收（对齐 Flutter SliverGrid）；
+          // 底部留白用 Grid padding，勿在同向外层 Scroll 中放 Grid
+          Grid() {
+            ForEach(this.ctrl.items, (item: BookCustomListItem) => {
+              GridItem() {
+                BookAlbumCard({
+                  covers: this.coversOf(item),
+                  title: item.name,
+                  onOpen: (): void => {
+                    this.openDetail(item);
+                  },
+                  onMore: (): void => {
+                    this.showItemMore(item);
                   }
-                }, (item: BookCustomListItem): string => `${item.id}_${item.name}`)
+                })
+                  .aspectRatio(this.gridColumnCount() === 1 ? 1.55 : 0.65)
               }
-              .columnsTemplate(this.columnsTemplate())
-              .columnsGap(12)
-              .rowsGap(12)
-              .width('100%')
-
-              Column()
-                .width('100%')
-                .height(92)
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .onAreaChange((_o: Area, n: Area) => {
-              this.viewWidth = n.width as number - 32;
-            })
+            }, (item: BookCustomListItem): string => `${item.id}_${item.name}`)
           }
+          .columnsTemplate(this.columnsTemplate())
+          .columnsGap(12)
+          .rowsGap(12)
           .width('100%')
           .height('100%')
+          .padding({ left: 16, right: 16 })
           .scrollBar(BarState.Off)
-          .align(Alignment.Top)
+          .edgeEffect(EdgeEffect.Spring)
+          .cachedCount(2)
+          .onAreaChange((_o: Area, n: Area) => {
+            this.viewWidth = n.width as number - 32;
+          })
           .onReachEnd(() => {
             void this.ctrl.loadMore();
           })

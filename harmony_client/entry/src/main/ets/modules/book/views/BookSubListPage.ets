@@ -93,7 +93,6 @@ export struct BookSubListPage {
             selectionMode: this.ctrl.isMultiSelectMode,
             selectedIds: this.ctrl.selectedItems,
             isInCustomList: this.ctrl.isInCustomList,
-            bottomPadding: this.ctrl.isMultiSelectMode ? 86 : 30,
             onLoadMore: (): void => {
               void this.ctrl.loadMore(true);
             },

@@ -240,7 +240,6 @@ export struct BookLibraryView {
       selectionMode: this.activeCtrl().isMultiSelectMode,
       selectedIds: this.activeCtrl().selectedItems,
       isInCustomList: this.activeCtrl().isInCustomList,
-      bottomPadding: 92,
       onLoadMore: (): void => {
         void this.activeCtrl().loadMore(true);
       },
@@ -260,38 +259,43 @@ export struct BookLibraryView {
     })
   }
 
-  /** 底部悬浮 chips（多选模式隐藏，对齐 Flutter _buildFloatingLibraryTabs） */
+  /** 底部悬浮 chips（多选模式隐藏；样式与照片模块 PhotoModeBar 完全统一） */
   @Builder
   FloatingChips() {
     if (!(this.activeIndex !== 3 && this.activeCtrl().isMultiSelectMode)) {
-      Row({ space: 4 }) {
-        this.Chip(L10n.t('book_menu_library_book', '图书'), 0)
-        this.Chip(L10n.t('book_menu_library_comic', '漫画'), 1)
-        this.Chip(L10n.t('favorites', '收藏'), 2)
-        this.Chip(L10n.t('book_menu_library_history', '历史'), 3)
+      Column() {
+        Row() {
+          this.Chip(L10n.t('book_menu_library_book', '图书'), 0)
+          this.Chip(L10n.t('book_menu_library_comic', '漫画'), 1)
+          this.Chip(L10n.t('favorites', '收藏'), 2)
+          this.Chip(L10n.t('book_menu_library_history', '历史'), 3)
+        }
+        .width('100%')
+        .height(45)
+        .padding({ left: 6, right: 6 })
+        .borderRadius(22.5)
+        .backgroundColor(AppTheme.withAlpha(AppTheme.current().surfaceBg, 0.92))
+        // 触摸穿透：条内非芯片区域可滑动下方列表（对齐照片 PhotoModeBar）
+        .hitTestBehavior(HitTestMode.None)
       }
-      .height(45)
-      .borderRadius(22.5)
-      .backgroundColor(AppTheme.withAlpha(AppTheme.current().surfaceBg, 0.92))
-      .border({ width: 1, color: AppTheme.current().divider })
-      .padding({ left: 8, right: 8 })
-      .shadow({ radius: 12, color: '#1F000000', offsetY: 2 })
+      .width('100%')
+      .padding({ left: 16, right: 16, bottom: 10 })
+      .hitTestBehavior(HitTestMode.None)
     }
   }
 
   @Builder
   Chip(label: string, index: number) {
     Text(label)
-      .fontSize(13)
-      .fontWeight(this.activeIndex === index ? FontWeight.Bold : FontWeight.Medium)
-      .fontColor(this.activeIndex === index ? AppTheme.current().buttonText : AppTheme.current().onSurface)
+      .fontSize(14)
+      .fontWeight(FontWeight.Medium)
+      .fontColor(this.activeIndex === index ? '#FFFFFF' : AppTheme.current().onSurface)
+      .height(32)
       .maxLines(1)
       .textAlign(TextAlign.Center)
-      .layoutWeight(1)
-      .padding({ top: 6, bottom: 6 })
-      .margin({ left: 4, right: 4 })
       .borderRadius(16)
       .backgroundColor(this.activeIndex === index ? AppTheme.current().primary : '#00000000')
+      .layoutWeight(1)
       .onClick(() => {
         if (this.activeIndex === index) {
           return;
@@ -324,17 +328,14 @@ export struct BookLibraryView {
       .width('100%')
       .height('100%')
 
-      // 底部悬浮 chips（对齐 Flutter Positioned bottom:5；Stack 子项默认居中，须显式钉到底部）
+      // 底部悬浮 chips（bottom 10 + 高 45，对齐照片 PhotoModeBar；列表铺满并从条下穿过）
       Column() {
         this.FloatingChips()
       }
       .width('100%')
-      .padding({ left: 16, right: 16, bottom: 5 })
-      .hitTestBehavior(HitTestMode.Transparent)
-      .position({ x: 0, y: '100%' })
-      .markAnchor({ y: '100%' })
-      .onClick(() => {
-      })
+      .height('100%')
+      .justifyContent(FlexAlign.End)
+      .hitTestBehavior(HitTestMode.None)
     }
     .width('100%')
     .height('100%')
@@ -347,7 +348,7 @@ class BookSortDefault {
   static readonly order: BookListSortOrder = BookListSortOrder.desc;
 }
 
-/** 历史视图网格（对齐 Flutter _HistoryGrid，itemScale 1.7） */
+/** 历史视图网格（对齐 Flutter _HistoryGrid，itemScale 1.7）：按行懒加载，padding 与主列表统一 */
 @ComponentV2
 struct HistoryGrid {
   @Param ctrl: BookHistoryController = new BookHistoryController();
@@ -371,64 +372,66 @@ struct HistoryGrid {
     return Math.min(Math.max(n, 2), 12);
   }
 
-  private repeatTemplate(): string {
+  /** 按当前列数把卡片切成行（供懒加载 List 使用） */
+  private rowChunks(): BookListItem[][] {
     const n = this.columnCount();
-    const arr: string[] = [];
-    for (let i = 0; i < n; i++) {
-      arr.push('1fr');
+    const rows: BookListItem[][] = [];
+    for (let i = 0; i < this.ctrl.items.length; i += n) {
+      rows.push(this.ctrl.items.slice(i, i + n));
     }
-    return arr.join(' ');
+    return rows;
   }
 
   build() {
-    Scroll() {
+    if (this.ctrl.loading && !this.ctrl.firstLoaded) {
       Column() {
-        if (this.ctrl.loading && !this.ctrl.firstLoaded) {
-          Column() {
-            LoadingProgress()
-              .width(36)
-              .height(36)
-              .color(AppTheme.current().primary)
-          }
-          .width('100%')
-          .margin({ top: 80 })
-        } else if (this.ctrl.items.length === 0) {
-          Column() {
-            EmptyState({ message: L10n.t('no_data', '暂无数据') })
-          }
-          .width('100%')
-          .margin({ top: 80 })
-        } else {
-          Grid() {
-            ForEach(this.ctrl.items, (item: BookListItem) => {
-              GridItem() {
-                BookItemCardLite({
-                  item: item,
-                  onOpen: this.onOpen,
-                  onMore: this.onMore
-                })
-              }
-            }, (item: BookListItem) => `${item.id}_${item.viewTime}_${item.isFavorite ? 1 : 0}`)
-          }
-          .columnsTemplate(this.repeatTemplate())
-          .columnsGap(this.spacing())
-          .rowsGap(this.spacing())
-          .width('100%')
-        }
-        Column()
-          .width('100%')
-          .height(24)
+        LoadingProgress()
+          .width(36)
+          .height(36)
+          .color(AppTheme.current().primary)
       }
       .width('100%')
-      .padding({ left: 16, right: 16 })
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+    } else if (this.ctrl.items.length === 0) {
+      Column() {
+        EmptyState({ message: L10n.t('no_data', '暂无数据') })
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+    } else {
+      List({ space: this.spacing() }) {
+        ForEach(this.rowChunks(), (row: BookListItem[]) => {
+          ListItem() {
+            Row({ space: this.spacing() }) {
+              ForEach(row, (item: BookListItem) => {
+                Column() {
+                  BookItemCardLite({
+                    item: item,
+                    onOpen: this.onOpen,
+                    onMore: this.onMore
+                  })
+                }
+                .layoutWeight(1)
+              }, (item: BookListItem) => `${item.id}_${item.viewTime}_${item.isFavorite ? 1 : 0}`)
+            }
+            .width('100%')
+          }
+        }, (row: BookListItem[], rowIdx: number): string =>
+          `${rowIdx}_${row.map((e: BookListItem): number => e.id).join('-')}`)
+      }
+      .width('100%')
+      .height('100%')
+      // 左/右/顶统一 16，底部不留白（列表从悬浮 chips 下方穿过）
+      .padding({ left: 16, right: 16, top: 16 })
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring)
+      .cachedCount(2)
       .onAreaChange((_o: Area, n: Area) => {
         this.contentWidth = n.width as number - 32;
       })
     }
-    .width('100%')
-    .height('100%')
-    .scrollBar(BarState.Off)
-    .align(Alignment.Top)
   }
 }
 

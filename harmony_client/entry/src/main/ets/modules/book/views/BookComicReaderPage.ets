@@ -592,45 +592,42 @@ export struct BookComicReaderPage {
       .alignItems(VerticalAlign.Center)
       .padding({ top: this.statusBarHeight, left: 8, right: 16 })
 
-      Scroll() {
-        Column() {
-          Grid() {
-            ForEach(this.ctrl.pages, (page: BookArchiveImage, index: number) => {
-              GridItem() {
-                Stack({ alignContent: Alignment.BottomEnd }) {
-                  AppImage({ url: page.url, showLoadingSpin: true })
-                    .width('100%')
-                    .height('100%')
-                  Text(`${index + 1}`)
-                    .fontSize(11)
-                    .fontColor('#FFFFFF')
-                    .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-                    .borderRadius(999)
-                    .backgroundColor('#99000000')
-                    .margin(6)
-                }
+      // Grid 自身滚动并按可视区懒加载缩略图（对齐 Flutter GridView.builder），
+      // 漫画可能有数百页，外套 Scroll 会一次性挂载全部缩略图并同时请求图片
+      Grid() {
+        ForEach(this.ctrl.pages, (page: BookArchiveImage, index: number) => {
+          GridItem() {
+            Stack({ alignContent: Alignment.BottomEnd }) {
+              AppImage({ url: page.url, showLoadingSpin: true })
                 .width('100%')
-                .height(this.previewItemH())
-                .borderRadius(8)
-                .clip(true)
-                .onClick((): void => {
-                  this.showPreview = false;
-                  this.ctrl.jumpToPageNumber(index + 1);
-                })
-              }
-            }, (page: BookArchiveImage): string => page.innerPath)
+                .height('100%')
+              Text(`${index + 1}`)
+                .fontSize(11)
+                .fontColor('#FFFFFF')
+                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                .borderRadius(999)
+                .backgroundColor('#99000000')
+                .margin(6)
+            }
+            .width('100%')
+            .height(this.previewItemH())
+            .borderRadius(8)
+            .clip(true)
+            .onClick((): void => {
+              this.showPreview = false;
+              this.ctrl.jumpToPageNumber(index + 1);
+            })
           }
-          .columnsTemplate('1fr 1fr 1fr')
-          .columnsGap(8)
-          .rowsGap(8)
-          .width('100%')
-        }
-        .width('100%')
-        .padding({ left: 12, right: 12, top: 12, bottom: this.navBarHeight + 12 })
+        }, (page: BookArchiveImage): string => page.innerPath)
       }
+      .columnsTemplate('1fr 1fr 1fr')
+      .columnsGap(8)
+      .rowsGap(8)
       .width('100%')
       .layoutWeight(1)
+      .padding({ left: 12, right: 12, top: 12, bottom: this.navBarHeight + 12 })
       .scrollBar(BarState.Off)
+      .cachedCount(3)
     }
     .width('100%')
     .height('100%')
