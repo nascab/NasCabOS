@@ -41,7 +41,7 @@ struct GalleryFaceAvatar {
   }
 }
 
-/** 分区标题 */
+/** 分区标题（对齐 Flutter _InfoSectionTitle：13 / w600，无额外间距） */
 @ComponentV2
 struct InfoSectionTitle {
   @Param title: string = '';
@@ -49,10 +49,25 @@ struct InfoSectionTitle {
   build() {
     Text(this.title)
       .fontSize(13)
-      .fontWeight(FontWeight.Medium)
+      .fontWeight(600)
       .fontColor('#FFFFFF')
-      .margin({ top: 6, bottom: 2 })
   }
+}
+
+/** 12dp 区间隔（对齐 Flutter SizedBox(height:12)） */
+@Builder
+function SectionGap12() {
+  Column()
+    .width(1)
+    .height(12)
+}
+
+/** 8dp 区间隔（对齐 Flutter SizedBox(height:8)） */
+@Builder
+function SectionGap8() {
+  Column()
+    .width(1)
+    .height(8)
 }
 
 /**
@@ -209,6 +224,16 @@ export struct GalleryInfoPanel {
     return lat !== 0 && lng !== 0;
   }
 
+  /** 基础区任一字段存在（对齐 Flutter baseRows.isNotEmpty 再统一出标题） */
+  private hasBasic(): boolean {
+    return this.infoStr('fullpath').length > 0
+      || this.infoNum('size') > 0
+      || this.dimensionText().length > 0
+      || GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['mtime']).length > 0
+      || GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['createTime']).length > 0
+      || GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['originalTime']).length > 0;
+  }
+
   /** 点击路径打开文件浏览（无扩展名打开本路径，否则打开其目录） */
   private openPathInFileBrowser(targetPath: string): void {
     const target = targetPath.trim();
@@ -238,10 +263,9 @@ export struct GalleryInfoPanel {
         .fontSize(12)
         .fontColor('#FFFFFF')
         .layoutWeight(1)
-        .padding({ top: 3 })
     }
-    .alignItems(VerticalAlign.Top)
-    .margin({ top: 3 })
+    .alignItems(VerticalAlign.Center)
+    .margin({ top: 6 })
   }
 
   @Builder
@@ -256,13 +280,12 @@ export struct GalleryInfoPanel {
         .fontSize(12)
         .fontColor('#2196F3')
         .layoutWeight(1)
-        .padding({ top: 3 })
         .onClick((): void => {
           this.openPathInFileBrowser(fullpath);
         })
     }
-    .alignItems(VerticalAlign.Top)
-    .margin({ top: 3 })
+    .alignItems(VerticalAlign.Center)
+    .margin({ top: 6 })
   }
 
   @Builder
@@ -288,14 +311,101 @@ export struct GalleryInfoPanel {
     .margin({ bottom: 8 })
   }
 
+  @Builder
+  BasicSection() {
+    if (this.hasBasic()) {
+      InfoSectionTitle({ title: L10n.t('gallery_info_basic', '基本信息') })
+      if (this.infoStr('fullpath').length > 0) {
+        this.PathRow(this.infoStr('fullpath'))
+      }
+      if (this.infoNum('size') > 0) {
+        this.InfoRow(L10n.t('size', '大小'), FileFormat.formatSize(this.infoNum('size')))
+      }
+      if (this.dimensionText().length > 0) {
+        this.InfoRow(L10n.t('gallery_info_dimensions', '尺寸'), this.dimensionText())
+      }
+      if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['mtime']).length > 0) {
+        this.InfoRow(L10n.t('modified_at', '修改于'),
+          GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['mtime']))
+      }
+      if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['createTime']).length > 0) {
+        this.InfoRow(L10n.t('create_time', '创建时间'),
+          GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['createTime']))
+      }
+      if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['originalTime']).length > 0) {
+        this.InfoRow(L10n.t('gallery_info_taken_time', '拍摄时间'),
+          GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['originalTime']))
+      }
+      SectionGap12()
+    }
+  }
+
+  @Builder
+  ShootingSection() {
+    if (this.shootingLine().length > 0) {
+      InfoSectionTitle({ title: L10n.t('gallery_info_shooting_params', '拍摄参数') })
+      this.InfoRow('', this.shootingLine())
+      SectionGap12()
+    }
+  }
+
+  @Builder
+  ExifSection() {
+    if (this.deviceText().length > 0 || this.lensText().length > 0) {
+      InfoSectionTitle({ title: L10n.t('gallery_info_exif', 'EXIF') })
+      if (this.deviceText().length > 0) {
+        this.InfoRow(L10n.t('gallery_info_device', '设备'), this.deviceText())
+      }
+      if (this.lensText().length > 0) {
+        this.InfoRow(L10n.t('gallery_info_lens', '镜头'), this.lensText())
+      }
+      SectionGap12()
+    }
+  }
+
+  @Builder
+  PeopleSection() {
+    if (this.ctrl.infoFaces().length > 0 && this.photoFileHash().length > 0) {
+      InfoSectionTitle({ title: L10n.t('gallery_info_people', '人物') })
+      SectionGap8()
+      ForEach(this.ctrl.infoFaces(), (face: TimelineDetectedFaceItem) => {
+        this.FaceRow(face, this.photoFileHash())
+      }, (face: TimelineDetectedFaceItem): string => `${face.faceId}_${face.name}_${face.faceCount}`)
+      SectionGap12()
+    }
+  }
+
+  @Builder
+  LocationSection() {
+    if (this.hasGps()) {
+      InfoSectionTitle({ title: L10n.t('location', '位置') })
+      if (this.infoStr('geo').length > 0) {
+        this.InfoRow('', this.infoStr('geo'))
+      }
+      SectionGap8()
+      Stack() {
+        GeoTileMap({
+          lat: this.infoNum('latitude'),
+          lng: this.infoNum('longitude')
+        })
+      }
+      .width('100%')
+      .height(220)
+      .borderRadius(10)
+      .clip(true)
+      SectionGap12()
+    }
+  }
+
   build() {
     Column() {
+      // 顶栏：对齐 Flutter SizedBox(6) + 48dp 点击区的关闭 IconButton
       Row() {
         Blank()
         SymbolGlyph(this.sheetMode ? $r('sys.symbol.xmark') : $r('sys.symbol.chevron_left'))
-          .fontSize(20)
+          .fontSize(24)
           .fontColor(['#FFFFFF'])
-          .padding(4)
+          .padding(12)
           .onClick((): void => {
             if (this.sheetMode) {
               this.onClose();
@@ -305,13 +415,18 @@ export struct GalleryInfoPanel {
           })
       }
       .width('100%')
+      .margin({ top: 6 })
 
       if (this.ctrl.infoLoading) {
-        LoadingProgress()
-          .width(28)
-          .height(28)
-          .color('#FFFFFF')
-          .margin({ top: 8, bottom: 8 })
+        Row() {
+          LoadingProgress()
+            .width(36)
+            .height(36)
+            .color('#FFFFFF')
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
+        .margin({ top: 8, bottom: 8 })
       }
       if (!this.ctrl.infoLoading && this.ctrl.infoErrorText.length > 0) {
         Text(this.ctrl.infoErrorText)
@@ -322,80 +437,14 @@ export struct GalleryInfoPanel {
       if (this.ctrl.infoData !== undefined) {
         Scroll() {
           Column() {
-            // ===== 基础 =====
-            if (this.infoStr('fullpath').length > 0) {
-              InfoSectionTitle({ title: L10n.t('gallery_info_basic', '基本信息') })
-              this.PathRow(this.infoStr('fullpath'))
-            }
-            if (this.infoNum('size') > 0) {
-              this.InfoRow(L10n.t('size', '大小'), FileFormat.formatSize(this.infoNum('size')))
-            }
-            if (this.dimensionText().length > 0) {
-              this.InfoRow(L10n.t('gallery_info_dimensions', '尺寸'), this.dimensionText())
-            }
-            if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['mtime']).length > 0) {
-              this.InfoRow(L10n.t('modified_at', '修改于'),
-                GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['mtime']))
-            }
-            if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['createTime']).length > 0) {
-              this.InfoRow(L10n.t('create_time', '创建时间'),
-                GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['createTime']))
-            }
-            if (GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['originalTime']).length > 0) {
-              this.InfoRow(L10n.t('gallery_info_taken_time', '拍摄时间'),
-                GalleryInfoPanel.fmtIso(this.ctrl.infoData?.['originalTime']))
-            }
-
-            // ===== 拍摄参数 =====
-            if (this.shootingLine().length > 0) {
-              InfoSectionTitle({ title: L10n.t('gallery_info_shooting_params', '拍摄参数') })
-              this.InfoRow('', this.shootingLine())
-            }
-
-            // ===== EXIF =====
-            if (this.deviceText().length > 0 || this.lensText().length > 0) {
-              InfoSectionTitle({ title: L10n.t('gallery_info_exif', 'EXIF') })
-              if (this.deviceText().length > 0) {
-                this.InfoRow(L10n.t('gallery_info_device', '设备'), this.deviceText())
-              }
-              if (this.lensText().length > 0) {
-                this.InfoRow(L10n.t('gallery_info_lens', '镜头'), this.lensText())
-              }
-            }
-
-            // ===== 人物 =====
-            if (this.ctrl.infoFaces().length > 0 && this.photoFileHash().length > 0) {
-              InfoSectionTitle({ title: L10n.t('gallery_info_people', '人物') })
-              Column() {
-                ForEach(this.ctrl.infoFaces(), (face: TimelineDetectedFaceItem) => {
-                  this.FaceRow(face, this.photoFileHash())
-                }, (face: TimelineDetectedFaceItem): string => `${face.faceId}_${face.name}_${face.faceCount}`)
-              }
-              .margin({ top: 8 })
-            }
-
-            // ===== 位置 =====
-            if (this.hasGps()) {
-              InfoSectionTitle({ title: L10n.t('location', '位置') })
-              if (this.infoStr('geo').length > 0) {
-                this.InfoRow('', this.infoStr('geo'))
-              }
-              Stack() {
-                GeoTileMap({
-                  lat: this.infoNum('latitude'),
-                  lng: this.infoNum('longitude')
-                })
-              }
-              .width('100%')
-              .height(220)
-              .borderRadius(10)
-              .clip(true)
-              .margin({ top: 8, bottom: 12 })
-            }
+            this.BasicSection()
+            this.ShootingSection()
+            this.ExifSection()
+            this.PeopleSection()
+            this.LocationSection()
           }
           .alignItems(HorizontalAlign.Start)
           .width('100%')
-          .padding({ bottom: 12 })
         }
         .scrollBar(BarState.Auto)
         .align(Alignment.TopStart)
@@ -408,7 +457,8 @@ export struct GalleryInfoPanel {
     .height('100%')
     .alignItems(HorizontalAlign.Start)
     .backgroundColor('#D9000000')
-    .padding({ left: 12, right: 12, top: 16, bottom: 12 })
+    // 对齐 Flutter fromLTRB(12,24,12,12)；sheet 模式上方已有拖拽手柄，取 12
+    .padding({ left: 12, right: 12, top: this.sheetMode ? 12 : 24, bottom: 12 })
   }
 
   private deviceText(): string {

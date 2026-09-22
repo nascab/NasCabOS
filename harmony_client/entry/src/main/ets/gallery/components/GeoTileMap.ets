@@ -14,6 +14,11 @@ export struct GeoTileMap {
   @Local centerLat: number = 0;
   @Local centerLng: number = 0;
   @Local tilePx: number = 256;
+  @Local surfaceW: number = 0;
+  @Local surfaceH: number = 0;
+  /** 组件相对窗口的位置（捏合中心点 pinchCenter 为窗口坐标，需换算为组件内坐标） */
+  private surfaceX: number = 0;
+  private surfaceY: number = 0;
   private panStartLat: number = 0;
   private panStartLng: number = 0;
   private panStartX: number = 0;
@@ -91,12 +96,40 @@ export struct GeoTileMap {
 
   private onPinchUpdate(e: GestureEvent): void {
     const target = Math.round(this.pinchBase + Math.log2(Math.max(e.scale, 0.2)));
-    this.zoom = Math.min(Math.max(target, 3), 18);
+    const newZoom = Math.min(Math.max(target, 3), 18);
+    if (newZoom !== this.zoom) {
+      // 对齐 flutter_map：以双指中心点为缩放锚点
+      this.zoomAtPoint(newZoom, e.pinchCenterX - this.surfaceX, e.pinchCenterY - this.surfaceY);
+    }
   }
 
-  /** 标记相对视图中心的像素偏移 */
+  /**
+   * 以组件内某点为锚点切换 zoom（锚点下的地理位置在缩放前后保持不动）。
+   * 双击放大 / 双指捏合共用，对齐 flutter_map 的 doubleTapZoom 与 pinchZoom。
+   */
+  private zoomAtPoint(newZoom: number, localX: number, localY: number): void {
+    const oldZoom = this.zoom;
+    if (newZoom === oldZoom) {
+      return;
+    }
+    const px = localX - this.surfaceW / 2;
+    const py = localY - this.surfaceH / 2;
+    const tapTileX = this.centerX() + px / this.tilePx;
+    const tapTileY = this.centerY() + py / this.tilePx;
+    const factor = Math.pow(2, newZoom - oldZoom);
+    this.centerLng = GeoTileMap.xToLng(tapTileX * factor - px / this.tilePx, newZoom);
+    this.centerLat = GeoTileMap.yToLat(tapTileY * factor - py / this.tilePx, newZoom);
+    this.zoom = newZoom;
+  }
+
+  /** 双击放大一级（对齐 flutter_map InteractiveFlag.doubleTapZoom） */
+  private onDoubleTapZoom(localX: number, localY: number): void {
+    this.zoomAtPoint(Math.min(this.zoom + 1, 18), localX, localY);
+  }
+
+  /** 标记相对视图中心的像素偏移（横向必须用经度 lng，误用纬度会导致标记飞出视口） */
   private markerOffsetX(): number {
-    return (GeoTileMap.lngToX(this.lat, this.zoom) - this.centerX()) * this.tilePx;
+    return (GeoTileMap.lngToX(this.lng, this.zoom) - this.centerX()) * this.tilePx;
   }
 
   private markerOffsetY(): number {
@@ -148,6 +181,14 @@ export struct GeoTileMap {
     .clip(true)
     .backgroundColor('#141C22')
     .gesture(GestureGroup(GestureMode.Parallel,
+      TapGesture({ count: 2 })
+        .onAction((e: GestureEvent): void => {
+          // TapGesture 不提供 offsetX/Y，触点坐标取 fingerList（相对组件的 localX/Y）
+          const f = e.fingerList.length > 0 ? e.fingerList[0] : undefined;
+          if (f !== undefined) {
+            this.onDoubleTapZoom(f.localX, f.localY);
+          }
+        }),
       PanGesture({ fingers: 1, direction: PanDirection.All, distance: 3 })
         .onActionStart((e: GestureEvent): void => {
           this.onPanStart(e);
@@ -163,5 +204,11 @@ export struct GeoTileMap {
           this.onPinchUpdate(e);
         })
     ))
+    .onAreaChange((_o: Area, n: Area): void => {
+      this.surfaceW = Number(n.width);
+      this.surfaceH = Number(n.height);
+      this.surfaceX = Number(n.globalPosition.x);
+      this.surfaceY = Number(n.globalPosition.y);
+    })
   }
 }
