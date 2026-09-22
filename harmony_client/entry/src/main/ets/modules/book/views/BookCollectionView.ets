@@ -11,7 +11,7 @@ import { BookCollectionItem } from '../models/BookModels';
 import { BookAlbumCard, BookPreviewCoverSpec } from '../components/BookAlbumCard';
 import {
   showBookCollectionCreateDialog, showBookCollectionEditDialog,
-  confirmDeleteBookCollection, showBookCollectionPathHelp
+  confirmDeleteBookCollection
 } from '../components/BookCollectionDialogs';
 import { BookSubListPageParam } from '../router/BookRoutes';
 
@@ -193,15 +193,11 @@ export struct BookCollectionView {
                 BookAlbumCard({
                   covers: this.coversOf(item),
                   title: item.name,
-                  showInfo: true,
                   onOpen: (): void => {
                     this.openDetail(item);
                   },
                   onMore: (): void => {
                     this.showItemMore(item);
-                  },
-                  onInfo: (): void => {
-                    showBookCollectionPathHelp(item.pathList);
                   }
                 })
                   .aspectRatio(this.gridColumnCount() === 1 ? 1.45 : 0.65)
@@ -213,7 +209,7 @@ export struct BookCollectionView {
           .rowsGap(12)
           .width('100%')
           .height('100%')
-          .padding({ left: 16, right: 16 })
+          .padding({ left: 16, right: 16, top: 16 })
           .scrollBar(BarState.Off)
           .edgeEffect(EdgeEffect.Spring)
           .cachedCount(2)

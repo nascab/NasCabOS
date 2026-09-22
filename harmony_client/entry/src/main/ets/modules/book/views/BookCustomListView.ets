@@ -246,7 +246,7 @@ export struct BookCustomListView {
           .rowsGap(12)
           .width('100%')
           .height('100%')
-          .padding({ left: 16, right: 16 })
+          .padding({ left: 16, right: 16, top: 16 })
           .scrollBar(BarState.Off)
           .edgeEffect(EdgeEffect.Spring)
           .cachedCount(2)
