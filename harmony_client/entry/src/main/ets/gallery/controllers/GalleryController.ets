@@ -111,6 +111,9 @@ export class GalleryController {
   };
   closePage: () => void = (): void => {
   };
+  /** items 集合变化（configure 完成/删除）通知页面的懒加载数据源 */
+  onItemsSet: () => void = (): void => {
+  };
 
   get isLivePhotoPlaying(): boolean {
     return this.livePlayingIndex >= 0;
@@ -159,6 +162,7 @@ export class GalleryController {
     this.currentIndex = Math.min(Math.max(param.initialIndex, 0), Math.max(items.length - 1, 0));
     this.isControlsVisible = true;
     this.livePlayingIndex = -1;
+    this.onItemsSet();
     this.preloadAdjacent(this.currentIndex);
   }
 
@@ -217,16 +221,8 @@ export class GalleryController {
 
   private preloadAdjacent(idx: number): void {
     void this.ensurePanoramaCandidate(idx);
-    const next = this.items[idx + 1];
-    if (next !== undefined && next.url.length > 0) {
-      AppImageLoader.load(next.url).catch((_e: Object): void => {
-      });
-    }
-    const prev = this.items[idx - 1];
-    if (prev !== undefined && prev.url.length > 0) {
-      AppImageLoader.load(prev.url).catch((_e: Object): void => {
-      });
-    }
+    // 相邻页图片无需主动预取：Swiper cachedCount(1) 会构建相邻页的 ZoomableImage，
+    // 由组件自身懒加载并随页面销毁自动取消；主动 load 会留下无法随销毁取消的等待者。
   }
 
   // ================= 旋转/缩放 =================
@@ -363,11 +359,14 @@ export class GalleryController {
       let candidate = matchesPanoramaRatio(item.width, item.height);
       if (!candidate) {
         const pm = await AppImageLoader.load(item.url);
+        // 全景探测不是展示者：拿到结果后释放等待者名额（下载本身继续完成并入缓存）
+        AppImageLoader.detach(item.url);
         const info = await pm.getImageInfo();
         candidate = matchesPanoramaRatio(info.size.width, info.size.height);
       }
       this.panoramaCandidates.set(index, candidate);
     } catch (_e) {
+      AppImageLoader.detach(this.items[index]?.url ?? '');
       this.panoramaCandidates.set(index, false);
     } finally {
       this.panoramaInFlight.delete(index);
@@ -387,6 +386,7 @@ export class GalleryController {
       }
     }
     this.items = next;
+    this.onItemsSet();
     if (next.length === 0) {
       this.closePage();
       return;

@@ -26,6 +26,16 @@ class MemoryEntry {
   }
 }
 
+/** 进行中的下载任务：等待者计数（组件）+ 取消令牌（最后一个等待者离开时中断网络） */
+class InflightRequest {
+  promise: Promise<PixelMap> = new Promise<PixelMap>((): void => {
+  });
+  waiters: number = 0;
+  cancelled: boolean = false;
+  /** 当前实际占用的 http 请求，取消时 destroy 立即中断 */
+  httpReq?: http.HttpRequest;
+}
+
 export class AppImageLoader {
   /** 内存上限 96MB（移动端设备预算） */
   private static readonly memoryMaxBytes: number = 96 * 1024 * 1024;
@@ -35,7 +45,7 @@ export class AppImageLoader {
    */
   private static readonly entries: Map<string, MemoryEntry> = new Map();
   private static cachedBytes: number = 0;
-  private static readonly inflight: Map<string, Promise<PixelMap>> = new Map();
+  private static readonly inflight: Map<string, InflightRequest> = new Map();
   /** 下载+解码并发上限，防止快速滚动/日期跳转时瞬时并发打满连接与内存导致缩略图失败 */
   private static readonly maxJobs: number = 6;
   private static activeJobs: number = 0;
@@ -81,7 +91,7 @@ export class AppImageLoader {
     }
   }
 
-  /** 主入口：内存 → 磁盘 → 网络（带 Bearer header），同 URL 去重 */
+  /** 组件展示用加载（计入等待者）：内存 → 磁盘 → 网络（带 Bearer header），同 URL 去重 */
   static load(url: string): Promise<PixelMap> {
     const hit = AppImageLoader.entries.get(url);
     if (hit !== undefined) {
@@ -92,19 +102,80 @@ export class AppImageLoader {
       }
       return Promise.resolve(hit.pixelMap);
     }
-    const running = AppImageLoader.inflight.get(url);
-    if (running) {
-      return running;
+    let req = AppImageLoader.inflight.get(url);
+    if (req !== undefined) {
+      req.waiters++;
+      return req.promise;
     }
-    const task = AppImageLoader.doLoad(url);
-    AppImageLoader.inflight.set(url, task);
-    task.then((pm: PixelMap): void => {
-      AppImageLoader.inflight.delete(url);
-      AppImageLoader.store(url, pm);
-    }).catch((_e: Object): void => {
-      AppImageLoader.inflight.delete(url);
-    });
-    return task;
+    req = AppImageLoader.startInflight(url, 1);
+    return req.promise;
+  }
+
+  /**
+   * 预取（不占用等待者名额）：仅用于相邻页/全景探测等“加载完进缓存即可”的场景。
+   * 组件随后若需要应继续调用 load 等待同一 promise。
+   */
+  static prefetch(url: string): void {
+    if (AppImageLoader.entries.has(url) || AppImageLoader.inflight.has(url)) {
+      return;
+    }
+    AppImageLoader.startInflight(url, 0);
+  }
+
+  /** 非组件等待者（全景探测等）拿到结果后释放名额，绝不中断下载 */
+  static detach(url: string): void {
+    const req = AppImageLoader.inflight.get(url);
+    if (req !== undefined && req.waiters > 0) {
+      req.waiters--;
+    }
+  }
+
+  /**
+   * 组件放弃某个 URL（页面销毁/切走）：等待者归零且任务仍在进行时中断网络请求，
+   * 防止整页销毁后队列里的数百个源文件继续下载（图片浏览器返回时间轴后的请求风暴）。
+   * 已被其他组件共享的任务不会被中断。
+   */
+  static cancelLoad(url: string): void {
+    if (url.length === 0) {
+      return;
+    }
+    const req = AppImageLoader.inflight.get(url);
+    if (req === undefined) {
+      return;
+    }
+    req.waiters--;
+    if (req.waiters > 0) {
+      return;
+    }
+    req.cancelled = true;
+    AppImageLoader.inflight.delete(url);
+    if (req.httpReq !== undefined) {
+      try {
+        req.httpReq.destroy();
+      } catch (_e) {
+        // 请求可能已结束
+      }
+    }
+  }
+
+  private static startInflight(url: string, waiters: number): InflightRequest {
+    const req = new InflightRequest();
+    req.waiters = waiters;
+    const promise = AppImageLoader.doLoad(url, req)
+      .then((pm: PixelMap): PixelMap => {
+        AppImageLoader.inflight.delete(url);
+        if (!req.cancelled) {
+          AppImageLoader.store(url, pm);
+        }
+        return pm;
+      })
+      .catch((e: Object): never => {
+        AppImageLoader.inflight.delete(url);
+        throw e instanceof Error ? e : new Error(`${e}`);
+      });
+    req.promise = promise;
+    AppImageLoader.inflight.set(url, req);
+    return req;
   }
 
   /** 组件开始展示某 URL 的 PixelMap 时持有引用 */
@@ -190,13 +261,23 @@ export class AppImageLoader {
     return false;
   }
 
-  private static async doLoad(url: string): Promise<PixelMap> {
+  private static async doLoad(url: string, req: InflightRequest): Promise<PixelMap> {
     await AppImageLoader.acquireJob();
     try {
+      if (req.cancelled) {
+        throw new Error('image_cancelled');
+      }
       let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
       if (!buffer || buffer.byteLength === 0) {
-        buffer = await AppImageLoader.download(url);
+        buffer = await AppImageLoader.download(url, req);
+        if (req.cancelled) {
+          // 网络已中断/放弃：不落盘、不解码
+          throw new Error('image_cancelled');
+        }
         AppImageLoader.writeDisk(url, buffer);
+      }
+      if (req.cancelled) {
+        throw new Error('image_cancelled');
       }
       return await AppImageLoader.decode(buffer);
     } finally {
@@ -204,15 +285,16 @@ export class AppImageLoader {
     }
   }
 
-  private static async download(url: string): Promise<ArrayBuffer> {
+  private static async download(url: string, req: InflightRequest): Promise<ArrayBuffer> {
     const token = (APIClient.getInstance().state.accessToken ?? '').trim();
     const headers: Record<string, string> = {};
     if (token.length > 0) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const req = http.createHttp();
+    const httpReq = http.createHttp();
+    req.httpReq = httpReq;
     try {
-      const resp = await req.request(url, {
+      const resp = await httpReq.request(url, {
         method: http.RequestMethod.GET,
         header: headers,
         expectDataType: http.HttpDataType.ARRAY_BUFFER,
@@ -228,7 +310,8 @@ export class AppImageLoader {
       }
       return resp.result as ArrayBuffer;
     } finally {
-      req.destroy();
+      httpReq.destroy();
+      req.httpReq = undefined;
     }
   }
 

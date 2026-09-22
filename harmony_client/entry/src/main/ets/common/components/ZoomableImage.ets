@@ -62,6 +62,8 @@ export struct ZoomableImage {
   private panBaseY: number = 0;
   /** fitWidth 基础缩放是否已应用（等待容器测量） */
   private baseApplied: boolean = false;
+  /** 当前已发起加载的 URL，用于 url 变化/销毁时精确取消旧请求 */
+  private loadedUrl: string = '';
 
   aboutToAppear(): void {
     this.currentScale = this.initScale;
@@ -70,6 +72,11 @@ export struct ZoomableImage {
 
   aboutToDisappear(): void {
     this.loadSeq++;
+    // 放弃仍在进行的源文件下载：整页销毁时未取消会导致返回后大量请求继续打到服务端
+    if (this.loadedUrl.length > 0) {
+      AppImageLoader.cancelLoad(this.loadedUrl);
+      this.loadedUrl = '';
+    }
   }
 
   @Monitor('url')
@@ -79,12 +86,17 @@ export struct ZoomableImage {
     this.currentScale = this.initScale;
     this.offsetX = 0;
     this.offsetY = 0;
+    if (this.loadedUrl.length > 0) {
+      AppImageLoader.cancelLoad(this.loadedUrl);
+      this.loadedUrl = '';
+    }
     void this.reload();
   }
 
   private async reload(): Promise<void> {
     const seq = ++this.loadSeq;
     const target = this.url.trim();
+    this.loadedUrl = target;
     if (target.length === 0) {
       this.pixelMap = undefined;
       this.failed = false;
@@ -100,7 +112,7 @@ export struct ZoomableImage {
       this.applyBaseScale();
     } catch (e) {
       hilog.error(0x0000, TAG, 'load failed: %{public}s, url: %{public}s', `${e}`, target);
-      if (seq !== this.loadSeq) {
+      if (seq !== this.loadSeq || `${e}`.includes('image_cancelled')) {
         return;
       }
       this.pixelMap = undefined;

@@ -15,6 +15,75 @@ import { LivePhotoInlinePlayer } from '../components/LivePhotoInlinePlayer';
 const GALLERY_WHITE = '#FFFFFF';
 const GALLERY_BLUE = '#2196F3';
 
+/**
+ * Swiper 懒加载数据源（对齐 Flutter PageView.builder）：
+ * 不能用 ForEach——ForEach 会一次性构建全部子组件，数百张图即触发数百个源文件下载，
+ * 退出页面后请求仍继续，直至内存崩溃。LazyForEach 仅构建当前页 + cachedCount 邻页。
+ * 通知统一走 onDatasetChange（同 listener 不可混用其他 DataChangeListener 接口）。
+ */
+class GalleryItemsDataSource implements IDataSource {
+  private items: GalleryItem[] = [];
+  private listeners: DataChangeListener[] = [];
+
+  update(items: GalleryItem[]): void {
+    const ops: DataOperation[] = [];
+    if (this.items.length === 0) {
+      if (items.length > 0) {
+        ops.push({ type: DataOperationType.ADD, index: 0, count: items.length });
+      }
+    } else {
+      // 已知变化形态只有“删除若干项”（删除照片）；算出按下标平移后的删除操作
+      const newKeys = new Set<string>();
+      for (const it of items) {
+        newKeys.add(GalleryItemsDataSource.keyOf(it));
+      }
+      let removedBefore = 0;
+      for (let i = 0; i < this.items.length; i++) {
+        if (!newKeys.has(GalleryItemsDataSource.keyOf(this.items[i]))) {
+          ops.push({ type: DataOperationType.DELETE, index: i - removedBefore, count: 1 });
+          removedBefore++;
+        }
+      }
+      // 兜底：出现新增/重排等非删除形态时全量替换
+      if (removedBefore === 0 && items.length !== this.items.length) {
+        ops.push({ type: DataOperationType.DELETE, index: 0, count: this.items.length });
+        ops.push({ type: DataOperationType.ADD, index: 0, count: items.length });
+      }
+    }
+    this.items = items;
+    if (ops.length > 0) {
+      for (const l of this.listeners) {
+        l.onDatasetChange(ops);
+      }
+    }
+  }
+
+  static keyOf(it: GalleryItem): string {
+    return it.photoId > 0 ? `p_${it.photoId}` : `f_${it.path}`;
+  }
+
+  totalCount(): number {
+    return this.items.length;
+  }
+
+  getData(index: number): GalleryItem {
+    return this.items[index];
+  }
+
+  registerDataChangeListener(listener: DataChangeListener): void {
+    if (this.listeners.indexOf(listener) < 0) {
+      this.listeners.push(listener);
+    }
+  }
+
+  unregisterDataChangeListener(listener: DataChangeListener): void {
+    const i = this.listeners.indexOf(listener);
+    if (i >= 0) {
+      this.listeners.splice(i, 1);
+    }
+  }
+}
+
 /** 全景页参数 */
 export class PanoramaPageParam {
   imageUrl: string = '';
@@ -59,6 +128,7 @@ export struct GalleryPage {
   @Param popPage: () => void = (): void => {
   };
   @Local ctrl: GalleryController = new GalleryController();
+  @Local itemDs: GalleryItemsDataSource = new GalleryItemsDataSource();
   @Local ready: boolean = false;
   @Local isPhoneLayout: boolean = true;
   @Local pageWidth: number = 0;
@@ -74,6 +144,9 @@ export struct GalleryPage {
     };
     this.ctrl.closePage = (): void => {
       this.popPage();
+    };
+    this.ctrl.onItemsSet = (): void => {
+      this.itemDs.update(this.ctrl.items);
     };
     void this.ctrl.configure(this.param).then((): void => {
       this.ready = true;
@@ -425,14 +498,16 @@ export struct GalleryPage {
           // 主区域
           Stack() {
             Swiper(this.swiperController) {
-              ForEach(this.ctrl.items, (item: GalleryItem, index: number) => {
+              LazyForEach(this.itemDs, (item: GalleryItem, index: number) => {
                 this.GalleryItemView(item, index)
-              }, (item: GalleryItem, index: number): string => `${index}_${item.path}_${item.url.length}`)
+              }, (item: GalleryItem): string => GalleryItemsDataSource.keyOf(item))
             }
             .index(this.ctrl.currentIndex)
             .loop(false)
             .indicator(false)
             .duration(200)
+            // 仅预构建左右各 1 页（对齐 Flutter PageView 邻页构建），杜绝整库源文件并发下载
+            .cachedCount(1)
             .disableSwipe(this.currentScale() > 1.001)
             .onChange((idx: number): void => {
               this.ctrl.onPageChanged(idx);
