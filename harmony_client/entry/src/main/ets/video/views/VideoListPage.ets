@@ -246,6 +246,8 @@ export struct VideoListPage {
     .scrollBar(BarState.Auto)
     .width('100%')
     .layoutWeight(1)
+    // 条目不足一屏时内容靠上（Scroll 默认垂直居中），对齐 Flutter ListView
+    .align(Alignment.Top)
     .onReachEnd(() => {
       void this.ctrl.loadMore(true);
     })
@@ -306,6 +308,8 @@ export struct VideoListPage {
       .scrollBar(BarState.Auto)
       .width('100%')
       .layoutWeight(1)
+      // 历史条目不足一屏时靠上（Scroll 默认垂直居中）
+      .align(Alignment.Top)
     }
   }
 
