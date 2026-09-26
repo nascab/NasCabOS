@@ -39,7 +39,6 @@ export struct MessageCenterPage {
     PageScaffold({
       title: L10n.t('message_center', '消息中心'),
       showBack: true,
-      statusBarBg: AppTheme.current().pageBg,
       onBack: (): void => {
         this.popPage();
       },
