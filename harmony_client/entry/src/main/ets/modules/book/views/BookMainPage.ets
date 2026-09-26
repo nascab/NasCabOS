@@ -175,6 +175,8 @@ export struct BookMainPage {
               })
             }
             .width('100%')
+            // 整体（含 padding 出的底部安全区）surface 背景：菜单与底部安全区同色
+            .backgroundColor(AppTheme.current().surfaceBg)
             .border({ width: { top: 0.8 }, color: AppTheme.current().divider })
             .padding({ bottom: this.navigationBarHeight })
           } else {

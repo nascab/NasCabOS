@@ -86,6 +86,7 @@ export struct BookSubListPage {
         Refresh({ refreshing: this.refreshing }) {
           BookListGrid({
             items: this.ctrl.items,
+            ctrl: this.ctrl,
             loading: this.ctrl.loading,
             loadingMore: this.ctrl.loadingMore,
             hasMore: this.ctrl.hasMore,
@@ -93,6 +94,8 @@ export struct BookSubListPage {
             selectionMode: this.ctrl.isMultiSelectMode,
             selectedIds: this.ctrl.selectedItems,
             isInCustomList: this.ctrl.isInCustomList,
+            // 多选悬浮 65 高菜单，底部留 75 间隙避免遮挡最后一行（对齐 Flutter bottomSpace 86）
+            bottomInset: this.ctrl.isMultiSelectMode ? 59 : 0,
             onLoadMore: (): void => {
               void this.ctrl.loadMore(true);
             },
@@ -123,7 +126,7 @@ export struct BookSubListPage {
       .width('100%')
       .height('100%')
 
-      // 多选底部操作栏（悬浮，对齐 Flutter Positioned bottom:0）
+      // 多选底部操作栏（悬浮，对齐 Flutter Positioned bottom:0 + 外层 surface 背景）
       if (this.ctrl.isMultiSelectMode) {
         Column() {
           BookMultiSelectBar({
@@ -145,9 +148,12 @@ export struct BookSubListPage {
           })
         }
         .width('100%')
+        // 整体（含底部安全区）surface 背景：菜单背景与底部导航条安全区同色
+        .backgroundColor(AppTheme.current().surfaceBg)
+        .border({ width: { top: 0.8 }, color: AppTheme.current().divider })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
         .position({ x: 0, y: '100%' })
         .markAnchor({ y: '100%' })
-        .border({ width: { top: 0.8 }, color: AppTheme.current().divider })
       }
     }
     .width('100%')

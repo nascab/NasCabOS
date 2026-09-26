@@ -478,6 +478,11 @@ export class BookListController {
 
   // ===== 多选 =====
 
+  /** 当前项是否已选（供 item 在自身 build 中直接订阅选中态，对齐 Photo Timeline 模式） */
+  isSelected(id: number): boolean {
+    return this.selectedItems.has(id);
+  }
+
   toggleSelection(id: number): void {
     if (id <= 0) {
       return;

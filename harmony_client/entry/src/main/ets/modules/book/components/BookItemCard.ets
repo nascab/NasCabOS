@@ -6,6 +6,10 @@ import { BookListItem } from '../models/BookModels';
 import { BookListApiService } from '../services/BookApiServices';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
+import { BookListController } from '../controllers/BookControllers';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DIAG_DOM: number = 0xB00C;
 
 /** 封面占位图（对齐 Flutter _fallbackAssets） */
 const FALLBACK_COVERS: ResourceStr[] = [
@@ -69,6 +73,10 @@ function metaText(item: BookListItem, cached: boolean): string {
 @ComponentV2
 export struct BookItemCard {
   @Param item: BookListItem = new BookListItem();
+  /** 列表控制器：非可选，首次 build 即存在，保证本 item 对 isMultiSelectMode
+   *  的读取一定建立订阅（严格对齐 PhotoTimelineItem）。历史等 Lite 用法不传时
+   *  使用默认实例（isMultiSelectMode 恒 false，不显示勾选）。 */
+  @Param ctrl: BookListController = new BookListController();
   @Param selectionMode: boolean = false;
   @Param selected: boolean = false;
   @Param isInCustomList: boolean = false;
@@ -83,6 +91,9 @@ export struct BookItemCard {
   @Local primaryUrl: string = '';
   @Local secondaryUrl: string = '';
   @Local useSecondary: boolean = false;
+  /** 封面实测宽/高（vp）：多选框用固定数值定位右下角（对齐照片 item） */
+  @Local coverW: number = 0;
+  @Local coverH: number = 0;
   private cacheSvc: BookLocalCacheService = BookLocalCacheService.getInstance();
 
   aboutToAppear(): void {
@@ -95,6 +106,18 @@ export struct BookItemCard {
     void this.resolveCoverUrls();
   }
 
+  @Monitor('ctrl')
+  onCtrlChange(): void {
+    hilog.info(DIAG_DOM, 'BOOKITEM', 'ctrl param CHANGED id=%{public}d mode=%{public}s',
+      this.item.id, this.ctrl.isMultiSelectMode ? 'T' : 'F');
+  }
+
+  @Monitor('selectionMode')
+  onSelModeChange(): void {
+    hilog.info(DIAG_DOM, 'BOOKITEM', 'selectionMode param CHANGED id=%{public}d v=%{public}s',
+      this.item.id, this.selectionMode ? 'T' : 'F');
+  }
+
   private isPdfCover(): boolean {
     const item = this.item;
     const ext = item.ext.trim().toLowerCase();
@@ -102,6 +125,19 @@ export struct BookItemCard {
       return true;
     }
     return endsWithPdf(item.fullPath) || endsWithPdf(item.filename) || endsWithPdf(item.firstFilePath);
+  }
+
+  /** 是否处于多选：直接读控制器可观察字段（item 自身建立订阅） */
+  private inSelection(): boolean {
+    const v: boolean = this.ctrl.isMultiSelectMode;
+    hilog.info(DIAG_DOM, 'BOOKITEM', 'read inSel id=%{public}d v=%{public}s selParam=%{public}s',
+      this.item.id, v ? 'T' : 'F', this.selectionMode ? 'T' : 'F');
+    return v;
+  }
+
+  /** 本 item 是否选中：直接读控制器（订阅 @Trace selectedItems） */
+  private isItemSelected(): boolean {
+    return this.ctrl.isSelected(this.item.id);
   }
 
   /** 封面类型：folder / pdf / fallback / network（对齐 Flutter _coverForActionSheet 分支） */
@@ -330,26 +366,27 @@ export struct BookItemCard {
           this.onMore(this.item);
         })
 
-        // 多选勾选框（右下角）
-        if (this.selectionMode) {
-          Column() {
-            CircleCheckbox({
-              value: this.selected,
-              boxSize: 22,
-              uncheckedBorderColor: '#FFFFFF',
-              onChanged: (checked: boolean): void => {
-                if (checked !== this.selected) {
-                  this.onToggleSelected(this.item);
-                }
+        // 多选勾选框（右下角：CircleCheckbox 直接作为 Stack 子节点 + 固定数值定位，
+        // 严格对齐照片 PhotoTimelineItem，避免 if 新挂载的“包裹 Column + 百分比定位”不显示）
+        if (this.inSelection()) {
+          CircleCheckbox({
+            value: this.isItemSelected(),
+            boxSize: 22,
+            uncheckedBorderColor: '#FFFFFF',
+            onChanged: (checked: boolean): void => {
+              if (checked !== this.isItemSelected()) {
+                this.onToggleSelected(this.item);
               }
-            })
-          }
-          .position({ x: '100%', y: '100%' })
-          .markAnchor({ x: '100%', y: '100%' })
-          .translate({ x: -6, y: -6 })
+            }
+          })
+            .position({ x: this.coverW - 28, y: this.coverH - 28 })
         }
       }
       .width('100%')
+      .onAreaChange((_o: Area, n: Area): void => {
+        this.coverW = n.width as number;
+        this.coverH = n.height as number;
+      })
 
       // 标题
       Text(this.item.displayTitle)
@@ -373,15 +410,27 @@ export struct BookItemCard {
         .textAlign(TextAlign.Start)
     }
     .width('100%')
-    .onClick(() => {
-      if (this.selectionMode) {
-        this.onToggleSelected(this.item);
-      } else {
-        this.onOpen(this.item);
-      }
-    })
-    .gesture(LongPressGesture({ repeat: false }).onAction((): void => {
-      this.onToggleSelected(this.item);
-    }))
+    // 点击与长按放入 Exclusive 互斥手势组：
+    // 避免“长按进入多选并选中 → 抬手 Click 又触发取消 → 选中集为空自动退出多选”，
+    // 导致长按后右下角 checkbox 一闪即逝。对齐 Flutter：多选态点击=切换选中，
+    // 非多选态点击=打开，长按=进入多选。
+    .gesture(
+      GestureGroup(GestureMode.Exclusive,
+        TapGesture({ count: 1 })
+          .onAction((_e: GestureEvent): void => {
+            if (this.inSelection()) {
+              this.onToggleSelected(this.item);
+            } else {
+              this.onOpen(this.item);
+            }
+          }),
+        LongPressGesture({ repeat: false, fingers: 1, duration: 500 })
+          .onAction((_e: GestureEvent): void => {
+            if (!this.inSelection()) {
+              this.onToggleSelected(this.item);
+            }
+          })
+      )
+    )
   }
 }

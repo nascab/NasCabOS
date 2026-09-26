@@ -233,6 +233,7 @@ export struct BookLibraryView {
   LibraryListSection() {
     BookListGrid({
       items: this.activeCtrl().items,
+      ctrl: this.activeCtrl(),
       loading: this.activeCtrl().loading,
       loadingMore: this.activeCtrl().loadingMore,
       hasMore: this.activeCtrl().hasMore,
