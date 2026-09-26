@@ -6,6 +6,9 @@ import { AppsService } from './AppsService';
 import { AppsJson, JsonCodec } from '../common/JsonTypes';
 import { L10n } from '../core/localization/L10n';
 import { PhotoBackupController } from '../modules/photo_backup/controllers/PhotoBackupController';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DIAG_DOMAIN: number = 0xC0DE;
 
 /** 首页控制器：对应 Flutter AppHomeController */
 @ObservedV2
@@ -88,17 +91,23 @@ export class HomeViewModel {
 
   private async loadHomeConfig(): Promise<void> {
     try {
+      hilog.info(DIAG_DOMAIN, 'NasCabMsg', 'loadHomeConfig start, p2p=%{public}s',
+        `${APIClient.getInstance().isP2pMode}`);
       const response = await this.appsService.getHomeConfig();
+      hilog.info(DIAG_DOMAIN, 'NasCabMsg', 'loadHomeConfig resp success=%{public}s data=%{public}s',
+        `${response.success}`, response.data ? JSON.stringify(response.data) : 'undefined');
       if (!response.success) {
         this.serverMessage = '';
         return;
       }
       const msg = (response.data?.newMessage ?? response.data?.message ?? '').trim();
       this.serverMessage = msg;
+      hilog.info(DIAG_DOMAIN, 'NasCabMsg', 'loadHomeConfig set serverMessage=%{public}s', msg);
       // 冷启动或切服后：首页接口成功说明当前连接可用，再触发「APP 打开时自动开启备份」
       // （对齐 Flutter AppHomeController._loadHomeConfig → PhotoBackupController.onConnectionConfirmed）
       void PhotoBackupController.getInstance().onConnectionConfirmed();
     } catch (_e) {
+      hilog.error(DIAG_DOMAIN, 'NasCabMsg', 'loadHomeConfig failed: %{public}s', `${_e}`);
       this.serverMessage = '';
     }
   }

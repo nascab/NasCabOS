@@ -74,4 +74,5 @@ export class AppRouter {
   static readonly ENCRYPTED_SPACE_DETAIL: string = 'EncryptedSpaceDetailPage';
   static readonly ENCRYPTED_SPACE_VIEWER: string = 'EncryptedSpaceViewerPage';
   static readonly SERVICE_MAIN: string = 'ServiceMainPage';
+  static readonly MESSAGE_CENTER: string = 'MessageCenterPage';
 }

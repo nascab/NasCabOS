@@ -118,6 +118,8 @@ import { MediaToolImgBatchCompressPage } from '../modules/media_tool/views/Media
 import { MediaToolVideoTransPage } from '../modules/media_tool/views/MediaToolVideoTransPage';
 import { MediaToolAudioTransPage } from '../modules/media_tool/views/MediaToolAudioTransPage';
 import { MediaToolMediaArrangePage } from '../modules/media_tool/views/MediaToolMediaArrangePage';
+import { MessageCenterPage } from '../modules/message/views/MessageCenterPage';
+import { MessageCenterParam } from '../modules/message/router/MessageRoutes';
 
 @Entry
 @Component
@@ -636,6 +638,13 @@ struct Index {
           this.pageStack.pop();
         }
       )
+    } else if (name === AppRouter.MESSAGE_CENTER) {
+      MessageCenterPageBuilder(
+        param instanceof MessageCenterParam ? param : new MessageCenterParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
     }
   }
 
@@ -707,6 +716,11 @@ function UploadCenterPageBuilder(param: UploadCenterParam, pushPage: (name: stri
 function DownloadCenterPageBuilder(param: DownloadCenterParam,
   pushPage: (name: string, param?: object) => void, popPage: () => void) {
   DownloadCenterPage({ param: param, pushPage: pushPage, popPage: popPage })
+}
+
+@Builder
+function MessageCenterPageBuilder(param: MessageCenterParam, popPage: () => void) {
+  MessageCenterPage({ param: param, popPage: popPage })
 }
 
 @Builder

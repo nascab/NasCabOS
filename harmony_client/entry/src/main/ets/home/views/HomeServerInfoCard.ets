@@ -4,6 +4,8 @@ import { CurrentUserStore } from '../../core/user/CurrentUserStore';
 import { ServerInfo } from '../../auth/models/ServerInfo';
 import { HomeViewModel } from '../HomeViewModel';
 import { AppIconMap } from '../AppIconMap';
+import { NavUtil } from '../../common/NavUtil';
+import { AppRouter } from '../../router/AppRouter';
 import { P2PService } from '../../p2p/P2PService';
 import { P2pTransportKind } from '../../p2p/P2pProtocol';
 
@@ -138,8 +140,8 @@ export struct HomeServerInfoCard {
         }
         .width('100%')
         .onClick(() => {
-          // 消息中心模块迁移后接入路由
-          this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+          // 进入消息中心
+          NavUtil.push(AppRouter.MESSAGE_CENTER);
         })
       }
       .width('100%')
