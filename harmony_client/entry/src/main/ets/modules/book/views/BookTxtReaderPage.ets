@@ -191,8 +191,8 @@ export struct BookTxtReaderPage {
       }
       this.paginator.splitChapters();
       this.contentReady = true;
+      // 首次分页可能在此同步完成（视口已知），loading 由 runPaginate 在成功后关闭
       this.runPaginate();
-      this.loading = false;
     } catch (e) {
       hilog.error(0x0000, TAG, 'initLoad failed: %{public}s', JSON.stringify(e));
       this.errorText = L10n.networkFailure;
@@ -211,6 +211,10 @@ export struct BookTxtReaderPage {
     this.pageIndex = this.paginator.findPageByCharOffset(this.pendingOffset);
     this.dataSource.reload(this.paginator.pages);
     this.lastUploadedPage = -1;
+    // 分页完成（含首次加载与重排），关闭加载态
+    if (this.loading) {
+      this.loading = false;
+    }
     if (this.pageIndex === this.swiperCurrent()) {
       // index 相同不触发 onPageChanged，手动补一次进度
       this.schedulePersist();
@@ -241,6 +245,8 @@ export struct BookTxtReaderPage {
     this.style = next;
     void PreferencesStore.getInstance()
       .setString('book_txt_style', JSON.stringify(next.toJson()));
+    // 全量重排期间展示加载态（主线程分页，结束后由 runPaginate 关闭）
+    this.loading = true;
     this.runPaginate();
   }
 
@@ -271,6 +277,7 @@ export struct BookTxtReaderPage {
     if (cur !== undefined) {
       this.pendingOffset = cur.charStart;
     }
+    this.loading = true;
     this.runPaginate();
   }
 
@@ -451,8 +458,14 @@ export struct BookTxtReaderPage {
         .width('100%')
         .layoutWeight(1)
         .onAreaChange((_o: Area, n: Area): void => {
-          this.bodyW = Number(n.width);
-          this.bodyH = Number(n.height);
+          const w = Number(n.width);
+          const h = Number(n.height);
+          // 尺寸未变不重排（避免无关 area 回调触发全量分页）
+          if (w === this.bodyW && h === this.bodyH) {
+            return;
+          }
+          this.bodyW = w;
+          this.bodyH = h;
           this.runPaginate();
         })
       }

@@ -308,27 +308,6 @@ export class BookTxtPaginator {
     if (usableW <= 0 || usableH <= 0) {
       return;
     }
-    const widthCache = new Map<string, number>();
-
-    const charWidth = (ch: string): number => {
-      const cached = widthCache.get(ch);
-      if (cached !== undefined) {
-        return cached;
-      }
-      let w = 0;
-      try {
-        const opts: MeasureOptions = { textContent: ch, fontSize: style.fontSize };
-        w = Math.ceil(measure.measureText(opts));
-      } catch (_e) {
-        w = 0;
-      }
-      if (w <= 0) {
-        w = style.fontSize; // 兜底
-      }
-      widthCache.set(ch, w);
-      return w;
-    };
-
     const startNewPage = (chapterIndex: number, charStart: number): TxtPage => {
       const p: TxtPage = { chapterIndex: chapterIndex, lines: [], charStart: charStart };
       this.pages.push(p);
@@ -363,56 +342,44 @@ export class BookTxtPaginator {
           }
           continue;
         }
-        // 贪心换行（拉丁文优先在空格/标点断行，避免单词被硬切）
+        // 换行（拉丁文优先在空格/标点断行，避免单词被硬切）：
+        // 一次性预算每字进格，后续均基于下标切片，整体线性，无重复测量与逐字拼接
         const chars = Array.from(para);
-        let lineBuf = '';
-        let lineW = 0;
-        let lineStart = 0; // 当前行首字符相对段落首字符下标
-        let lastBreak = -1; // 行内最后一个可断点下标（含断点字符）
-        for (let k = 0; k < chars.length; k++) {
-          const ch = chars[k];
-          const w = charWidth(ch);
-          if (lineW + w > usableW && lineBuf.length > 0) {
-            let lineText = lineBuf;
-            let consumed = lineBuf.length;
-            if (lastBreak > 0 && lastBreak < lineBuf.length) {
-              lineText = lineBuf.substring(0, lastBreak);
-              consumed = lastBreak + 1;
-            }
-            if (y + BookTxtPaginator.lineHeightOf(style, false) > usableH) {
-              page = startNewPage(ci, paraCharStart + lineStart);
-              y = 0;
-            }
-            page.lines.push({
-              text: lineText, isTitle: false,
-              isParaStart: lineStart === 0, charStart: paraCharStart + lineStart
-            });
-            y += BookTxtPaginator.lineHeightOf(style, false);
-            lineStart += consumed;
-            lineBuf = lineBuf.substring(consumed);
-            lineW = 0;
-            const rest = Array.from(lineBuf);
-            for (const rc of rest) {
-              lineW += charWidth(rc);
-            }
-            lastBreak = -1;
-          }
-          lineBuf += ch;
-          lineW += w;
-          if (BookTxtPaginator.isBreakChar(ch)) {
-            lastBreak = lineBuf.length;
-          }
+        const nch = chars.length;
+        const widths: number[] = new Array<number>(nch);
+        for (let k = 0; k < nch; k++) {
+          widths[k] = this.charWidthOf(chars[k], style.fontSize);
         }
-        if (lineBuf.length > 0 || chars.length === 0) {
+        let s = 0; // 当前行首字符下标
+        while (s < nch) {
+          // 贪心求行尾 e（不含）
+          let wsum = 0;
+          let e = s;
+          let lastBreak = -1; // 行内最后一个可断点下标（含断点字符）
+          while (e < nch) {
+            if (wsum + widths[e] > usableW && e > s) {
+              break;
+            }
+            wsum += widths[e];
+            if (BookTxtPaginator.isBreakChar(chars[e])) {
+              lastBreak = e;
+            }
+            e++;
+          }
+          // 行内存在断点且溢出发生在断点之后：回退到断点（含断点字符）
+          if (e < nch && lastBreak > s) {
+            e = lastBreak + 1;
+          }
           if (y + BookTxtPaginator.lineHeightOf(style, false) > usableH) {
-            page = startNewPage(ci, paraCharStart + lineStart);
+            page = startNewPage(ci, paraCharStart + s);
             y = 0;
           }
           page.lines.push({
-            text: lineBuf, isTitle: false,
-            isParaStart: lineStart === 0, charStart: paraCharStart + lineStart
+            text: chars.slice(s, e).join(''), isTitle: false,
+            isParaStart: s === 0, charStart: paraCharStart + s
           });
           y += BookTxtPaginator.lineHeightOf(style, false);
+          s = e;
         }
         // 段间距
         y += Math.ceil(style.fontSize * 0.35);
@@ -424,6 +391,42 @@ export class BookTxtPaginator {
 
   private static isBreakChar(ch: string): boolean {
     return ch === ' ' || ch === ',' || ch === '.' || ch === '，' || ch === '。' || ch === '；' || ch === '、';
+  }
+
+  /** 半角字符进格持久缓存（key: 字号|字符），跨多次分页复用，避免重复 measure IPC */
+  private static halfWidthCache: Map<string, number> = new Map<string, number>();
+
+  /** 是否半角字符（对齐 Flutter _isHalf：ASCII 可打印区 + 中文弯引号按半角测量） */
+  private static isHalfWidthCode(code: number): boolean {
+    return (code >= 0x0020 && code <= 0x007E) || code === 0x201C || code === 0x201D;
+  }
+
+  /**
+   * 字符进格（单位 vp，与分页宽度一致）：
+   * 全角字符（中文/全角标点等）进格等于字号（对齐 Flutter zhWordSize 定宽策略，零 IPC）；
+   * 半角字符经 measure 测量（measureText 返回物理 px，必须 px2vp 换算），结果持久缓存。
+   */
+  private charWidthOf(ch: string, fontSize: number): number {
+    if (!BookTxtPaginator.isHalfWidthCode(ch.charCodeAt(0))) {
+      return fontSize;
+    }
+    const key = `${fontSize}|${ch}`;
+    const cached = BookTxtPaginator.halfWidthCache.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    let w = 0;
+    try {
+      const opts: MeasureOptions = { textContent: ch, fontSize: fontSize };
+      w = Math.ceil(px2vp(Math.ceil(measure.measureText(opts))));
+    } catch (_e) {
+      w = 0;
+    }
+    if (w <= 0) {
+      w = Math.ceil(fontSize * 0.55); // 半角兜底
+    }
+    BookTxtPaginator.halfWidthCache.set(key, w);
+    return w;
   }
 
   private viewportW: number = 0;
