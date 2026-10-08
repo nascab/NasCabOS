@@ -2259,7 +2259,11 @@ class P2pRtcClient {
 
     for (final st in channels.values) {
       try {
-        st.dc.close();
+        // 必须 await 数据通道关闭完成后再销毁 peerConnection：
+        // RTCDataChannelNative.close() 在发送 dataChannelClose 前还会 await
+        // 流关闭/事件订阅取消；若不 await，pc.dispose() 的消息会先到达原生层，
+        // 导致 dataChannelClose 报 peerConnection is null 且异常未捕获
+        await st.dc.close().timeout(const Duration(seconds: 2));
       } catch (_) {}
       if (!st.ready.isCompleted) {
         st.ready.completeError(Exception('p2p_closed'));

@@ -402,7 +402,11 @@ class ServerListController extends GetxController {
           // 蜂窝网络 + 私有 IP → 必然不可达，跳过直连
           // final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
           // if (!(network.isCellular && isPrivateLanServerUrl)) {
-            await ApiController.instance.disconnectP2p().catchError((_) {});
+            // P2P 已就绪且配对码一致时保留连接（直连探测按 baseUrl 路由，不受影响），
+            // 供直连失败后的 Phase 2 直接复用，避免「先拆后建」竞态
+            if (!_isP2pReusableFor(serverItem)) {
+              await ApiController.instance.disconnectP2p().catchError((_) {});
+            }
             ApiController.instance.setBaseUrl(serverItem.serverUrl);
             status = await AuthApiService.instance.checkServerStatus(
               false,
@@ -422,7 +426,9 @@ class ServerListController extends GetxController {
                 lanUrl.isNotEmpty &&
                 _normalizeUrl(lanUrl) == _normalizeUrl(serverItem.serverUrl);
             if (lan.isNotEmpty && !lanAlreadyTried) {
-              await ApiController.instance.disconnectP2p().catchError((_) {});
+              if (!_isP2pReusableFor(serverItem)) {
+                await ApiController.instance.disconnectP2p().catchError((_) {});
+              }
               ApiController.instance.setBaseUrl(lanUrl);
               final lanStatus = await AuthApiService.instance.checkServerStatus(
                 false,
@@ -442,8 +448,15 @@ class ServerListController extends GetxController {
         if ((status == null || !status.success || !status.isNasCabServer) &&
             hasPairCode) {
           usingP2p = true;
-          await ApiController.instance.disconnectP2p().catchError((_) {});
-          await _ensureP2pConnected(serverItem);
+          if (_isP2pReusableFor(serverItem)) {
+            // 复用 Failover 已建好的同配对码就绪连接，跳过断开与全量重建。
+            // 注：走 connectP2pByPairCode 短路虽会直接返回，但会重置
+            // transportKind 且不恢复 baseUrl，故这里直接切到 P2P 通道
+            ApiController.instance.setBaseUrl(ApiController.p2pBaseUrl);
+          } else {
+            await ApiController.instance.disconnectP2p().catchError((_) {});
+            await _ensureP2pConnected(serverItem);
+          }
           status = await AuthApiService.instance.checkServerStatus(
             false,
             timeout: const Duration(seconds: 3),
@@ -627,6 +640,19 @@ class ServerListController extends GetxController {
       barrierDismissible: true,
       builder: (dialogContext) => const _PairCodeConnectDialog(),
     );
+  }
+
+  /// 当前 P2P 连接是否可直接复用：已就绪且配对码与目标服务器一致。
+  ///
+  /// 点击流程（直连/局域网探测、P2P 探测）期间，若 Failover 已建好同配对码的
+  /// 就绪连接，则保留并复用，避免「先拆后建」竞态：拆除刚建好的连接再做全量
+  /// 重建，重建期间任何抖动都会放大为「P2P 通道连接失败」。
+  /// 直连探测按 baseUrl 路由，保留 P2P 连接不影响直连探测结果。
+  bool _isP2pReusableFor(ServerInfoBean serverItem) {
+    final code = (serverItem.pairCode ?? '').trim();
+    if (code.isEmpty) return false;
+    final api = ApiController.instance;
+    return api.isP2pReady && api.p2pPairCode.trim() == code;
   }
 
   Future<void> _ensureP2pConnected(ServerInfoBean serverItem) async {
