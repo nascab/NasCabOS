@@ -1,7 +1,7 @@
 import { describe, it, expect } from '@ohos/hypium';
 import { APIState } from '../main/ets/core/network/APIState';
 import { NetworkConfig } from '../main/ets/core/network/NetworkConfig';
-import { AuthService } from '../main/ets/auth/AuthService';
+import { AuthService } from '../main/ets/modules/auth/AuthService';
 import { P2pSignalingBinary } from '../main/ets/p2p/P2pSignalingBinary';
 import { P2pChannelUtil, P2pRtcChannel } from '../main/ets/p2p/P2pProtocol';
 

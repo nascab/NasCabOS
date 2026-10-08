@@ -1,0 +1,295 @@
+import { image } from '@kit.ImageKit';
+import { window } from '@kit.ArkUI';
+import { L10n } from '../../core/localization/L10n';
+import { APIClient } from '../../core/network/APIClient';
+import { CurrentUserStore } from '../../core/user/CurrentUserStore';
+import { AppEventBus } from '../../common/AppEventBus';
+import { WindowStore } from '../../common/WindowStore';
+import { SystemBars } from '../../common/SystemBars';
+import { HomeViewModel } from '../home/HomeViewModel';
+import { WallpaperLoader } from '../home/WallpaperLoader';
+import { HomeServerInfoCard } from '../home/views/HomeServerInfoCard';
+import { HomeMonitorCard } from '../home/views/HomeMonitorCard';
+import { HomeAppsGrid } from '../home/views/HomeAppsGrid';
+import { HomeUserInfoDialog } from '../home/views/HomeUserInfoDialog';
+import { HomeWallpaperPicker } from '../home/views/HomeWallpaperPicker';
+import { AppRouter } from '../../router/AppRouter';
+import { LanguageService } from '../../core/localization/LanguageService';
+import { UploadCenterParam } from '../transfer/views/UploadCenterPage';
+import { PhotoMainPageParam } from '../photo/views/main/PhotoMainPage';
+import { VideoMainPageParam } from '../video/views/VideoMainPage';
+import { MusicMainPageParam } from '../music/router/MusicRoutes';
+import { BookMainPageParam } from '../book/router/BookRoutes';
+import { NotesMainPageParam } from '../notes/router/NotesRoutes';
+import { EncryptedSpaceMainPageParam } from '../encrypted_space/router/EncryptedSpaceRoutes';
+import { SecurityCenterPageParam } from '../security/router/SecurityRoutes';
+import { ProcessListPageParam } from '../process/router/ProcessRoutes';
+import { MonitorPageParam } from '../monitor/router/MonitorRoutes';
+import { TerminalMainPageParam } from '../terminal/router/TerminalRoutes';
+import { TransmissionMainPageParam } from '../transmission/router/TransmissionRoutes';
+import { UserManagementPageParam } from '../user/router/UserRoutes';
+import { FileMountPageParam } from '../file_mount/router/FileMountRoutes';
+import { ShareServerMainPageParam } from '../share_server/router/ShareServerRoutes';
+import { ServiceMainPageParam } from '../service/router/ServiceRoutes';
+import { DockerMainPageParam } from '../docker/router/DockerRoutes';
+import { FileBackupPageParam } from '../file_backup/router/FileBackupRoutes';
+import { PhotoBackupPageParam } from '../photo_backup/router/PhotoBackupRoutes';
+import { MediaToolEntryPageParam } from '../media_tool/router/MediaToolRoutes';
+
+/** 首页：对应 Flutter AppHomePage */
+@ComponentV2
+export struct HomePage {
+  @Local vm: HomeViewModel = new HomeViewModel();
+  @Local userStore: CurrentUserStore = CurrentUserStore.getInstance();
+  @Local wallpaperPixelMap: image.PixelMap | undefined = undefined;
+  @Local showUserInfo: boolean = false;
+  @Local showWallpaperPicker: boolean = false;
+  @Param onNavigateServerList: () => void = () => {
+  };
+  @Param pushPage: (name: string, param?: object) => void = (_name: string, _param?: object) => {
+  };
+  private lastWallpaperUrl: string = '';
+  /** 状态栏高度（vp）：全屏布局下内容用它避让（壁纸背景仍顶格） */
+  @Local statusBarHeight: number = 0;
+  @Local localeBump: number = 0;
+  private localeListener: (data: string) => void = (_data: string) => {
+    this.vm.notifyLocaleChanged();
+    this.localeBump++;
+  };
+
+  aboutToAppear(): void {
+    this.vm.init();
+    this.fetchStatusBarHeight();
+    // 首页为深色沉浸（壁纸顶格）：全屏布局 + 透明系统栏白字
+    SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
+    void this.refreshWallpaper();
+    AppEventBus.on(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
+  }
+
+  private fetchStatusBarHeight(): void {
+    const w = WindowStore.getMainWindow();
+    if (w === undefined) {
+      return;
+    }
+    const area = w.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    this.statusBarHeight = px2vp(area.topRect.height);
+  }
+
+  aboutToDisappear(): void {
+    AppEventBus.off(LanguageService.EVENT_LOCALE_CHANGED, this.localeListener);
+    SystemBars.deactivate(this);
+    void this.wallpaperPixelMap?.release();
+    this.wallpaperPixelMap = undefined;
+  }
+
+  /** 加载会话壁纸（对应 Flutter SessionWallpaperBackground） */
+  private async refreshWallpaper(): Promise<void> {
+    const url = WallpaperLoader.resolveUrl(this.userStore.wallpaperUrl ?? '');
+    if (url.length === 0) {
+      this.lastWallpaperUrl = '';
+      this.wallpaperPixelMap = undefined;
+      return;
+    }
+    if (url === this.lastWallpaperUrl && this.wallpaperPixelMap) {
+      return;
+    }
+    this.lastWallpaperUrl = url;
+    try {
+      const pm = await WallpaperLoader.loadPixelMap(url);
+      const old = this.wallpaperPixelMap;
+      this.wallpaperPixelMap = pm;
+      void old?.release();
+    } catch (_e) {
+      // 加载失败保持占位背景
+    }
+  }
+
+  private openApp(app: string): void {
+    if (this.vm.openApp(app)) {
+      if (app === 'setting') {
+        this.pushPage(AppRouter.SETTINGS);
+      } else if (app === 'folder') {
+        this.pushPage(AppRouter.FILES);
+      } else if (app === 'upload') {
+        this.pushPage(AppRouter.UPLOAD_CENTER, new UploadCenterParam());
+      } else if (app === 'download') {
+        this.pushPage(AppRouter.DOWNLOAD_CENTER);
+      } else if (app === 'photo') {
+        const param = new PhotoMainPageParam();
+        param.title = L10n.t('app_photo', '照片管理');
+        this.pushPage(AppRouter.PHOTO_MAIN, param);
+      } else if (app === 'movie') {
+        this.pushPage(AppRouter.VIDEO_MAIN, new VideoMainPageParam());
+      } else if (app === 'music') {
+        this.pushPage(AppRouter.MUSIC_MAIN, new MusicMainPageParam());
+      } else if (app === 'book') {
+        this.pushPage(AppRouter.BOOK_MAIN, new BookMainPageParam());
+      } else if (app === 'note') {
+        this.pushPage(AppRouter.NOTES_MAIN, new NotesMainPageParam());
+      } else if (app === 'transmission') {
+        this.pushPage(AppRouter.TRANSMISSION_PAGE, new TransmissionMainPageParam());
+      } else if (app === 'nascab_service') {
+        this.pushPage(AppRouter.SERVICE_MAIN, new ServiceMainPageParam());
+      } else if (app === 'docker') {
+        this.pushPage(AppRouter.DOCKER_PAGE, new DockerMainPageParam());
+      } else if (app === 'encrypted') {
+        this.pushPage(AppRouter.ENCRYPTED_SPACE_MAIN, new EncryptedSpaceMainPageParam());
+      } else if (app === 'security') {
+        this.pushPage(AppRouter.SECURITY_CENTER, new SecurityCenterPageParam());
+      } else if (app === 'process') {
+        this.pushPage(AppRouter.PROCESS_LIST, new ProcessListPageParam());
+      } else if (app === 'monitor') {
+        this.pushPage(AppRouter.MONITOR_PAGE, new MonitorPageParam());
+      } else if (app === 'terminal') {
+        this.pushPage(AppRouter.TERMINAL_PAGE, new TerminalMainPageParam());
+      } else if (app === 'user') {
+        this.pushPage(AppRouter.USER_MANAGEMENT, new UserManagementPageParam());
+      } else if (app === 'mounts') {
+        this.pushPage(AppRouter.FILE_MOUNT, new FileMountPageParam());
+      } else if (app === 'share' || app === 'file_share_server') {
+        this.pushPage(AppRouter.SHARE_SERVER_MAIN, new ShareServerMainPageParam());
+      } else if (app === 'backup') {
+        this.pushPage(AppRouter.FILE_BACKUP, new FileBackupPageParam());
+      } else if (app === 'photo_backup') {
+        this.pushPage(AppRouter.PHOTO_BACKUP, new PhotoBackupPageParam());
+      } else if (app === 'media_tool') {
+        this.pushPage(AppRouter.MEDIA_TOOL_ENTRY, new MediaToolEntryPageParam());
+      }
+      return;
+    }
+    this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+  }
+
+  build() {
+    // navDestination builder 分支的组件必须以 NavDestination 为根，否则内容无法挂载（空白页）
+    NavDestination() {
+      if (!APIClient.getInstance().isAuthenticated || !this.userStore.isLoggedIn) {
+        this.SessionExpiredView();
+      } else {
+        this.MainHomeView();
+      }
+    }
+    .hideTitleBar(true)
+    .mode(NavDestinationMode.STANDARD)
+    .onShown((): void => {
+      // 首页为沉浸式（壁纸顶格）：每次显示重新激活全屏样式，从设置等常规页返回时零跳动
+      SystemBars.activate(this, { colors: SystemBars.immersiveColors(), fullscreen: true });
+    })
+    // 依赖 localeBump：切换语言后触发首页整体刷新
+    .opacity(this.localeBump >= 0 ? 1 : 1)
+  }
+
+  @Builder
+  SessionExpiredView() {
+    Column() {
+      SymbolGlyph($r('sys.symbol.exclamationmark_circle'))
+        .fontSize(48)
+        .fontColor(['#3D5AFE'])
+      Text(L10n.serviceSessionExpired)
+        .fontSize(16)
+        .textAlign(TextAlign.Center)
+        .margin({ top: 16, bottom: 24 })
+      Button(L10n.ok)
+        .onClick(() => {
+          CurrentUserStore.getInstance().clear();
+          APIClient.getInstance().clearAuthInfo();
+          this.onNavigateServerList();
+        })
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .padding(24)
+    .backgroundColor('#1a1a2e')
+  }
+
+  @Builder
+  MainHomeView() {
+    Stack() {
+      // 壁纸背景（上下延伸到系统安全区外，对齐 Flutter 首页沉浸效果）
+      if (this.wallpaperPixelMap) {
+        Image(this.wallpaperPixelMap)
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      } else {
+        Column()
+          .width('100%')
+          .height('100%')
+          .backgroundColor('#2d3436')
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      }
+
+      Column() {
+        HomeServerInfoCard({
+          vm: this.vm,
+          onOpenUserInfo: () => {
+            this.showUserInfo = true;
+          },
+          onOpenWallpaper: () => {
+            this.showWallpaperPicker = true;
+          }
+        })
+
+        HomeMonitorCard({
+          vm: this.vm,
+          onTapAction: (action: string) => {
+            if (action === 'upload') {
+              this.openApp('upload');
+              return;
+            }
+            if (action === 'download') {
+              this.openApp('download');
+              return;
+            }
+            if (action === 'photo_backup') {
+              // 相册备份已迁移，接入路由
+              this.openApp('photo_backup');
+              return;
+            }
+            this.getUIContext().getPromptAction().showToast({ message: L10n.featureComingSoon });
+          }
+        })
+
+        HomeAppsGrid({
+          vm: this.vm,
+          onTapApp: (app: string) => {
+            this.openApp(app);
+          }
+        })
+      }
+      .width('100%')
+      .height('100%')
+      // 全屏布局下避让状态栏（壁纸背景层仍顶格延伸）
+      .padding({ top: this.statusBarHeight + 8, bottom: 24 })
+
+      if (this.showUserInfo) {
+        HomeUserInfoDialog({
+          onDismiss: () => {
+            this.showUserInfo = false;
+          },
+          onLoggedOut: () => {
+            this.showUserInfo = false;
+            AppEventBus.emitAuthSessionExpired();
+            this.onNavigateServerList();
+          }
+        })
+      }
+
+      if (this.showWallpaperPicker) {
+        HomeWallpaperPicker({
+          onDismiss: () => {
+            this.showWallpaperPicker = false;
+          },
+          onApplied: () => {
+            void this.refreshWallpaper();
+          }
+        })
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .alignContent(Alignment.TopStart)
+  }
+}

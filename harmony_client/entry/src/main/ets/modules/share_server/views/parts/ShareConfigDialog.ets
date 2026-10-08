@@ -1,7 +1,7 @@
 import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
 import { DialogUtil } from '../../../../common/DialogUtil';
-import { pickTargetFolderViaSheet } from '../../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
 import { EmptyState } from '../../../../common/components/EmptyState';
 import { ShareRootPath, ShareServerConfigRecord, ShareUserOption } from '../../models/ShareServerModels';
 import { ShareServerController } from '../../controllers/ShareServerController';

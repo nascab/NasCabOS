@@ -12,7 +12,7 @@ import { PickOption, showOptionPickSheet } from '../../../common/components/Opti
 import { MusicCollectionController } from '../controllers/MusicLibraryControllers';
 import { MusicCollectionItem, MusicCollectionPreviewItem } from '../models/MusicModels';
 import { MusicSubListPageParam } from '../router/MusicRoutes';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 
 /**
  * 音乐合集列表页（对齐 Flutter MusicCollectionListView 移动端）：

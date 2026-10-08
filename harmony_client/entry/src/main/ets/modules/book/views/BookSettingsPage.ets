@@ -10,8 +10,8 @@ import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { BookSourceSettingsController } from '../controllers/BookControllers';
 import { BookSource } from '../models/BookModels';
 import { BookLocalCacheService, BookCacheEntry } from '../services/BookLocalCacheService';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
-import { FileFormat } from '../../../files/models/FileModels';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
+import { FileFormat } from '../../files/models/FileModels';
 
 /**
  * 图书设置页（对齐 Flutter _AppBookSettingsTab）：

@@ -8,8 +8,8 @@ import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
 import { MusicSourceController, MusicCacheSettingsController } from '../controllers/MusicSettingControllers';
 import { MusicSource } from '../models/MusicModels';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
-import { FileFormat } from '../../../files/models/FileModels';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
+import { FileFormat } from '../../files/models/FileModels';
 
 /**
  * 音乐设置页（对齐 Flutter _AppMusicSettingsTab）：

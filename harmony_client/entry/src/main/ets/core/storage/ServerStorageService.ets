@@ -1,6 +1,6 @@
 import { PreferencesStore } from './PreferencesStore';
 import { CacheKeys } from './CacheKeys';
-import { ServerInfo } from '../../auth/models/ServerInfo';
+import { ServerInfo } from '../../modules/auth/models/ServerInfo';
 
 export class ServerStorageService {
   private static instance: ServerStorageService | undefined = undefined;

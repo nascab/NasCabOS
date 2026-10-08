@@ -8,7 +8,7 @@ import { NavUtil } from '../../../common/NavUtil';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { GlassCard } from '../../../common/components/GlassCard';
 import { SheetHandle, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
-import { UploadTransferHelper } from '../../../transfer/utils/UploadTransferHelper';
+import { UploadTransferHelper } from '../../transfer/utils/UploadTransferHelper';
 import { PhotoBackupController, PhotoBackupRuntime } from '../controllers/PhotoBackupController';
 import { PhotoBackupSourceType, PhotoBackupTask } from '../models/PhotoBackupModels';
 import { PhotoBackupRoutes, PhotoBackupPageParam, PhotoBackupTaskFormPageParam } from '../router/PhotoBackupRoutes';

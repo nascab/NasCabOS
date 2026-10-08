@@ -8,9 +8,9 @@ import { L10n } from '../../../core/localization/L10n';
 import { HeaderMap } from '../../../common/HeaderMap';
 import { P2pRtcChannel } from '../../../p2p/P2pProtocol';
 import { P2PService } from '../../../p2p/P2PService';
-import { UploadCancellationToken } from '../../../transfer/controllers/UploadCore';
-import { UploadTransferHelper } from '../../../transfer/utils/UploadTransferHelper';
-import { UriReader } from '../../../transfer/utils/UriReader';
+import { UploadCancellationToken } from '../../transfer/controllers/UploadCore';
+import { UploadTransferHelper } from '../../transfer/utils/UploadTransferHelper';
+import { UriReader } from '../../transfer/utils/UriReader';
 
 const TAG = 'EncryptedSpaceApi';
 

@@ -22,7 +22,7 @@ import { MusicListApiService } from '../services/MusicApiServices';
 import { PlayListApiService } from '../services/MusicApiServices';
 import { MusicFileApiService, MusicFileAttributes } from '../services/MusicApiServices';
 import { pickMusicPlayListId } from '../components/MusicPlayListSelectSheet';
-import { FileFormat } from '../../../files/models/FileModels';
+import { FileFormat } from '../../files/models/FileModels';
 import { AppEventBus } from '../../../common/AppEventBus';
 import { ThemeManager } from '../../../core/theme/ThemeManager';
 

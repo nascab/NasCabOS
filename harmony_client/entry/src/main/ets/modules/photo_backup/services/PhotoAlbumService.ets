@@ -5,7 +5,7 @@ import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { WindowStore } from '../../../common/WindowStore';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { L10n } from '../../../core/localization/L10n';
-import { UploadTransferHelper } from '../../../transfer/utils/UploadTransferHelper';
+import { UploadTransferHelper } from '../../transfer/utils/UploadTransferHelper';
 import {
   PhotoAlbumInfo, PhotoBackupCursor, PhotoBackupSourceType,
   PhotoBackupTask, PhotoSourceEntry

@@ -4,7 +4,7 @@ import { PageScaffold } from '../../../common/PageScaffold';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { FileBackupController } from '../controllers/FileBackupController';
 import { FileBackupEditPageParam } from '../router/FileBackupRoutes';
 import { BackupTask, parseIntOr } from '../models/FileBackupModels';

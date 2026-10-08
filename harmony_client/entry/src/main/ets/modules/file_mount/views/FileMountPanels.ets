@@ -5,7 +5,7 @@ import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { GlassCard } from '../../../common/components/GlassCard';
-import { FileBrowserParam } from '../../../files/views/FileBrowserPage';
+import { FileBrowserParam } from '../../files/views/FileBrowserPage';
 import { MountItem } from '../models/FileMountModels';
 import { OpenlistDriverI18n } from '../services/OpenlistDriverI18n';
 import { FileMountRoutes, FileMountEditPageParam, OpenlistMountEditPageParam } from '../router/FileMountRoutes';

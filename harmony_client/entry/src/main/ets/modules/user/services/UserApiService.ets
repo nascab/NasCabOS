@@ -1,5 +1,5 @@
 import { APIClient } from '../../../core/network/APIClient';
-import { AuthService } from '../../../auth/AuthService';
+import { AuthService } from '../../auth/AuthService';
 import {
   FileLogListResponse, LoginRecord, UserPermissionItem, UserProfile
 } from '../models/UserModels';

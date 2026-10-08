@@ -5,9 +5,9 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { APIClient } from '../../../core/network/APIClient';
 import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { PlayerPlaylistItem } from '../../../video_player/models/PlayerModels';
-import { openVideoPlayer } from '../../../video_player/views/PlayerNavigator';
-import { MediaPickerUtil } from '../../../transfer/utils/MediaPickerUtil';
+import { PlayerPlaylistItem } from '../../video_player/models/PlayerModels';
+import { openVideoPlayer } from '../../video_player/views/PlayerNavigator';
+import { MediaPickerUtil } from '../../transfer/utils/MediaPickerUtil';
 import { EncryptedSpaceActiveSpace, EncryptedFileItem } from '../models/EncryptedSpaceModels';
 import { EncryptedSpaceApiService } from './EncryptedSpaceApiService';
 

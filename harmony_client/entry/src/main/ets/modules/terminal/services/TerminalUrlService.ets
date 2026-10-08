@@ -2,7 +2,7 @@ import { APIClient } from '../../../core/network/APIClient';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { ServerStorageService } from '../../../core/storage/ServerStorageService';
-import { ServerInfo } from '../../../auth/models/ServerInfo';
+import { ServerInfo } from '../../auth/models/ServerInfo';
 
 /**
  * 终端 WebSocket 连接地址构建（对齐 Flutter getTerminalConnectUrl 非 Web 分支）：

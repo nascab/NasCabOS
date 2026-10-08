@@ -2,7 +2,7 @@ import { L10n } from '../../../core/localization/L10n';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { PreferencesStore } from '../../../core/storage/PreferencesStore';
-import { UploadCancellationToken } from '../../../transfer/controllers/UploadCore';
+import { UploadCancellationToken } from '../../transfer/controllers/UploadCore';
 import {
   EncryptedSpaceActiveSpace, EncryptedFileItem, encryptedFileItemFrom,
   ENCRYPTED_SPACE_SORT_FIELDS

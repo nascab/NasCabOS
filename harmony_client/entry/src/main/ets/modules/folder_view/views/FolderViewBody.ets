@@ -3,18 +3,18 @@ import { L10n } from '../../../core/localization/L10n';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
-import { FileUiHook } from '../../../files/controllers/FileController';
-import { showFileCreateSheet, showFileViewSheet } from '../../../files/views/FileSheets';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
-import { FileTopActionsBar } from '../../../files/views/components/FileTopActionsBar';
-import { FileSearchSection } from '../../../files/views/components/FileSearchSection';
-import { FileViewToolbar } from '../../../files/views/components/FileViewToolbar';
-import { FileListBodyView } from '../../../files/views/components/FileListBodyView';
-import { FileMultiSelectBarView } from '../../../files/views/components/FileMultiSelectBarView';
+import { FileUiHook } from '../../files/controllers/FileController';
+import { showFileCreateSheet, showFileViewSheet } from '../../files/views/FileSheets';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
+import { FileTopActionsBar } from '../../files/views/components/FileTopActionsBar';
+import { FileSearchSection } from '../../files/views/components/FileSearchSection';
+import { FileViewToolbar } from '../../files/views/components/FileViewToolbar';
+import { FileListBodyView } from '../../files/views/components/FileListBodyView';
+import { FileMultiSelectBarView } from '../../files/views/components/FileMultiSelectBarView';
 import { FolderViewController } from '../controllers/FolderViewController';
 import { FolderViewModuleType, FolderViewModuleTypes } from '../models/FolderViewModuleType';
 import { FolderViewPageParam } from '../router/FolderViewRoutes';
-import { TaskCenterPageParam } from '../../../transfer/views/TaskCenterPage';
+import { TaskCenterPageParam } from '../../transfer/views/TaskCenterPage';
 
 /**
  * 文件视图主体（通用组件，对齐 Flutter AppFolderViewPage _buildScaffold）：

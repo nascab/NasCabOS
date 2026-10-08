@@ -1,4 +1,4 @@
-import { MediaPickerUtil } from '../../../transfer/utils/MediaPickerUtil';
+import { MediaPickerUtil } from '../../transfer/utils/MediaPickerUtil';
 import { PreferencesStore } from '../../../core/storage/PreferencesStore';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { DialogUtil } from '../../../common/DialogUtil';

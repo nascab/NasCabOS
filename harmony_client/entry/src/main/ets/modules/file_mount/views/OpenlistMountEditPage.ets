@@ -7,7 +7,7 @@ import { PageScaffold } from '../../../common/PageScaffold';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { OpenlistMountController } from '../controllers/FileMountControllers';
 import { OpenlistDriverI18n } from '../services/OpenlistDriverI18n';
 import { OpenlistMountEditPageParam } from '../router/FileMountRoutes';

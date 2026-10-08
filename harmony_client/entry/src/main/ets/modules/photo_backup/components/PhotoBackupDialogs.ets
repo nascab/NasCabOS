@@ -3,7 +3,7 @@ import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { DialogUtil, DialogParamsBase } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { EmptyState } from '../../../common/components/EmptyState';
-import { UploadTransferHelper } from '../../../transfer/utils/UploadTransferHelper';
+import { UploadTransferHelper } from '../../transfer/utils/UploadTransferHelper';
 import { PhotoBackupController } from '../controllers/PhotoBackupController';
 import {
   formatPhotoBackupTime, PhotoBackupFileRecord, PhotoBackupRunRecord, PhotoBackupTask

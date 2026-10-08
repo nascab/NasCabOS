@@ -2,7 +2,7 @@ import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { L10n } from '../../../core/localization/L10n';
 import { NavUtil } from '../../../common/NavUtil';
 import { AppRouter } from '../../../router/AppRouter';
-import { FileBrowserParam } from '../../../files/views/FileBrowserPage';
+import { FileBrowserParam } from '../../files/views/FileBrowserPage';
 
 /**
  * 磁盘间备份模块公共小组件（对齐 Flutter backup_common_widgets.dart 的 _KeyValueRow

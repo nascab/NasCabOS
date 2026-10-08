@@ -1,7 +1,7 @@
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { UserManagementController } from '../controllers/UserManagementController';
 import { PermissionGroup, groupPermissions } from '../models/UserModels';
 

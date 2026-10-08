@@ -5,7 +5,7 @@ import { GlassCard } from '../../../common/components/GlassCard';
 import { EmptyState } from '../../../common/components/EmptyState';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickServerFileViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickServerFileViaSheet } from '../../files/views/FolderPickerSheet';
 import { QuickShareItem } from '../models/ShareServerModels';
 import { QuickShareController } from '../controllers/QuickShareController';
 import { QrCodeView } from './parts/QrCodeView';

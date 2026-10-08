@@ -20,8 +20,8 @@ import { MusicAlbumArtistPage } from './MusicAlbumArtistPage';
 import { MusicPlayListPage } from './MusicPlayListPage';
 import { MusicCollectionPage } from './MusicCollectionPage';
 import { MusicFloatingBar } from '../components/MusicFloatingBar';
-import { FolderViewBody } from '../../../modules/folder_view/views/FolderViewBody';
-import { FolderViewModuleType } from '../../../modules/folder_view/models/FolderViewModuleType';
+import { FolderViewBody } from '../../folder_view/views/FolderViewBody';
+import { FolderViewModuleType } from '../../folder_view/models/FolderViewModuleType';
 
 /**
  * 音乐主页（对齐 Flutter AppMusicMainFrameView + AppMusicMainView 移动端布局）：

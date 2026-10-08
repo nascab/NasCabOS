@@ -4,7 +4,7 @@ import { NetworkConfig } from './NetworkConfig';
 import { PreferencesStore } from '../storage/PreferencesStore';
 import { CacheKeys } from '../storage/CacheKeys';
 import { ServerStorageService } from '../storage/ServerStorageService';
-import { ServerInfo } from '../../auth/models/ServerInfo';
+import { ServerInfo } from '../../modules/auth/models/ServerInfo';
 import { P2PService } from '../../p2p/P2PService';
 import { P2pIcePreference } from '../../p2p/P2pProtocol';
 import { DevConnectMode, DevConnectModeUtil } from './DevConnectMode';

@@ -1,6 +1,6 @@
 import { L10n } from '../../../../core/localization/L10n';
 import { DialogUtil } from '../../../../common/DialogUtil';
-import { pickTargetFolderViaSheet } from '../../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
 import { PickOption } from '../../../../common/components/OptionPickSheet';
 import { MediaToolTaskController, buildImgBatchUpsertBody,
   parseImgBatchOutSize, parseImgBatchQuality } from '../../controllers/MediaToolControllers';

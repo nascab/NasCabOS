@@ -8,7 +8,7 @@ import { SheetHandle, SheetParamsBase, SheetUtil } from '../../../common/SheetUt
 import { BorderedIconButton } from '../../../common/components/BorderedIconButton';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickServerFileViaSheet, pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickServerFileViaSheet, pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { DockerController } from '../controllers/DockerController';
 import {
   buildDockerImageOptions, DOCKER_RESTART_POLICY_OPTIONS, dockerStr, DockerContainer,

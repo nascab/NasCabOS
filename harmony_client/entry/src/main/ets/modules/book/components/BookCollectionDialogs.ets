@@ -2,7 +2,7 @@ import { DialogParamsBase, DialogUtil } from '../../../common/DialogUtil';
 import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { BookCollectionController } from '../controllers/BookControllers';
 import { BookCollectionItem } from '../models/BookModels';
 

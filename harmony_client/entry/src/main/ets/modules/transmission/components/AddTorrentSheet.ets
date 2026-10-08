@@ -4,8 +4,8 @@ import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { SheetHandle, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
-import { pickTargetFolderViaSheet, pickServerFileViaSheet } from '../../../files/views/FolderPickerSheet';
-import { MediaPickerUtil } from '../../../transfer/utils/MediaPickerUtil';
+import { pickTargetFolderViaSheet, pickServerFileViaSheet } from '../../files/views/FolderPickerSheet';
+import { MediaPickerUtil } from '../../transfer/utils/MediaPickerUtil';
 import { TransmissionController } from '../controllers/TransmissionController';
 
 /**

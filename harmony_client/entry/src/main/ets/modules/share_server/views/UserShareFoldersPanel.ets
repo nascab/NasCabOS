@@ -3,7 +3,7 @@ import { AppTheme } from '../../../core/theme/AppTheme';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { GlassCard } from '../../../common/components/GlassCard';
 import { EmptyState } from '../../../common/components/EmptyState';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { UserShareFolderItem } from '../models/ShareServerModels';
 import { ShareServerController } from '../controllers/ShareServerController';
 

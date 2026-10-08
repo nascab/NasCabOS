@@ -12,7 +12,7 @@ import { MusicListItem, browseMusicFolder } from '../models/MusicModels';
 import { MusicPlayService } from '../service/MusicPlayService';
 import { MusicCoverThumb } from '../components/MusicCoverThumb';
 import { MusicMultiSelectBar } from '../components/MusicMultiSelectBar';
-import { FileBrowserParam } from '../../../files/views/FileBrowserPage';
+import { FileBrowserParam } from '../../files/views/FileBrowserPage';
 import { pickMusicPlayListId } from '../components/MusicPlayListSelectSheet';
 import { MusicSubListPageParam } from '../router/MusicRoutes';
 import { MusicSubListPayload } from '../controllers/MusicSubListController';

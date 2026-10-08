@@ -3,7 +3,7 @@ import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { DialogUtil, DialogParamsBase } from '../../../common/DialogUtil';
 import { SheetHandle, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import {
   EncryptedSpaceController, EncryptedSpaceEntry, EncryptedExportTaskItem
 } from '../controllers/EncryptedSpaceController';

@@ -28,7 +28,7 @@ export default class EntryAbility extends UIAbility {
     } catch (err) {
       hilog.error(DOMAIN, 'NasCab', 'Bootstrap failed: %{public}s', JSON.stringify(err));
     }
-    windowStage.loadContent('pages/Index', (err) => {
+    windowStage.loadContent('modules/pages/Index', (err) => {
       if (err.code) {
         hilog.error(DOMAIN, 'NasCab', 'Failed to load content: %{public}s', JSON.stringify(err));
         return;

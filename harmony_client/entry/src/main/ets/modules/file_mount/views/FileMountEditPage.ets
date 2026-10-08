@@ -4,7 +4,7 @@ import { PageScaffold } from '../../../common/PageScaffold';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { CircleCheckbox } from '../../../common/components/CircleCheckbox';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { FileMountController } from '../controllers/FileMountControllers';
 import { FileMountEditPageParam } from '../router/FileMountRoutes';
 import { MountItem, recStr } from '../models/FileMountModels';

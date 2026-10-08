@@ -1,4 +1,4 @@
-import { FileController } from '../../../files/controllers/FileController';
+import { FileController } from '../../files/controllers/FileController';
 import { FolderViewModuleType, FolderViewModuleTypes } from '../models/FolderViewModuleType';
 
 /**

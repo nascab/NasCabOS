@@ -6,7 +6,7 @@ import { PageScaffold } from '../../../common/PageScaffold';
 import { NavUtil } from '../../../common/NavUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { PhotoAlbumService } from '../services/PhotoAlbumService';
 import { PhotoBackupController } from '../controllers/PhotoBackupController';
 import { PhotoBackupSourceType, PhotoBackupTask } from '../models/PhotoBackupModels';

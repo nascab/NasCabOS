@@ -5,9 +5,9 @@ import { NetworkStatus } from '../../../core/network/NetworkStatus';
 import { BackgroundWorkKeeper } from '../../../core/background/BackgroundWorkKeeper';
 import { TransferNotificationHub } from '../../../core/notification/TransferNotificationHub';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { UploadTransferHelper } from '../../../transfer/utils/UploadTransferHelper';
-import { TransferStatus, TransferTask } from '../../../transfer/models/TransferModels';
-import { UploadCancellationToken, UploadCore, ProcessFileParams } from '../../../transfer/controllers/UploadCore';
+import { UploadTransferHelper } from '../../transfer/utils/UploadTransferHelper';
+import { TransferStatus, TransferTask } from '../../transfer/models/TransferModels';
+import { UploadCancellationToken, UploadCore, ProcessFileParams } from '../../transfer/controllers/UploadCore';
 import {
   PhotoBackupCursor, PhotoBackupFileRecord, PhotoBackupRunRecord,
   PhotoBackupRunTrigger, PhotoBackupSourceType, PhotoBackupTask, PhotoSourceEntry

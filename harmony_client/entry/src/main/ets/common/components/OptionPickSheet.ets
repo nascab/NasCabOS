@@ -1,6 +1,6 @@
 import { L10n } from '../../core/localization/L10n';
 import { AppTheme } from '../../core/theme/AppTheme';
-import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../common/SheetUtil';
+import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../SheetUtil';
 
 export class PickOption {
   key: string = '';

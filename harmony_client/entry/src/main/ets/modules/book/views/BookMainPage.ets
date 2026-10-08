@@ -18,8 +18,8 @@ import { BookCustomListView } from './BookCustomListView';
 import { BookCollectionView } from './BookCollectionView';
 import { BookMultiSelectBar } from '../components/BookMultiSelectBar';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
-import { FolderViewBody } from '../../../modules/folder_view/views/FolderViewBody';
-import { FolderViewModuleType } from '../../../modules/folder_view/models/FolderViewModuleType';
+import { FolderViewBody } from '../../folder_view/views/FolderViewBody';
+import { FolderViewModuleType } from '../../folder_view/models/FolderViewModuleType';
 
 /**
  * 图书馆主页（对齐 Flutter AppBookMainView 移动端布局）：

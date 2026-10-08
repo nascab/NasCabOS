@@ -19,7 +19,7 @@ import {
   NotesGroup, NotesNote, NOTES_ALL_TAG_FILTER, NOTES_PRESET_COLORS
 } from '../models/NotesModels';
 import { NotesActionItem, showNotesActionSheet } from '../components/NotesActionSheet';
-import { pickTargetFolderViaSheet } from '../../../files/views/FolderPickerSheet';
+import { pickTargetFolderViaSheet } from '../../files/views/FolderPickerSheet';
 import { NotesFileUtils } from '../services/NotesFileUtils';
 import { NotesMainPageParam } from '../router/NotesRoutes';
 

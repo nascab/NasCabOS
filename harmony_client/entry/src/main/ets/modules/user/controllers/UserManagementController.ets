@@ -1,7 +1,7 @@
 import { L10n } from '../../../core/localization/L10n';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
-import { AuthService } from '../../../auth/AuthService';
+import { AuthService } from '../../auth/AuthService';
 import {
   FileOperationLog, FileLogListResponse, LoginRecord, PermissionGroup,
   UserPermissionItem, UserProfile, flattenPermissions, groupPermissions
