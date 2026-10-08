@@ -1,9 +1,13 @@
 import { http } from '@kit.NetworkKit';
 import { image } from '@kit.ImageKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import fs from '@ohos.file.fs';
 import { APIClient } from '../../core/network/APIClient';
 import { AppTheme } from '../../core/theme/AppTheme';
 import { L10n } from '../../core/localization/L10n';
+
+const THUMB_LOG_DOMAIN: number = 0x8801;
+const THUMB_LOG_TAG: string = 'TinyThumb';
 
 /**
  * 统一图片加载器（对齐 Flutter CustomExtendedImage 能力）：
@@ -34,6 +38,10 @@ class InflightRequest {
   cancelled: boolean = false;
   /** 当前实际占用的 http 请求，取消时 destroy 立即中断 */
   httpReq?: http.HttpRequest;
+  /** tiny 202/404 退避等待定时器，取消时立即唤醒轮询协程 */
+  retryTimer: number = -1;
+  /** 退避等待的唤醒函数（与 retryTimer 配对，取消时立即结束休眠） */
+  cancelWait?: () => void;
 }
 
 export class AppImageLoader {
@@ -52,22 +60,40 @@ export class AppImageLoader {
   private static waitQueue: (() => void)[] = [];
   private static cacheDir: string = '';
 
-  /** tiny 缩略图退避重试配置（对齐 Flutter _kTiny404MaxRetries） */
+  /**
+   * tiny 缩略图退避重试配置（404 对齐 Flutter _kTiny404MaxRetries）。
+   * 404：文件不存在/海报缺失，仅按 500ms×2^n 重试 5 次（约 15.5s）。
+   * 202：服务端 worker 异步生成中（>100MB 视频/慢 IO 挂载盘转 worker，
+   * ffmpeg 单帧超时上限 180s），组件级短轮询必然提前放弃，
+   * 故在传输层按最长 180s 总预算持续轮询（2/4/8/16s…），且不随组件销毁中断（结果落盘预热缓存）。
+   */
   static readonly TINY_MAX_RETRIES: number = 5;
   static readonly TINY_INITIAL_DELAY_MS: number = 500;
+  static readonly TINY_PENDING_BUDGET_MS: number = 180_000;
+  static readonly TINY_PENDING_BASE_DELAY_MS: number = 2000;
+  static readonly TINY_PENDING_MAX_DELAY_MS: number = 16_000;
 
   /** 是否 tiny 缩略图接口 URL（对齐 Flutter _isTinyUrl：服务端可能异步生成中返回 404/202） */
   static isTinyUrl(url: string): boolean {
     return url.includes('/api/file/tiny');
   }
 
-  /** 是否可重试的 tiny 生成中错误（对齐 Flutter _isTinyPendingError） */
-  static isTinyPendingError(url: string, error: Object): boolean {
+  /** tiny 失败分类结果：kind=0 不重试；1=404 短重试（对齐 Flutter）；2=202/5xx/网络错误 长轮询 */
+  private static classifyTinyError(url: string, error: Object): number {
     if (!AppImageLoader.isTinyUrl(url)) {
-      return false;
+      return 0;
     }
     const s = `${error}`;
-    return s.includes('image_http_404') || s.includes('image_http_202');
+    // 明确终态：参数错误/鉴权/类型不支持，重试无意义
+    if (s.includes('image_http_400') || s.includes('image_http_401') ||
+      s.includes('image_http_403') || s.includes('image_http_415')) {
+      return 0;
+    }
+    if (s.includes('image_http_404')) {
+      return 1;
+    }
+    // 202 生成中、5xx、HTTP 超时/断连等网络错误：服务端可能正在内联 ffmpeg 出图，按长轮询处理
+    return 2;
   }
 
   /** 由 AppImage 组件注入应用缓存目录（getContext(this).cacheDir） */
@@ -149,6 +175,15 @@ export class AppImageLoader {
     }
     req.cancelled = true;
     AppImageLoader.inflight.delete(url);
+    if (req.retryTimer >= 0) {
+      clearTimeout(req.retryTimer);
+      req.retryTimer = -1;
+    }
+    if (req.cancelWait !== undefined) {
+      const wake = req.cancelWait;
+      req.cancelWait = undefined;
+      wake();
+    }
     if (req.httpReq !== undefined) {
       try {
         req.httpReq.destroy();
@@ -262,30 +297,116 @@ export class AppImageLoader {
   }
 
   private static async doLoad(url: string, req: InflightRequest): Promise<PixelMap> {
+    // 磁盘读取为本地快速 IO，不占用网络/解码并发槽
+    let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
+    if (!buffer || buffer.byteLength === 0) {
+      buffer = await AppImageLoader.downloadWithRetry(url, req);
+      if (req.cancelled) {
+        // 网络已中断/放弃：不落盘、不解码
+        throw new Error('image_cancelled');
+      }
+      AppImageLoader.writeDisk(url, buffer);
+    }
+    if (req.cancelled) {
+      throw new Error('image_cancelled');
+    }
     await AppImageLoader.acquireJob();
     try {
-      if (req.cancelled) {
-        throw new Error('image_cancelled');
-      }
-      let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
-      if (!buffer || buffer.byteLength === 0) {
-        buffer = await AppImageLoader.download(url, req);
-        if (req.cancelled) {
-          // 网络已中断/放弃：不落盘、不解码
-          throw new Error('image_cancelled');
-        }
-        AppImageLoader.writeDisk(url, buffer);
-      }
-      if (req.cancelled) {
-        throw new Error('image_cancelled');
-      }
       return await AppImageLoader.decode(buffer);
     } finally {
       AppImageLoader.releaseJob();
     }
   }
 
-  private static async download(url: string, req: InflightRequest): Promise<ArrayBuffer> {
+  /**
+   * 带 tiny 退避轮询的下载：
+   * - 404（尚未生成/文件缺失）：维持 Flutter 对齐的 5 次 500ms×2^n；
+   * - 202（worker 异步生成中）/5xx/HTTP 超时断连：2s 起步、上限 16s，在 180s 总预算内持续轮询
+   *   （服务端可能正阻塞在 inline ffmpeg 出图，单次 HTTP 超时后图仍会落缓存，需继续轮询）；
+   * - 400/401/403/415 等终态错误立即失败；
+   * - 每次 HTTP 尝试单独占用并发槽，退避休眠期间释放，避免长轮询饿死其他图片加载；
+   * - 组件销毁不取消（继续后台轮询并落盘预热），仅 URL 切换/大图放弃时由 cancelLoad 中断。
+   */
+  private static async downloadWithRetry(url: string, req: InflightRequest): Promise<ArrayBuffer> {
+    let attempt = 0;
+    let elapsedMs = 0;
+    while (true) {
+      if (req.cancelled) {
+        throw new Error('image_cancelled');
+      }
+      let buffer: ArrayBuffer | undefined;
+      let retryKind = 0;
+      let lastError: Error = new Error('image_failed');
+      await AppImageLoader.acquireJob();
+      try {
+        buffer = await AppImageLoader.downloadOnce(url, req);
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error(`${e}`);
+        if (lastError.message === 'image_cancelled') {
+          throw lastError;
+        }
+        retryKind = AppImageLoader.classifyTinyError(url, e as Object);
+      } finally {
+        AppImageLoader.releaseJob();
+      }
+      if (buffer !== undefined) {
+        if (attempt > 0) {
+          hilog.info(THUMB_LOG_DOMAIN, THUMB_LOG_TAG, 'tiny ok after %{public}d attempts/%{public}dms',
+            attempt + 1, elapsedMs);
+        }
+        return buffer;
+      }
+      if (retryKind === 0) {
+        hilog.warn(THUMB_LOG_DOMAIN, THUMB_LOG_TAG, 'tiny terminal error: %{public}s', lastError.message);
+        throw lastError;
+      }
+      let delayMs = 0;
+      if (retryKind === 1) {
+        if (attempt >= AppImageLoader.TINY_MAX_RETRIES) {
+          hilog.warn(THUMB_LOG_DOMAIN, THUMB_LOG_TAG, 'tiny give up after 404 x%{public}d', attempt + 1);
+          throw new Error('image_http_404');
+        }
+        delayMs = AppImageLoader.TINY_INITIAL_DELAY_MS * (1 << attempt);
+      } else {
+        if (elapsedMs >= AppImageLoader.TINY_PENDING_BUDGET_MS) {
+          hilog.warn(THUMB_LOG_DOMAIN, THUMB_LOG_TAG,
+            'tiny give up after budget %{public}dms, last=%{public}s', elapsedMs, lastError.message);
+          throw lastError;
+        }
+        delayMs = Math.min(
+          AppImageLoader.TINY_PENDING_BASE_DELAY_MS * (1 << attempt),
+          AppImageLoader.TINY_PENDING_MAX_DELAY_MS);
+        delayMs = Math.min(delayMs, AppImageLoader.TINY_PENDING_BUDGET_MS - elapsedMs);
+      }
+      if (attempt === 0 || attempt === 1) {
+        hilog.info(THUMB_LOG_DOMAIN, THUMB_LOG_TAG,
+          'tiny pending kind=%{public}d attempt=%{public}d err=%{public}s retryIn=%{public}dms',
+          retryKind, attempt + 1, lastError.message, delayMs);
+      }
+      await AppImageLoader.pause(delayMs, req);
+      if (req.cancelled) {
+        throw new Error('image_cancelled');
+      }
+      attempt++;
+      elapsedMs += delayMs;
+    }
+  }
+
+  /** 可被取消立即唤醒的休眠（退避等待期间不占用事件循环之外的资源） */
+  private static pause(delayMs: number, req: InflightRequest): Promise<void> {
+    return new Promise<void>((resolve): void => {
+      req.cancelWait = (): void => {
+        resolve();
+      };
+      req.retryTimer = setTimeout((): void => {
+        req.retryTimer = -1;
+        req.cancelWait = undefined;
+        resolve();
+      }, delayMs);
+    });
+  }
+
+  private static async downloadOnce(url: string, req: InflightRequest): Promise<ArrayBuffer> {
     const token = (APIClient.getInstance().state.accessToken ?? '').trim();
     const headers: Record<string, string> = {};
     if (token.length > 0) {
@@ -308,7 +429,17 @@ export class AppImageLoader {
       if (resp.responseCode < 200 || resp.responseCode >= 300) {
         throw new Error(`image_http_${resp.responseCode}`);
       }
-      return resp.result as ArrayBuffer;
+      // 202 属 2xx 成功区间但 body 为空（tiny 按需生成中）。必须显式抛错对齐 Flutter
+      // direct_image_http_202，否则 resp.result 为 undefined 会被当"无异常的失败"跳过全部重试。
+      if (resp.responseCode === 202) {
+        throw new Error('image_http_202');
+      }
+      const result = resp.result as ArrayBuffer;
+      if (!result || result.byteLength === 0) {
+        // 防御：空响应体对 tiny 视为生成中（长轮询），非 tiny 视为终态失败
+        throw new Error(AppImageLoader.isTinyUrl(url) ? 'image_http_202' : 'image_failed');
+      }
+      return result;
     } finally {
       httpReq.destroy();
       req.httpReq = undefined;
@@ -409,15 +540,19 @@ export struct AppImage {
   @Param imageRadius: number = 0;
   /** 加载中是否显示转圈（小缩略图场景可关） */
   @Param showLoadingSpin: boolean = true;
+  /**
+   * 加载中/失败时是否使用透明背景（列表缩略图场景：底层常驻本地类型图标，
+   * 网络图未就绪时直接露出图标，避免长时间灰块；tiny 202 生成可能轮询数十秒）。
+   */
+  @Param loadingTransparent: boolean = false;
   /** 加载结果回调（成功 true / 失败 false）：用于主图失败切换备选图等场景 */
   @Param onLoaded: (ok: boolean) => void = (_ok: boolean): void => {
   };
   @Local pixelMap: PixelMap | undefined = undefined;
   @Local failed: boolean = false;
   private loadSeq: number = 0;
-  /** tiny 404/202 退避重试计数与定时器（对齐 Flutter _tiny404RetryCount/_tiny404RetryTimer） */
-  private retryCount: number = 0;
-  private retryTimer: number = -1;
+  /** 最近一次提交给加载器的 URL（组件销毁不取消；URL 切换时用于取消旧的挂起请求） */
+  private requestedUrl: string = '';
   /** 当前组件持有展示权的图片 URL（与 AppImageLoader 引用计数配对） */
   private heldUrl: string = '';
 
@@ -426,41 +561,28 @@ export struct AppImage {
     void this.reload();
   }
 
-  /** 组件销毁时取消挂起的重试定时器并释放持有的 PixelMap 引用（对齐 Flutter dispose cancel） */
+  /**
+   * 组件销毁：仅释放持有的 PixelMap 引用。
+   * 不取消挂起的网络请求——tiny 202 轮询继续在后台进行，成功后落盘预热磁盘缓存，
+   * 滑回列表/重进页面时直接命中（加载器对 202 有最长 180s 的轮询预算与去重）。
+   */
   aboutToDisappear(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
     this.releaseHeld();
   }
 
-  /** 组件复用时 url 变化重新加载（重置重试计数，对齐 Flutter didUpdateWidget） */
+  /** 组件复用时 url 变化：旧 URL 仍在请求中且无其他等待者时立即中断，再加载新 URL */
   @Monitor('url')
   onUrlChange(): void {
-    this.retryCount = 0;
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
+    const previous = this.requestedUrl;
+    const current = this.url.trim();
+    if (previous.length > 0 && previous !== current) {
+      AppImageLoader.cancelLoad(previous);
     }
     void this.reload();
   }
 
   private isLocal(target: string): boolean {
     return target.length > 0 && !target.startsWith('http://') && !target.startsWith('https://');
-  }
-
-  /** tiny 生成中的指数退避重试：delay = 500ms × 2^count，最多 5 次 */
-  private scheduleRetry(): void {
-    if (this.retryTimer >= 0 || this.retryCount >= AppImageLoader.TINY_MAX_RETRIES) {
-      return;
-    }
-    const delay = AppImageLoader.TINY_INITIAL_DELAY_MS * (1 << this.retryCount);
-    this.retryTimer = setTimeout((): void => {
-      this.retryTimer = -1;
-      this.retryCount++;
-      void this.reload();
-    }, delay);
   }
 
   private releaseHeld(): void {
@@ -473,6 +595,7 @@ export struct AppImage {
   private async reload(): Promise<void> {
     const seq = ++this.loadSeq;
     const target = this.url.trim();
+    this.requestedUrl = target;
     if (target.length === 0 || this.isLocal(target)) {
       this.releaseHeld();
       this.pixelMap = undefined;
@@ -480,6 +603,7 @@ export struct AppImage {
       return;
     }
     try {
+      // tiny 202/404 的退避轮询已内聚在加载器传输层（202 最长轮询 180s），这里只等待最终结果
       const pm = await AppImageLoader.load(target);
       if (seq !== this.loadSeq) {
         return;
@@ -490,7 +614,6 @@ export struct AppImage {
       this.heldUrl = target;
       this.pixelMap = pm;
       this.failed = false;
-      this.retryCount = 0;
       if (previous.length > 0 && previous !== target) {
         AppImageLoader.release(previous);
       }
@@ -499,16 +622,8 @@ export struct AppImage {
       if (seq !== this.loadSeq) {
         return;
       }
-      if (AppImageLoader.isTinyPendingError(target, e as Object)) {
-        // 缩略图服务端生成中：释放旧图、保持加载占位，指数退避重试，重试耗尽才显示失败
-        if (this.retryCount < AppImageLoader.TINY_MAX_RETRIES) {
-          this.releaseHeld();
-          this.pixelMap = undefined;
-          this.failed = false;
-          this.scheduleRetry();
-          return;
-        }
-      }
+      hilog.warn(THUMB_LOG_DOMAIN, THUMB_LOG_TAG, 'AppImage load failed tiny=%{public}s: %{public}s',
+        AppImageLoader.isTinyUrl(target) ? '1' : '0', e instanceof Error ? e.message : `${e}`);
       this.releaseHeld();
       this.pixelMap = undefined;
       this.failed = true;
@@ -547,23 +662,27 @@ export struct AppImage {
           void this.reload();
         })
       } else {
-        // 加载中占位
-        Column() {
-          if (this.showLoadingSpin) {
-            LoadingProgress()
-              .width(26)
-              .height(26)
-              .color(AppTheme.withAlpha('#FFFFFF', 0.35))
+        // 加载中占位：loadingTransparent 时留空，露出底层本地类型图标（tiny 生成可能等待数十秒）
+        if (!this.loadingTransparent) {
+          Column() {
+            if (this.showLoadingSpin) {
+              LoadingProgress()
+                .width(26)
+                .height(26)
+                .color(AppTheme.withAlpha('#FFFFFF', 0.35))
+            }
           }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
+          .height('100%')
         }
-        .justifyContent(FlexAlign.Center)
-        .width('100%')
-        .height('100%')
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.08))
+    .backgroundColor(this.loadingTransparent && this.pixelMap === undefined ?
+      Color.Transparent :
+      AppTheme.withAlpha(AppTheme.current().onSurface, 0.08))
     .borderRadius(this.imageRadius)
     .clip(true)
   }

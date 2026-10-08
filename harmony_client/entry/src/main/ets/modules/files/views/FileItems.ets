@@ -156,7 +156,7 @@ export struct FileGridItem {
     .width('100%')
     .onClick(() => {
       if (this.isCustomAdd) {
-        this.ctrl.handleItemTap(this.item, true);
+        this.ctrl.handleItemTap(this.item, true, this.allItems);
         return;
       }
       if (this.ctrl.isMultiSelectMode) {
@@ -167,7 +167,7 @@ export struct FileGridItem {
         this.onOpenDir(this.path, FileModelAccess.fileName(this.item));
         return;
       }
-      this.ctrl.handleItemTap(this.item, true);
+      this.ctrl.handleItemTap(this.item, true, this.allItems);
     })
     .gesture(LongPressGesture()
       .onAction((): void => {
@@ -257,7 +257,7 @@ export struct FileListItem {
     .opacity(fileItemIsDotHidden(this.item) ? FILE_HIDDEN_LIST_OPACITY : 1.0)
     .onClick(() => {
       if (this.isCustomAdd) {
-        this.ctrl.handleItemTap(this.item, true);
+        this.ctrl.handleItemTap(this.item, true, this.allItems);
         return;
       }
       if (this.ctrl.isMultiSelectMode) {
@@ -268,7 +268,7 @@ export struct FileListItem {
         this.onOpenDir(this.path, FileModelAccess.fileName(this.item));
         return;
       }
-      this.ctrl.handleItemTap(this.item, true);
+      this.ctrl.handleItemTap(this.item, true, this.allItems);
     })
     .gesture(LongPressGesture()
       .onAction((): void => {

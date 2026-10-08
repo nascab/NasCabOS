@@ -7,6 +7,7 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { FileController } from '../controllers/FileController';
 import { FileFormat, FileItem, FileModelAccess, FileStats } from '../models/FileModels';
 import { FileStatsService } from '../service/FileStatsService';
+import { FileOpener } from '../service/FileOpener';
 import { AppRouter } from '../../../router/AppRouter';
 import { UploadCenterParam } from '../../transfer/views/UploadCenterPage';
 import { DownloadService } from '../../transfer/services/DownloadService';
@@ -691,6 +692,16 @@ struct FileItemMenuSheetInner {
             }
           })
         } else {
+          if (FileModelAccess.type(this.p.item) !== 'dir') {
+            SheetListItem({
+              icon: $r('sys.symbol.eye'),
+              title: L10n.t('open', '打开'),
+              onSelect: (): void => {
+                this.p.close();
+                FileOpener.openFileItem(this.p.item, this.p.allItems);
+              }
+            })
+          }
           SheetListItem({
             icon: $r('sys.symbol.square_and_pencil'),
             title: L10n.t('rename', '重命名'),

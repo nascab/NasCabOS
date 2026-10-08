@@ -7,6 +7,7 @@ import { DialogUtil } from '../../../common/DialogUtil';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { FileApiService } from '../service/FileApiService';
 import { FileWatcherService, FileChangeData } from '../service/FileWatcherService';
+import { FileOpener } from '../service/FileOpener';
 import { FileClipboard } from './FileClipboard';
 import {
   FileItem, FileModelAccess, FileSuffixes, fileItemIsDotHidden
@@ -935,10 +936,14 @@ export class FileController {
     }
   }
 
-  // ==================== open（未迁移依赖模块的分支以 toast 占位） ====================
+  // ==================== open（类型分发见 FileOpener） ====================
 
-  /** 点击条目（对齐 Flutter handleItemTap；仅保留目录导航，其余类型打开器未迁移） */
-  handleItemTap(it: FileItem, forceEnter: boolean): void {
+  /**
+   * 点击条目（对齐 Flutter handleItemTap）：目录进入导航；
+   * 图片/视频/TXT/PDF/电子书按类型分发到 gallery/video_player/book 模块（见 FileOpener）。
+   * allItems 为当前展示列表，图片/视频用于定位同屏滑动与连播索引。
+   */
+  handleItemTap(it: FileItem, forceEnter: boolean, allItems: FileItem[] = []): void {
     const virtualType = FileModelAccess.virtualType(it);
     if (virtualType === 'custom_add') {
       this.uiHook?.showAddCustomPath();
@@ -954,8 +959,7 @@ export class FileController {
         void this.navigateTo(path);
         return;
       }
-      // 图片/视频/文档/书籍/压缩包等打开器依赖相册、播放器、编辑器、传输等未迁移模块
-      ToastUtil.show(L10n.featureComingSoon);
+      FileOpener.openFileItem(it, allItems.length > 0 ? allItems : this.displayItems);
       return;
     }
     this.selectOnly(path);
