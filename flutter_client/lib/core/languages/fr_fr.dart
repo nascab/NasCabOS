@@ -1950,6 +1950,8 @@ class FrFr extends Translations {
       'server_menu_select_channel': 'Sélectionner canal',
       'server_menu_edit_pair_code': 'Modifier code d\'appairage',
       'server_saved': 'Serveurs enregistrés',
+      'server_ignore_local_proxy': 'Ignorer le proxy local',
+      'server_ignore_local_proxy_help': 'Si vous utilisez un proxy local pour vous connecter au serveur, veuillez décocher cette option',
       'server_listTitle': 'Sélectionner serveur NasCab pour connexion',
       'server_add': 'Ajouter serveur',
       'server_localServer': 'Local',

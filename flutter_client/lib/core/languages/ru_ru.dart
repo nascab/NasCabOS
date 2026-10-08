@@ -1891,6 +1891,8 @@ class RuRu extends Translations {
       'server_menu_select_channel': 'Выбрать канал',
       'server_menu_edit_pair_code': 'Редактировать код сопряжения',
       'server_saved': 'Сохранённые серверы',
+      'server_ignore_local_proxy': 'Игнорировать локальный прокси',
+      'server_ignore_local_proxy_help': 'Если вы подключаетесь к серверу через локальный прокси, снимите этот флажок',
       'server_listTitle': 'Выберите сервер NasCab для входа',
       'server_add': 'Добавить сервер',
       'server_localServer': 'Локальный',

@@ -1951,6 +1951,8 @@ class IdId extends Translations {
       'server_menu_select_channel': 'Pilih Channel',
       'server_menu_edit_pair_code': 'Ubah Kode Pencocokan',
       'server_saved': 'Server Tersimpan',
+      'server_ignore_local_proxy': 'Abaikan proxy lokal',
+      'server_ignore_local_proxy_help': 'Jika Anda bergantung pada proxy lokal untuk terhubung ke server, harap hapus centang opsi ini',
       'server_listTitle': 'Login Server NASCAB',
       'server_add': 'Tambah Server',
       'server_localServer': 'Lokal',

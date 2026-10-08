@@ -1926,6 +1926,8 @@ class ViVn extends Translations {
       'server_menu_select_channel': 'Chọn kênh',
       'server_menu_edit_pair_code': 'Sửa mã ghép đôi',
       'server_saved': 'Đã lưu máy chủ',
+      'server_ignore_local_proxy': 'Bỏ qua proxy cục bộ',
+      'server_ignore_local_proxy_help': 'Nếu bạn phụ thuộc vào proxy cục bộ để kết nối với máy chủ, vui lòng bỏ chọn tùy chọn này',
       'server_listTitle': 'Đăng nhập máy chủ NASCAB',
       'server_add': 'Thêm máy chủ',
       'server_localServer': 'Máy nội bộ',

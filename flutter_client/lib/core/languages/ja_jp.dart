@@ -1785,6 +1785,8 @@ class JaJp extends Translations {
       'server_menu_select_channel': 'チャンネルを選択',
       'server_menu_edit_pair_code': 'ペアリングコードを編集',
       'server_saved': '保存されたサーバー',
+      'server_ignore_local_proxy': 'ローカルプロキシを無視',
+      'server_ignore_local_proxy_help': 'ローカルプロキシ経由でサーバーに接続している場合は、このオプションのチェックを外してください',
       'server_listTitle': 'ログインする NasCab サーバーを選択',
       'server_add': 'サーバーを追加',
       'server_localServer': 'ローカル',

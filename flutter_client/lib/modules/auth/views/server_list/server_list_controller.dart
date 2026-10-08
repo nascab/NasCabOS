@@ -15,6 +15,8 @@ import 'package:NasCabOS/core/config/app_config.dart';
 
 import 'package:NasCabOS/modules/auth/service/auth_api_service.dart';
 import '../../../../core/api/api_controller.dart';
+import '../../../../core/api/proxy_bypass_config.dart';
+import '../../../../utils/cache_manager.dart';
 import '../../../../utils/dialog_util.dart';
 import '../../../../utils/device_utils.dart';
 import '../../../../utils/toast_util.dart';
@@ -45,6 +47,7 @@ class ServerListController extends GetxController {
   final showAddServerView = false.obs; //是否显示添加服务器页面
   final showCreateAdminView = false.obs; //是否显示创建管理员页面
   final selectedServerRx = Rxn<ServerInfoBean>(); //当前选中的服务器
+  final ignoreLocalProxy = true.obs; //是否忽略本地代理（默认开启，所有网络请求直连）
 
   bool _serverTapLocked = false;
   BuildContext? _tapLoadingDialogContext;
@@ -57,11 +60,20 @@ class ServerListController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 同步“忽略本地代理”状态（ApiController.onInit 已从本地缓存加载）
+    ignoreLocalProxy.value = ProxyBypassConfig.enabled;
     if (_initFlowStarted) return;
     _initFlowStarted = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _initFlow();
     });
+  }
+
+  /// 切换“忽略本地代理”：写入本地缓存，并对所有网络请求即时生效
+  void setIgnoreLocalProxy(bool value) {
+    ignoreLocalProxy.value = value;
+    ProxyBypassConfig.enabled = value;
+    unawaited(CacheManager().setBool(ProxyBypassConfig.cacheKey, value));
   }
 
   // getter方法

@@ -13,6 +13,7 @@ import '../../../../core/bg/background_controller.dart';
 import '../../../../core/theme/dark_theme.dart';
 import '../../../../utils/dimens_util.dart';
 import '../../../../utils/device_utils.dart';
+import '../../../../utils/dialog_util.dart';
 
 /// 服务器列表视图
 class ServerListView extends GetView<ServerListController> {
@@ -137,6 +138,8 @@ class _ServerListViewContent extends StatelessWidget {
             icon: Icons.cloud_done,
             actions: [CustomLanguageSelector(tooltip: 'language'.tr)],
           ),
+          // 忽略本地代理（固定在列表上方，不随服务器列表滚动；勾选后所有网络请求直连）
+          _buildIgnoreLocalProxyRow(context, serverListController),
           // 服务器列表
           Expanded(
             child: Scrollbar(
@@ -172,6 +175,55 @@ class _ServerListViewContent extends StatelessWidget {
             ),
           ),
           SizedBox(height: Dimens.s12),
+        ],
+      ),
+    );
+  }
+
+  /// 构建忽略本地代理选项（固定于“已保存服务器”标题上方，左侧与其对齐）
+  Widget _buildIgnoreLocalProxyRow(
+    BuildContext context,
+    ServerListController serverListController,
+  ) {
+    final theme = Theme.of(context);
+    return CheckboxListTile(
+      value: serverListController.ignoreLocalProxy.value,
+      onChanged: (bool? value) =>
+          serverListController.setIgnoreLocalProxy(value ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      // 左侧与下方“已保存服务器”区域标题左边缘（Dimens.s20）对齐
+      contentPadding: EdgeInsets.fromLTRB(Dimens.s20, 0, Dimens.s20, 0),
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              'server_ignore_local_proxy'.tr,
+              style: TextStyle(
+                fontSize: Dimens.t14,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          SizedBox(width: Dimens.s4),
+          // 圆形帮助图标：点击弹出说明（内层 InkWell 拦截点击，不触发勾选）
+          InkWell(
+            onTap: () => DialogUtil.showInfoDialog(
+              title: 'server_ignore_local_proxy'.tr,
+              content: 'server_ignore_local_proxy_help'.tr,
+            ),
+            borderRadius: BorderRadius.circular(Dimens.r12),
+            child: Padding(
+              padding: EdgeInsets.all(Dimens.s2),
+              child: Icon(
+                Icons.help_outline,
+                size: Dimens.i16,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
         ],
       ),
     );

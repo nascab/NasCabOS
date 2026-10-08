@@ -1940,6 +1940,8 @@ class PtBr extends Translations {
       'server_menu_select_channel': 'Selecionar Canal',
       'server_menu_edit_pair_code': 'Editar Código de Pareamento',
       'server_saved': 'Servidores salvos',
+      'server_ignore_local_proxy': 'Ignorar proxy local',
+      'server_ignore_local_proxy_help': 'Se você depende de um proxy local para conectar ao servidor, desmarque esta opção',
       'server_listTitle': 'Selecionar servidor NasCab para login',
       'server_add': 'Adicionar Servidor',
       'server_localServer': 'Local',

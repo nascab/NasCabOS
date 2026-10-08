@@ -30,6 +30,7 @@ import '../../modules/photoBackup/controller/photo_backup_controller.dart';
 import '../../modules/base/components/custom_extended_image.dart';
 import '../config/app_config.dart';
 import '../config/nascab_endpoints.dart';
+import 'proxy_bypass_config.dart';
 import 'http_client_factory.dart'
     if (dart.library.html) 'http_client_factory_web.dart'
     if (dart.library.io) 'http_client_factory_io.dart';
@@ -138,6 +139,7 @@ class ApiController extends GetxController {
     super.onInit();
     _loadStoredTokens();
     _loadDevConnectMode();
+    _loadIgnoreLocalProxy();
     _startTokenRefreshTimer();
     if (!kIsWeb) {
       LocalWebAssetServer.instance.setP2pActive(baseUrl.trim() == p2pBaseUrl);
@@ -228,6 +230,14 @@ class ApiController extends GetxController {
           .trim()
           .toLowerCase();
       _devConnectMode = _parseDevConnectMode(raw);
+    } catch (_) {}
+  }
+
+  /// 从本地缓存加载“忽略本地代理”开关（无缓存值时默认开启），对所有网络请求生效
+  void _loadIgnoreLocalProxy() {
+    try {
+      ProxyBypassConfig.enabled =
+          CacheManager().getBool(ProxyBypassConfig.cacheKey) ?? true;
     } catch (_) {}
   }
 

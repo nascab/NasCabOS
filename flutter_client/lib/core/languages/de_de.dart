@@ -1934,6 +1934,8 @@ class DeDe extends Translations {
       'server_menu_select_channel': 'Kanal auswählen',
       'server_menu_edit_pair_code': 'Pairing-Code bearbeiten',
       'server_saved': 'Gespeicherte Server',
+      'server_ignore_local_proxy': 'Lokalen Proxy ignorieren',
+      'server_ignore_local_proxy_help': 'Wenn Sie für die Verbindung zum Server einen lokalen Proxy nutzen, deaktivieren Sie bitte diese Option',
       'server_listTitle': 'NasCab-Server zum Login auswählen',
       'server_add': 'Server hinzufügen',
       'server_localServer': 'Lokal',

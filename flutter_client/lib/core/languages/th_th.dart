@@ -1862,6 +1862,8 @@ class ThTh extends Translations {
       'server_menu_select_channel': 'เลือกช่อง',
       'server_menu_edit_pair_code': 'แก้ไขรหัสจับคู่',
       'server_saved': 'บันทึกเซิร์ฟเวอร์แล้ว',
+      'server_ignore_local_proxy': 'ละเว้นพร็อกซีภายในเครื่อง',
+      'server_ignore_local_proxy_help': 'หากคุณพึ่งพาพร็อกซีภายในเครื่องในการเชื่อมต่อกับเซิร์ฟเวอร์ โปรดยกเลิกการเลือกตัวเลือกนี้',
       'server_listTitle': 'เข้าสู่ระบบเซิร์ฟเวอร์ NASCAB',
       'server_add': 'เพิ่มเซิร์ฟเวอร์',
       'server_localServer': 'เครื่องนี้',

@@ -1855,6 +1855,8 @@ class ArAr extends Translations {
       'server_menu_select_channel': 'تحديد قناة',
       'server_menu_edit_pair_code': 'تحرير رمز الاقتران',
       'server_saved': 'خوادم محفوظة',
+      'server_ignore_local_proxy': 'تجاهل الوكيل المحلي',
+      'server_ignore_local_proxy_help': 'إذا كنت تعتمد على وكيل محلي للاتصال بالخادم، فيرجى إلغاء تحديد هذا الخيار',
       'server_listTitle': 'حدد خادم NasCab لتسجيل الدخول',
       'server_add': 'إضافة خادم',
       'server_localServer': 'محلي',

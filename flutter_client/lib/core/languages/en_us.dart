@@ -1903,6 +1903,8 @@ class EnUs extends Translations {
       'server_menu_select_channel': 'Select Channel',
       'server_menu_edit_pair_code': 'Edit Pair Code',
       'server_saved': 'Saved servers',
+      'server_ignore_local_proxy': 'Ignore local proxy',
+      'server_ignore_local_proxy_help': 'If you rely on a local proxy to connect to the server, please uncheck this option',
       'server_listTitle': 'Select NasCab server to login',
       'server_add': 'Add Server',
       'server_localServer': 'Local',

@@ -1793,6 +1793,8 @@ class KoKr extends Translations {
       'server_menu_select_channel': '채널 선택',
       'server_menu_edit_pair_code': '페어링 코드 수정',
       'server_saved': '서버 저장됨',
+      'server_ignore_local_proxy': '로컬 프록시 무시',
+      'server_ignore_local_proxy_help': '로컬 프록시를 통해 서버에 연결하는 경우 이 옵션의 선택을 해제해 주세요',
       'server_listTitle': 'NASCAB 서버 로그인',
       'server_add': '서버 추가',
       'server_localServer': '로컬',

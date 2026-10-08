@@ -1924,6 +1924,8 @@ class EsEs extends Translations {
       'server_menu_select_channel': 'Seleccionar canal',
       'server_menu_edit_pair_code': 'Editar código de emparejamiento',
       'server_saved': 'Servidores guardados',
+      'server_ignore_local_proxy': 'Ignorar proxy local',
+      'server_ignore_local_proxy_help': 'Si depende de un proxy local para conectarse al servidor, desactive esta opción',
       'server_listTitle': 'Seleccionar servidor NasCab para iniciar sesión',
       'server_add': 'Agregar servidor',
       'server_localServer': 'Local',
