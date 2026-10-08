@@ -402,9 +402,10 @@ class ServerListController extends GetxController {
           // 蜂窝网络 + 私有 IP → 必然不可达，跳过直连
           // final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
           // if (!(network.isCellular && isPrivateLanServerUrl)) {
-            // P2P 已就绪且配对码一致时保留连接（直连探测按 baseUrl 路由，不受影响），
-            // 供直连失败后的 Phase 2 直接复用，避免「先拆后建」竞态
-            if (!_isP2pReusableFor(serverItem)) {
+            // P2P 已就绪或同配对码建连进行中时保留（直连探测按 baseUrl 路由，不受影响），
+            // 供直连失败后的 Phase 2 直接复用或排队短路，避免「先拆后建」竞态
+            if (!_isP2pReusableFor(serverItem) &&
+                !_isP2pConnectInFlightFor(serverItem)) {
               await ApiController.instance.disconnectP2p().catchError((_) {});
             }
             ApiController.instance.setBaseUrl(serverItem.serverUrl);
@@ -426,7 +427,8 @@ class ServerListController extends GetxController {
                 lanUrl.isNotEmpty &&
                 _normalizeUrl(lanUrl) == _normalizeUrl(serverItem.serverUrl);
             if (lan.isNotEmpty && !lanAlreadyTried) {
-              if (!_isP2pReusableFor(serverItem)) {
+              if (!_isP2pReusableFor(serverItem) &&
+                  !_isP2pConnectInFlightFor(serverItem)) {
                 await ApiController.instance.disconnectP2p().catchError((_) {});
               }
               ApiController.instance.setBaseUrl(lanUrl);
@@ -454,7 +456,11 @@ class ServerListController extends GetxController {
             // transportKind 且不恢复 baseUrl，故这里直接切到 P2P 通道
             ApiController.instance.setBaseUrl(ApiController.p2pBaseUrl);
           } else {
-            await ApiController.instance.disconnectP2p().catchError((_) {});
+            // 同配对码建连进行中（如配对码添加流程）：不断开，
+            // _ensureP2pConnected 经建连队列等待其完成后短路复用或原样重建
+            if (!_isP2pConnectInFlightFor(serverItem)) {
+              await ApiController.instance.disconnectP2p().catchError((_) {});
+            }
             await _ensureP2pConnected(serverItem);
           }
           status = await AuthApiService.instance.checkServerStatus(
@@ -653,6 +659,20 @@ class ServerListController extends GetxController {
     if (code.isEmpty) return false;
     final api = ApiController.instance;
     return api.isP2pReady && api.p2pPairCode.trim() == code;
+  }
+
+  /// 同配对码的 P2P 建连是否正在进行（如配对码添加流程、自动重连在建）。
+  ///
+  /// 此时点击流程同样不应断开：_ensureP2pConnected 经建连队列排队等待其完成，
+  /// 成功则短路复用、失败则原样重建；若先 disconnect 会把即将就绪的连接拆掉
+  /// （表现为 p2p_rtc_init_failed_p2p_closed），重建期抖动即「P2P 通道连接失败」。
+  bool _isP2pConnectInFlightFor(ServerInfoBean serverItem) {
+    final code = (serverItem.pairCode ?? '').trim();
+    if (code.isEmpty) return false;
+    final api = ApiController.instance;
+    return !api.isP2pReady &&
+        api.isP2pEnabled &&
+        api.p2pPairCode.trim() == code;
   }
 
   Future<void> _ensureP2pConnected(ServerInfoBean serverItem) async {
