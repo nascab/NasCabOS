@@ -316,7 +316,15 @@ export struct BookTxtReaderPage {
       return;
     }
     const target = Math.min(Math.max(page1, 1), this.pageTotal) - 1;
-    this.swiperController.changeIndex(target, true);
+    if (target === this.pageIndex) {
+      return;
+    }
+    // 声明式翻页：Swiper.index 已绑定 pageIndex，直接改状态即可，
+    // 不用 swiperController.changeIndex（命令式与 .index 声明式在弹层退场期间混用，
+    // 会在 render 过程中改状态，触发 pageStack changed during render 崩溃）
+    this.navScrubPage1 = -1;
+    this.pageIndex = target;
+    this.schedulePersist();
   }
 
   private progressText(): string {
@@ -349,7 +357,13 @@ export struct BookTxtReaderPage {
       void this.reloadWithEncoding(v);
     };
     p.onJump = (page1: number): void => {
-      this.jumpToPage(page1);
+      const target = page1;
+      // 先关闭弹层，待退场动画结束再翻页：
+      // 弹层打开期间直接 changeIndex 会在 render 过程中改状态（pageStack/Swiper），触发崩溃
+      p.close();
+      setTimeout((): void => {
+        this.jumpToPage(target);
+      }, 280);
     };
     SheetUtil.present<TxtSettingsSheetParams>(p, txtSettingsSheetBuilder);
   }

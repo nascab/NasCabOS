@@ -66,6 +66,20 @@ export struct BookListGrid {
     return rows;
   }
 
+  /**
+   * 单列固定宽度（vp）：(内容宽 - 列间距×(n-1)) / n。
+   * 末行不足 n 本时卡片必须保持该宽度，不能用 layoutWeight 均分整行，
+   * 否则最后一本书会撑满整行、封面被等比放大。
+   * 内容宽未测量完成时返回 0，由行组件回退等分布局。
+   */
+  private itemWidth(): number {
+    const n = this.columnCount();
+    if (this.contentWidth <= 0 || n <= 0) {
+      return 0;
+    }
+    return (this.contentWidth - this.spacing() * (n - 1)) / n;
+  }
+
   build() {
     if (this.loading && this.items.length === 0) {
       Column() {
@@ -94,6 +108,7 @@ export struct BookListGrid {
             BookListRowView({
               row: row,
               spacing: this.spacing(),
+              itemWidth: this.itemWidth(),
               ctrl: this.ctrl,
               selectionMode: this.selectionMode,
               selectedIds: this.selectedIds,
@@ -182,6 +197,8 @@ export struct BookListGrid {
 struct BookListRowView {
   @Param row: BookListItem[] = [];
   @Param spacing: number = 10;
+  /** 单列固定宽度（vp）；<=0 表示容器宽度尚未测量，回退 layoutWeight 均分 */
+  @Param itemWidth: number = 0;
   @Param ctrl: BookListController = new BookListController();
   @Param selectionMode: boolean = false;
   @Param selectedIds: Set<number> = new Set<number>();
@@ -219,7 +236,11 @@ struct BookListRowView {
             }
           })
         }
-        .layoutWeight(1)
+        // 固定列宽：末行不足 n 本时右侧留白，卡片保持与满行一致的尺寸，
+        // 不会因 layoutWeight 均分整行而把最后一本书撑大；
+        // 容器宽度未测量时（itemWidth<=0）回退等分布局避免首帧 0 宽闪烁
+        .layoutWeight(this.itemWidth > 0 ? 0 : 1)
+        .width(this.itemWidth > 0 ? this.itemWidth : 0)
       }, (item: BookListItem) => `${item.id}_${item.isFavorite ? 1 : 0}_${item.coverState}`)
     }
     .width('100%')

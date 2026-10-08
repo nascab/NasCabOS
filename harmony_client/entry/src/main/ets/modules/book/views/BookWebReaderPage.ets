@@ -118,36 +118,9 @@ export struct BookWebReaderPage {
   @Local progress: number = 0;
   @Local errorText: string = '';
   private webController: webview.WebviewController = new webview.WebviewController();
-  /** 本地文件 serve 打开的 fd 集合（aboutToDisappear 统一关闭） */
-  private servedFds: Set<number> = new Set();
 
   aboutToAppear(): void {
     void this.buildStartUrl();
-  }
-
-  aboutToDisappear(): void {
-    this.servedFds.forEach((fd: number): void => {
-      try {
-        fs.closeSync(fd);
-      } catch (_e) {
-        // 忽略关闭失败
-      }
-    });
-    this.servedFds.clear();
-  }
-
-  /** 为一次本地文件请求打开独立 fd（内核按 fd 读取，避免共享偏移竞态） */
-  private openServeFd(): number {
-    if (this.param.localPath.length === 0) {
-      return -1;
-    }
-    try {
-      const f: fs.File = fs.openSync(this.param.localPath, fs.OpenMode.READ_ONLY);
-      this.servedFds.add(f.fd);
-      return f.fd;
-    } catch (_e) {
-      return -1;
-    }
   }
 
   /** 组装阅读器 URL（对齐 Flutter book_item_card 打开逻辑的查询参数集合） */
@@ -227,12 +200,37 @@ export struct BookWebReaderPage {
     return resp;
   }
 
-  /** 本地缓存图书文件响应（fd 方式，内核读取后自行消费，fd 在页面销毁时统一关闭） */
+  /**
+   * 本地缓存图书文件响应（fd 直供，每次拦截打开独立 fd，避免共享偏移竞态）。
+   * 重要：setResponseData(number) 的 fd 所有权按 ArkWeb 官方契约移交 Web 内核，
+   * 由内核消费后负责关闭；页面侧禁止再手动关闭，否则与内核双重关闭同一 fd。
+   * 被错误关闭的 fd 号会被后续 opendir、fopen 回收复用，进而与内核自身的
+   * ScopedFD 互相踩踏，触发 MUSL-FDSAN 报错、chromium scoped_file CHECK 失败、
+   * 渲染进程异常退出。仅在 fd 移交本身失败时兜底关闭，避免 fd 泄漏。
+   */
   private serveLocalFile(): WebResourceResponse {
     const resp = new WebResourceResponse();
-    const fd = this.openServeFd();
-    if (fd >= 0) {
-      resp.setResponseData(fd);
+    let fd = -1;
+    let file: fs.File | undefined = undefined;
+    if (this.param.localPath.length > 0) {
+      try {
+        file = fs.openSync(this.param.localPath, fs.OpenMode.READ_ONLY);
+        fd = file.fd;
+      } catch (_e) {
+        file = undefined;
+      }
+    }
+    if (file !== undefined && fd >= 0) {
+      try {
+        // fd 所有权移交 Web 内核，由内核负责关闭，此处及页面销毁时均不可再 close
+        resp.setResponseData(fd);
+      } catch (_e) {
+        try {
+          fs.closeSync(file);
+        } catch (_c) {
+        }
+        fd = -1;
+      }
     }
     resp.setResponseMimeType(bookMimeOf(this.param.localPath));
     resp.setResponseCode(fd >= 0 ? 200 : 404);
