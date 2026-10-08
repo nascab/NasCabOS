@@ -250,11 +250,11 @@ class TinyImageWorker {
     const fullPath = sourcePath ? path.resolve(sourcePath) : '';
 
     // 来源目录不存在则跳过并删除记录
-    await this._ensureSourceDirsFresh();
-    if (!this._isUnderSourceDir(fullPath)) {
-      await this.photoKnex('wait_gen_tiny').where({ id }).del();
-      return false;
-    }
+    // await this._ensureSourceDirsFresh();
+    // if (!this._isUnderSourceDir(fullPath)) {
+    //   await this.photoKnex('wait_gen_tiny').where({ id }).del();
+    //   return false;
+    // }
 
     if (!fullPath || !(await pathAccessible(fullPath, TINY_PATH_CHECK_MS))) {
       await this.photoKnex('wait_gen_tiny').where({ id }).del();
