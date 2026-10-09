@@ -113,6 +113,12 @@ export class P2PService implements P2pRequestSender {
   private reconnectAttempts: number = 0;
   private reconnectTimerId: number = -1;
   private connectSerialPromise: Promise<void> | undefined = undefined;
+  /** 建连代际：disconnect() 递增，在途建连 body 检查点失效后中止且不复活状态 */
+  private connectEpoch: number = 0;
+  /** 当前在途建连的配对码（供 isConnectInFlightFor 判定，对齐 Flutter _isP2pConnectInFlightFor） */
+  private inFlightCode: string = '';
+  /** 已建立连接实际使用的 ICE 偏好（短路复用时需匹配） */
+  private activeIcePreference: P2pIcePreference = P2pIcePreference.AUTO;
 
   static getInstance(): P2PService {
     if (!P2PService.instance) {
@@ -124,22 +130,38 @@ export class P2PService implements P2pRequestSender {
 
   async connectByPairCode(code: string, icePreference: P2pIcePreference = P2pIcePreference.AUTO): Promise<void> {
     this.icePreference = icePreference;
-    if (this.connectSerialPromise) {
-      await this.connectSerialPromise;
+    while (this.connectSerialPromise) {
+      // 排队等待前一次建连结束，但吞掉其错误：
+      // 排队方不继承前次失败，由本次按自己的参数重新评估（可短路复用）
+      const prev = this.connectSerialPromise;
+      await prev.catch(() => {});
     }
-    this.connectSerialPromise = this.connectByPairCodeBody(code);
+    const trimmed = code.trim();
+    this.inFlightCode = trimmed;
+    this.connectSerialPromise = this.connectByPairCodeBody(trimmed, icePreference);
     try {
       await this.connectSerialPromise;
     } finally {
       this.connectSerialPromise = undefined;
+      this.inFlightCode = '';
     }
   }
 
-  private async connectByPairCodeBody(code: string): Promise<void> {
+  private async connectByPairCodeBody(code: string, requestedPref: P2pIcePreference): Promise<void> {
     const trimmed = code.trim();
     if (trimmed.length === 0) {
       throw P2PError.emptyPairCode();
     }
+    // 短路复用：同配对码已连上时直接复用现有通道（对齐 Flutter _isP2pReusableFor）。
+    // 自动偏好复用任意通道（点击服务器等自动流程不拆可用连接）；
+    // 显式偏好（直连/中继）要求一致才复用，否则按新偏好重建。
+    if (this.isConnected && this.pairCode.trim() === trimmed
+      && (requestedPref === P2pIcePreference.AUTO || this.activeIcePreference === requestedPref)) {
+      return;
+    }
+
+    // 代际快照：disconnect() 递增 epoch，在途建连在检查点发现失效即中止
+    const epoch = this.connectEpoch;
 
     this.connectionState = P2PConnectionState.CONNECTING;
     this.lastError = undefined;
@@ -149,6 +171,9 @@ export class P2PService implements P2pRequestSender {
       await this.cleanupConnection(false);
 
       const session = await this.createP2pSession(trimmed);
+      if (epoch !== this.connectEpoch) {
+        throw P2PError.wsError('p2p_connect_stale');
+      }
       const wsUrl = session.wsUrl ?? '';
       const sid = session.sessionId ?? '';
       console.error(`[P2P] session created: wsUrl=${wsUrl}, sid=${sid}`);
@@ -161,18 +186,29 @@ export class P2PService implements P2pRequestSender {
       this.allowReconnect = true;
 
       const iceServers = await this.connectSignaling(wsUrl);
+      if (epoch !== this.connectEpoch) {
+        throw P2PError.wsError('p2p_connect_stale');
+      }
       console.error(`[P2P] signaling ready: iceServers=${JSON.stringify(iceServers)}`);
-      await this.startWebRTC(sid, iceServers);
+      await this.startWebRTC(sid, iceServers, epoch, requestedPref);
+      if (epoch !== this.connectEpoch) {
+        throw P2PError.wsError('p2p_connect_stale');
+      }
       console.error('[P2P] webrtc channels ready');
 
       this.isConnected = true;
       this.connectionState = P2PConnectionState.CONNECTED;
       this.reconnectAttempts = 0;
+      this.activeIcePreference = requestedPref;
 
       APIClient.getInstance().setBaseUrl(NetworkConfig.P2P_BASE_URL);
       await LocalPlaybackProxy.getInstance().start();
       await this.savePairCode(trimmed);
     } catch (e) {
+      if (epoch !== this.connectEpoch) {
+        // 建连期间发生过 disconnect()：状态已被复位，这里不再写 FAILED/lastError，防止复活
+        throw P2PError.wsError('p2p_connect_stale');
+      }
       this.connectionState = P2PConnectionState.FAILED;
       if (e instanceof Error) {
         this.lastError = e.message;
@@ -245,12 +281,26 @@ export class P2PService implements P2pRequestSender {
   }
 
   disconnect(): void {
+    // 代际 +1：使在途建连 body 在后续检查点失效并中止，防止断开后被在途逻辑复活
+    this.connectEpoch += 1;
     void this.cleanupConnection(true);
     this.isConnected = false;
     this.connectionState = P2PConnectionState.DISCONNECTED;
     this.sessionId = '';
     this.pairCode = '';
     LocalPlaybackProxy.getInstance().stop();
+  }
+
+  /** 现有连接是否可复用于该配对码（对齐 Flutter _isP2pReusableFor） */
+  isReusableFor(code: string): boolean {
+    const trimmed = code.trim();
+    return trimmed.length > 0 && this.isConnected && this.pairCode.trim() === trimmed;
+  }
+
+  /** 是否有针对该配对码的建连正在进行（对齐 Flutter _isP2pConnectInFlightFor） */
+  isConnectInFlightFor(code: string): boolean {
+    const trimmed = code.trim();
+    return trimmed.length > 0 && this.connectSerialPromise !== undefined && this.inFlightCode === trimmed;
   }
 
   get storedPairCode(): string {
@@ -292,7 +342,8 @@ export class P2PService implements P2pRequestSender {
     });
   }
 
-  private async startWebRTC(sessionId: string, iceServers: Object[]): Promise<void> {
+  private async startWebRTC(sessionId: string, iceServers: Object[], epoch: number,
+    requestedPref: P2pIcePreference): Promise<void> {
     const ws = this.signaling;
     if (!ws) {
       throw P2PError.invalidSession();
@@ -300,7 +351,7 @@ export class P2PService implements P2pRequestSender {
 
     const rtc = new WebRTCClient(sessionId, iceServers, (msg: SignalingOfferMsg) => {
       ws.sendOffer(msg);
-    }, this.icePreference === P2pIcePreference.RELAY_ONLY);
+    }, requestedPref === P2pIcePreference.RELAY_ONLY);
     this.rtcClient = rtc;
 
     // ICE 候选上行：对齐 Flutter 端 webrtc:candidate 信令
@@ -309,6 +360,11 @@ export class P2PService implements P2pRequestSender {
     });
 
     const forwardHandler = new SignalingForwardHandler(rtc, () => {
+      // 纵深防御：迟到的 onClose 若已不属于当前代际/当前客户端，直接忽略
+      //（手动 disconnect 已由 WebSocketSignaling.handleDisconnect 的 connected 标志抑制）
+      if (epoch !== this.connectEpoch || this.rtcClient !== rtc) {
+        return;
+      }
       this.isConnected = false;
       this.connectionState = P2PConnectionState.DISCONNECTED;
       if (this.rtcClient) {
@@ -354,7 +410,7 @@ export class P2PService implements P2pRequestSender {
     this.connectionState = P2PConnectionState.RECONNECTING;
     this.reconnectTimerId = setTimeout(() => {
       this.reconnectTimerId = -1;
-      this.connectByPairCode(this.pairCode).then(() => {
+      this.connectByPairCode(this.pairCode, this.icePreference).then(() => {
         this.reconnectAttempts = 0;
       }).catch(() => {
         this.scheduleReconnect();

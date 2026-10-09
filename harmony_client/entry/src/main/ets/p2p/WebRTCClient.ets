@@ -482,10 +482,14 @@ export class WebRTCClient {
 
   close(): void {
     this.stopHeartbeat();
-    if (this.pcHandle >= 0) {
-      WebRTCNativeBridge.closePeerConnection(this.pcHandle);
-      this.pcHandle = -1;
+    // 先解除 start() 的通道就绪等待：若建连途中被关闭，不再等 60s 超时
+    if (this.readyReject) {
+      this.readyReject(P2PError.wsError('p2p_closed') as Error);
+      this.readyResolve = undefined;
+      this.readyReject = undefined;
     }
+    // 先 reject 在途请求/分块，再销毁底层资源：
+    // 若先关 PC，native 关闭事件与 reject 的时序交叉可能让等待方悬挂
     this.channels.forEach((state: ChannelState) => {
       state.pending.forEach((p: PendingRequest) => {
         p.reject(P2PError.wsError('p2p_closed') as Error);
@@ -497,6 +501,10 @@ export class WebRTCClient {
       state.pendingChunks.clear();
     });
     this.channels.clear();
+    if (this.pcHandle >= 0) {
+      WebRTCNativeBridge.closePeerConnection(this.pcHandle);
+      this.pcHandle = -1;
+    }
   }
 }
 

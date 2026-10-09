@@ -291,13 +291,20 @@ export class ServerListViewModel {
     try {
       const hasPairCode = server.hasPairCode();
       const hasDirectUrl = server.hasDirectUrl() && server.serverUrl.trim() !== NetworkConfig.P2P_BASE_URL;
+      // 对齐 Flutter 双保护：可复用连接不拆、在建连接不拆（对同一配对码）
+      const pairCode = (server.pairCode ?? '').trim();
+      const p2p = P2PService.getInstance();
+      const p2pReusable = pairCode.length > 0 && p2p.isReusableFor(pairCode);
+      const p2pInFlight = pairCode.length > 0 && p2p.isConnectInFlightFor(pairCode);
 
       let status: ServerStatusResponse | undefined = undefined;
       let usingP2p = false;
 
       // Phase 1: 局域网直连
       if (hasDirectUrl) {
-        P2PService.getInstance().disconnect();
+        if (!p2pReusable && !p2pInFlight) {
+          P2PService.getInstance().disconnect();
+        }
         APIClient.getInstance().setBaseUrl(server.serverUrl.trim());
         status = await this.authService.checkServerStatus(2000);
 
@@ -307,7 +314,9 @@ export class ServerListViewModel {
           const lanUrl = lan.length > 0 ? `http://${lan}:${this.resolveHttpPort(server)}` : '';
           const lanAlreadyTried = lanUrl.length > 0 && normalizeUrl(lanUrl) === normalizeUrl(server.serverUrl);
           if (lan.length > 0 && !lanAlreadyTried) {
-            P2PService.getInstance().disconnect();
+            if (!p2pReusable && !p2pInFlight) {
+              P2PService.getInstance().disconnect();
+            }
             APIClient.getInstance().setBaseUrl(lanUrl);
             const lanStatus = await this.authService.checkServerStatus(2000);
             if (this.matchServerId(lanStatus, server)) {
@@ -320,7 +329,14 @@ export class ServerListViewModel {
       // Phase 2: P2P 自动探测直连/中继
       if ((status === undefined || !status.success || !status.isNasCabServer) && hasPairCode) {
         usingP2p = true;
-        P2PService.getInstance().disconnect();
+        // 重新评估：Phase 1 若已保留可复用/在建连接则不拆；
+        // 其余情况（不同配对码/已失效）清理后再建
+        const reusableNow = pairCode.length > 0 && p2p.isReusableFor(pairCode);
+        const inFlightNow = pairCode.length > 0 && p2p.isConnectInFlightFor(pairCode);
+        if (!reusableNow && !inFlightNow) {
+          P2PService.getInstance().disconnect();
+        }
+        // 可复用/在建时 connectByPairCode 内部短路复用或排队等待在途建连
         await this.ensureP2pConnected(server);
         if (!APIClient.getInstance().isP2pMode) {
           APIClient.getInstance().setBaseUrl(NetworkConfig.P2P_BASE_URL);
