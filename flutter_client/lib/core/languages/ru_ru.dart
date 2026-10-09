@@ -428,6 +428,8 @@ class RuRu extends Translations {
       'selected_summary': 'Выбрано: @photos фото / @groups групп',
       'selected_photos_only': 'Выбрано: @count',
       'put_in_photo_trash': 'Переместить в корзину фото',
+      'photo_ai_similar_keep_all': 'Оставить все',
+      'photo_ai_similar_keep_all_success': 'Все фотографии оставлены; эта группа больше не будет показываться',
       'delete_groups_confirm': 'Удалить @count выбранных записей дедупликации?',
       'photo_ai_auto_hide_face_album': 'Автоматически скрывать альбомы лиц',
       'photo_ai_auto_hide_face_album_subtitle':

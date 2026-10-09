@@ -445,6 +445,8 @@ class DeDe extends Translations {
       'selected_summary': 'Ausgewählt: @photos Fotos / @groups Gruppen',
       'selected_photos_only': 'Ausgewählt: @count',
       'put_in_photo_trash': 'In Foto-Papierkorb verschieben',
+      'photo_ai_similar_keep_all': 'Alle behalten',
+      'photo_ai_similar_keep_all_success': 'Alle Fotos wurden behalten, diese Gruppe wird nicht mehr angezeigt',
       'delete_groups_confirm': '@count ausgewählte Dedup-Datensätze löschen?',
       'photo_ai_auto_hide_face_album': 'Gesichtsalben automatisch ausblenden',
       'photo_ai_auto_hide_face_album_subtitle':

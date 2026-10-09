@@ -1297,6 +1297,8 @@ class ZhCn extends Translations {
       'selected_summary': '已选：@photos 张 / @groups 组',
       'selected_photos_only': '已选：@count 张',
       'put_in_photo_trash': '放入照片回收站',
+      'photo_ai_similar_keep_all': '全部保留',
+      'photo_ai_similar_keep_all_success': '已全部保留，该组将不再提示',
       'delete_groups_confirm': '确定删除选中的 @count 组去重记录？',
       'photo_ai_auto_hide_face_album': '自动隐藏人物相册',
       'photo_ai_auto_hide_face_album_subtitle': '隐藏照片少于一定数量的相册',

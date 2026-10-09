@@ -33,6 +33,7 @@ class AiSimilarController extends GetxController {
   final RxMap<int, int> photoSizeById = <int, int>{}.obs;
   final RxSet<int> _defaultAppliedGroupIds = <int>{}.obs;
   final RxSet<int> _manuallyToggledPhotoIds = <int>{}.obs;
+  final Set<int> _dismissingGroupIds = <int>{};
 
   final ScrollController scrollController = ScrollController();
 
@@ -167,10 +168,71 @@ class AiSimilarController extends GetxController {
 
   void togglePhotoSelection(int id) {
     _manuallyToggledPhotoIds.add(id);
-    if (selectedPhotoIds.contains(id)) {
+    final wasSelected = selectedPhotoIds.contains(id);
+    if (wasSelected) {
       selectedPhotoIds.remove(id);
     } else {
       selectedPhotoIds.add(id);
+    }
+
+    // 取消勾选后该组没有任何选中照片时，视为“全部保留”，移除该去重分组
+    if (wasSelected) {
+      final group = _findGroupOfPhoto(id);
+      if (group != null && _isGroupFullyKept(group)) {
+        unawaited(dismissKeepAllGroup(group));
+      }
+    }
+  }
+
+  AiSimilarGroupItem? _findGroupOfPhoto(int photoId) {
+    for (final g in groups) {
+      if (g.photos.any((p) => p.id == photoId)) return g;
+    }
+    return null;
+  }
+
+  /// 用户手动操作过，且组内当前没有任何待删除照片：表示该组全部保留
+  bool _isGroupFullyKept(AiSimilarGroupItem group) {
+    var touched = false;
+    for (final p in group.photos) {
+      if (selectedPhotoIds.contains(p.id)) return false;
+      if (_manuallyToggledPhotoIds.contains(p.id)) touched = true;
+    }
+    return touched;
+  }
+
+  /// 删除分组记录（照片全部保留），之后该组不再出现在去重列表中
+  Future<void> dismissKeepAllGroup(AiSimilarGroupItem group) async {
+    if (!_dismissingGroupIds.add(group.id)) return;
+    try {
+      final res = await _api.batchDeleteGroups([group.id]);
+      if (!res.success) {
+        ToastUtil.show(
+          (res.code == 403 ? 'permission_denied' : 'operation_failed').tr,
+        );
+        // 失败时恢复默认勾选，避免组一直停留在零勾选状态
+        _defaultAppliedGroupIds.remove(group.id);
+        _applyDefaultSelectionForGroup(group, force: true);
+        return;
+      }
+
+      final photoIds = group.photos
+          .map((p) => p.id)
+          .toList(growable: false);
+      groups.removeWhere((g) => g.id == group.id);
+      selectedPhotoIds.removeWhere(photoIds.contains);
+      _manuallyToggledPhotoIds.removeWhere(photoIds.contains);
+      _defaultAppliedGroupIds.remove(group.id);
+      for (final id in photoIds) {
+        photoSizeById.remove(id);
+      }
+      ToastUtil.show('photo_ai_similar_keep_all_success'.tr);
+
+      if (groups.isEmpty && hasMore.value && !isLoading.value) {
+        unawaited(_loadNextPageIfEmpty(showLoading: false));
+      }
+    } finally {
+      _dismissingGroupIds.remove(group.id);
     }
   }
 
@@ -178,12 +240,21 @@ class AiSimilarController extends GetxController {
     final ids = selectedPhotoIds.toList();
     if (ids.isEmpty) return;
 
+    // 兜底：手动取消了全部勾选（全部保留）但分组记录尚未移除的组，一并忽略
+    final keepAllGroupIds = groups
+        .where(_isGroupFullyKept)
+        .map((g) => g.id)
+        .toList(growable: false);
+
     try {
       DialogUtil.showLoading(message: 'loading'.tr);
       final res = await _timelineApi.batchTrash(ids);
       if (!res.success) {
         ToastUtil.show((res.code == 403 ? 'permission_denied' : 'operation_failed').tr);
         return;
+      }
+      if (keepAllGroupIds.isNotEmpty) {
+        await _api.batchDeleteGroups(keepAllGroupIds);
       }
       ToastUtil.show('photo_trashed_success'.tr);
       clearSelection();
@@ -330,10 +401,13 @@ class AiSimilarController extends GetxController {
     }
   }
 
-  void _applyDefaultSelectionForGroup(AiSimilarGroupItem group) {
-    if (_defaultAppliedGroupIds.contains(group.id)) return;
+  void _applyDefaultSelectionForGroup(
+    AiSimilarGroupItem group, {
+    bool force = false,
+  }) {
+    if (!force && _defaultAppliedGroupIds.contains(group.id)) return;
     final ids = group.photos.map((e) => e.id).toList(growable: false);
-    if (ids.any(_manuallyToggledPhotoIds.contains)) return;
+    if (!force && ids.any(_manuallyToggledPhotoIds.contains)) return;
 
     int? keepId;
     int keepSize = -1;

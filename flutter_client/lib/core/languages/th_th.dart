@@ -1406,6 +1406,8 @@ class ThTh extends Translations {
       'selected_summary': 'เลือก: @photos รูป / @groups กลุ่ม',
       'selected_photos_only': 'เลือก: @count รูป',
       'put_in_photo_trash': 'ย้ายไปถังรีไซเคิลรูป',
+      'photo_ai_similar_keep_all': 'เก็บทั้งหมด',
+      'photo_ai_similar_keep_all_success': 'เก็บรูปทั้งหมดแล้ว กลุ่มนี้จะไม่แสดงอีก',
       'delete_groups_confirm': 'ยืนยันลบ @count กลุ่มบันทึกลบซ้ำที่เลือก?',
       'photo_ai_auto_hide_face_album': 'ซ่อนอัลบั้มบุคคลอัตโนมัติ',
       'photo_ai_auto_hide_face_album_subtitle':

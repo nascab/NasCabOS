@@ -423,6 +423,8 @@ class ArAr extends Translations {
       'selected_summary': 'محدد: @photos صور / @groups مجموعات',
       'selected_photos_only': 'محدد: @count',
       'put_in_photo_trash': 'نقل إلى سلة محذوفات الصور',
+      'photo_ai_similar_keep_all': 'الاحتفاظ بالكل',
+      'photo_ai_similar_keep_all_success': 'تم الاحتفاظ بجميع الصور، ولن تظهر هذه المجموعة مرة أخرى',
       'delete_groups_confirm': 'حذف @count سجلات إزالة تكرار محددة؟',
       'photo_ai_auto_hide_face_album': 'إخفاء تلقائي لألبومات الوجه',
       'photo_ai_auto_hide_face_album_subtitle':

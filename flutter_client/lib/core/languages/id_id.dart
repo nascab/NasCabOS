@@ -1461,6 +1461,8 @@ class IdId extends Translations {
       'selected_summary': 'Terpilih: @photos Foto / @groups Grup',
       'selected_photos_only': 'Terpilih: @count Foto',
       'put_in_photo_trash': 'Masukkan ke Tempat Sampah Foto',
+      'photo_ai_similar_keep_all': 'Simpan semua',
+      'photo_ai_similar_keep_all_success': 'Semua foto disimpan; grup ini tidak akan ditampilkan lagi',
       'delete_groups_confirm':
           'Yakin ingin menghapus @count grup catatan penghapusan duplikasi yang dipilih?',
       'photo_ai_auto_hide_face_album':

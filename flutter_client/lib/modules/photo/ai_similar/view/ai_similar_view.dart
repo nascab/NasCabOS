@@ -327,12 +327,25 @@ class _AiSimilarGroupCard extends StatelessWidget {
                   style: theme.textTheme.titleSmall,
                 ),
               ),
-              Text(
-                '${group.id}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              TextButton.icon(
+                onPressed: () => controller.dismissKeepAllGroup(group),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.done, size: 16),
+                label: Text(
+                  'photo_ai_similar_keep_all'.tr,
+                  style: theme.textTheme.labelMedium,
                 ),
               ),
+              // Text(
+              //   '${group.id}',
+              //   style: theme.textTheme.bodySmall?.copyWith(
+              //     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: 10),

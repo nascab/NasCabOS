@@ -447,6 +447,8 @@ class FrFr extends Translations {
       'selected_summary': 'Sélectionné : @photos photos / @groups groupes',
       'selected_photos_only': 'Sélectionné : @count',
       'put_in_photo_trash': 'Mettre à la corbeille photo',
+      'photo_ai_similar_keep_all': 'Tout conserver',
+      'photo_ai_similar_keep_all_success': 'Toutes les photos sont conservées ; ce groupe ne sera plus affiché',
       'delete_groups_confirm':
           'Supprimer @count enregistrements de déduplication sélectionnés ?',
       'photo_ai_auto_hide_face_album':

@@ -436,6 +436,9 @@ class EnUs extends Translations {
       'selected_summary': 'Selected: @photos photos / @groups groups',
       'selected_photos_only': 'Selected: @count',
       'put_in_photo_trash': 'Move to photo trash',
+      'photo_ai_similar_keep_all': 'Keep all',
+      'photo_ai_similar_keep_all_success':
+          'All photos kept; this group will no longer be shown',
       'delete_groups_confirm': 'Delete @count selected dedup records?',
       'photo_ai_auto_hide_face_album': 'Auto Hide Face Albums',
       'photo_ai_auto_hide_face_album_subtitle':

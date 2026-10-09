@@ -1343,6 +1343,8 @@ class KoKr extends Translations {
       'selected_summary': '선택됨：@photos 장 / @groups 개 그룹',
       'selected_photos_only': '선택됨：@count 장',
       'put_in_photo_trash': '사진 휴지통으로 이동',
+      'photo_ai_similar_keep_all': '모두 유지',
+      'photo_ai_similar_keep_all_success': '모든 사진을 유지했으며 이 그룹은 더 이상 표시되지 않습니다',
       'delete_groups_confirm': '선택된 @count 개 중복 제거 기록을 삭제하시겠습니까?',
       'photo_ai_auto_hide_face_album': '인물 앨범 자동 숨기기',
       'photo_ai_auto_hide_face_album_subtitle': '일정 수보다 적은 사진이 있는 앨범 숨기기',

@@ -441,6 +441,8 @@ class PtBr extends Translations {
       'selected_summary': 'Selecionado: @photos fotos / @groups grupos',
       'selected_photos_only': 'Selecionado: @count',
       'put_in_photo_trash': 'Mover para lixeira de fotos',
+      'photo_ai_similar_keep_all': 'Manter todas',
+      'photo_ai_similar_keep_all_success': 'Todas as fotos foram mantidas; este grupo não será mais exibido',
       'delete_groups_confirm':
           'Excluir @count registros de deduplicação selecionados?',
       'photo_ai_auto_hide_face_album':

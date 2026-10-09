@@ -1451,6 +1451,8 @@ class ViVn extends Translations {
       'selected_summary': 'Đã chọn：@photos ảnh / @groups nhóm',
       'selected_photos_only': 'Đã chọn：@count ảnh',
       'put_in_photo_trash': 'Cho vào thùng rác ảnh',
+      'photo_ai_similar_keep_all': 'Giữ tất cả',
+      'photo_ai_similar_keep_all_success': 'Đã giữ tất cả ảnh; nhóm này sẽ không còn được hiển thị',
       'delete_groups_confirm':
           'Xác nhận xóa @count bản ghi loại bỏ trùng lặp đã chọn?',
       'photo_ai_auto_hide_face_album': 'Tự động ẩn album nhân vật',

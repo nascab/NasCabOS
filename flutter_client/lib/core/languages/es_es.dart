@@ -439,6 +439,8 @@ class EsEs extends Translations {
       'selected_summary': 'Seleccionado: @photos fotos / @groups grupos',
       'selected_photos_only': 'Seleccionado: @count',
       'put_in_photo_trash': 'Mover a papelera de fotos',
+      'photo_ai_similar_keep_all': 'Conservar todas',
+      'photo_ai_similar_keep_all_success': 'Se conservaron todas las fotos; este grupo ya no se mostrará',
       'delete_groups_confirm':
           '¿Eliminar @count registros de deduplicación seleccionados?',
       'photo_ai_auto_hide_face_album':

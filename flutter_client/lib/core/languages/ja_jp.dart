@@ -1335,6 +1335,8 @@ class JaJp extends Translations {
       'selected_summary': '選択済み：@photos 枚 / @groups グループ',
       'selected_photos_only': '選択済み：@count 枚',
       'put_in_photo_trash': '写真ゴミ箱に入れる',
+      'photo_ai_similar_keep_all': 'すべて保留',
+      'photo_ai_similar_keep_all_success': 'すべての写真を保留しました。このグループは今後表示されません',
       'delete_groups_confirm': '選択した @count グループの重複除去記録を削除しますか？',
       'photo_ai_auto_hide_face_album': '人物アルバムを自動非表示',
       'photo_ai_auto_hide_face_album_subtitle': '写真数が一定未満のアルバムを非表示',
