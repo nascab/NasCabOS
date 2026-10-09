@@ -57,7 +57,6 @@ extension ApiControllerP2p on ApiController {
     if (kIsWeb) return false;
     if (!_isP2pAutoMode()) return false;
     if (!isP2pMode) return false;
-    if (Platform.isWindows) return false;
     if (!isP2pReady) return false;
     if (_p2pTransportKind != P2pTransportKind.relay) return false;
     if (_p2pActiveIcePreference != P2pIcePreference.auto) return false;
@@ -381,6 +380,19 @@ extension ApiControllerP2p on ApiController {
     String code, {
     required bool resetReconnectAttempts,
   }) async {
+    // auto 偏好下打洞失败时，由 attempt 内部立即以 relayOnly 回退重连一次，
+    // 避免进入「20s 打洞超时 → 退避重连 → 再打洞失败」的长时间循环
+    await _connectP2pByPairCodeAttempt(
+      code,
+      resetReconnectAttempts: resetReconnectAttempts,
+    );
+  }
+
+  Future<void> _connectP2pByPairCodeAttempt(
+    String code, {
+    required bool resetReconnectAttempts,
+    bool allowRelayFallback = true,
+  }) async {
     print(
       '🟡 [P2pConnect] 开始连接, 配对码: "$code", resetReconnectAttempts: $resetReconnectAttempts',
     );
@@ -629,6 +641,27 @@ extension ApiControllerP2p on ApiController {
         // print('🟢 [P2pConnect] RTC 数据通道启动成功');
       } catch (e) {
         print('🔴 [P2pConnect] RTC 初始化失败: $e');
+        // auto 偏好打洞失败：立即回退中继(relayOnly)重连一次，
+        // 让用户尽快进入服务器；后续连接（含下次登录）仍默认 auto 优先直连
+        if (allowRelayFallback &&
+            isCurrentConnectToken() &&
+            _p2pIcePreference == P2pIcePreference.auto) {
+          print('🟠 [P2pConnect] 直连打洞失败，回退中继(relayOnly)重连...');
+          try {
+            await _cleanupP2p(
+              disableReconnect: false,
+              expectedConnectToken: connectToken,
+            );
+          } catch (_) {}
+          _p2pIcePreference = P2pIcePreference.relayOnly;
+          _p2pTransportKind = P2pTransportKind.relay;
+          _bumpConnectChannelRevision();
+          return await _connectP2pByPairCodeAttempt(
+            code,
+            resetReconnectAttempts: resetReconnectAttempts,
+            allowRelayFallback: false,
+          );
+        }
         unawaited(
           _cleanupP2p(
             disableReconnect: false,

@@ -43,11 +43,6 @@ class P2pRtcClient {
   /// 若因此落中继，登录后由 scheduleP2pDirectUpgrade 后台探测直连并热升级；
   /// 强制中继(relayOnly)策略不经此延迟（skipRelayCandidateDelay）。
   static Duration get _relayCandidateDelay {
-    // Windows 曾单独保持 4s 延迟（该平台未启用后台直连升级，优先保直连路径），
-    // 已按要求注释统一立即发送；如需恢复取消下行注释：
-    // if (defaultTargetPlatform == TargetPlatform.windows) {
-    //   return const Duration(seconds: 4);
-    // }
     return Duration.zero;
   }
 

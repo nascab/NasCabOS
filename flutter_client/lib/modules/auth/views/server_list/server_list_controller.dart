@@ -53,6 +53,7 @@ class ServerListController extends GetxController {
   BuildContext? _tapLoadingDialogContext;
   int _tapLoadingToken = 0;
   bool _tapLoadingActive = false;
+  Route<void>? _tapLoadingRoute;
   bool _exitDialogShowing = false;
   bool _initFlowStarted = false;
   bool _privacyDialogShowing = false;
@@ -576,7 +577,10 @@ class ServerListController extends GetxController {
     _tapLoadingActive = true;
     final token = ++_tapLoadingToken;
 
-    showDialog<void>(
+    // 记录 route 以便精确移除：dismiss 时若用 Navigator.pop() 会盲 pop 栈顶，
+    // 当错误弹窗/确认弹窗/新页面先于 finally 入栈时，会把它们误关而 loading 永久残留
+    // （表现为界面一直显示"正在登录"卡死）
+    final route = DialogRoute<void>(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
@@ -611,10 +615,15 @@ class ServerListController extends GetxController {
           ),
         );
       },
-    ).then((_) {
+    );
+    _tapLoadingRoute = route;
+    Navigator.of(context, rootNavigator: true).push(route).then((_) {
       if (_tapLoadingToken == token) {
         _tapLoadingActive = false;
         _tapLoadingDialogContext = null;
+      }
+      if (identical(_tapLoadingRoute, route)) {
+        _tapLoadingRoute = null;
       }
     });
   }
@@ -631,6 +640,18 @@ class ServerListController extends GetxController {
     _tapLoadingActive = false;
     final ctx = _tapLoadingDialogContext;
     _tapLoadingDialogContext = null;
+    // 优先精确移除自身 route，避免盲 pop 栈顶误关后弹的错误/确认弹窗或新页面
+    final route = _tapLoadingRoute;
+    _tapLoadingRoute = null;
+    if (route != null) {
+      try {
+        final navigator = route.navigator;
+        if (navigator != null) {
+          navigator.removeRoute(route);
+          return;
+        }
+      } catch (_) {}
+    }
     if (ctx == null) return;
     try {
       final navigator = Navigator.of(ctx, rootNavigator: true);

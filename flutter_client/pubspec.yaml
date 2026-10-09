@@ -96,7 +96,6 @@ dependencies:
   video_thumbnail: ^0.5.3
   photo_manager: ^3.9.0
   unicode: ^0.3.1
-  flutter_webrtc: ^1.3.1
   audio_service: ^0.18.18
   audio_session: 0.2.2
   just_audio: ^0.10.5
@@ -108,6 +107,7 @@ dependencies:
   flutter_quill_to_pdf: ^2.3.9
   pdf: ^3.12.0
   fvp: ^0.38.1
+  flutter_webrtc: ^1.6.2+hotfix.4
 
 dependency_overrides:
   # 覆盖 pub 版：修复 Android MediaSession.onPlayPause 未转发（桌面小组件/部分系统播放暂停键无响应）
