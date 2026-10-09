@@ -415,14 +415,18 @@ class LoginController extends GetxController {
   /// 探测 127.0.0.1:6789 的本机服务 serverId，失败返回 null
   Future<String?> _probeLocalhostServerId() async {
     try {
-      final savedBaseUrl = ApiController.instance.baseUrl;
-      ApiController.instance.setBaseUrl(AppConfig.localhostBaseUrl);
-      final serverStatus = await AuthApiService.instance.checkServerStatus(
-        false,
-        timeout: const Duration(seconds: 2),
-        maxRetries: 0,
-      );
-      ApiController.instance.setBaseUrl(savedBaseUrl);
+      // 临时切到 localhost 仅改内存态、不触发 connectChannelRevision，
+      // 避免壁纸等 URL 驱动组件在探测窗口内用临时地址重建请求；
+      // whenComplete 保证探测异常时也恢复，且恢复自带一次 revision 通知
+      final restoreBaseUrl = ApiController.instance
+          .overrideBaseUrlTemporarily(AppConfig.localhostBaseUrl);
+      final serverStatus = await AuthApiService.instance
+          .checkServerStatus(
+            false,
+            timeout: const Duration(seconds: 2),
+            maxRetries: 0,
+          )
+          .whenComplete(restoreBaseUrl);
       if (serverStatus.isNasCabServer) {
         final id = (serverStatus.serverData?['serverId'] ?? '').toString();
         print('[SameMachine/Login] 127.0.0.1 探测成功, serverId=$id');

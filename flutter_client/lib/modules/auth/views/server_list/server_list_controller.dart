@@ -234,17 +234,19 @@ class ServerListController extends GetxController {
   // 检测本机是否启用了nascab服务
 
   /// 探测 127.0.0.1:6789 的本机服务 serverId，失败返回 null。
-  /// 会临时切换 baseUrl 并在完成后恢复原值。
+  /// 临时切换 baseUrl 仅改内存态（不触发 connectChannelRevision），
+  /// 完成后自动恢复原值并通知一次 revision。
   Future<String?> _probeLocalhostServerId() async {
     try {
-      final savedBaseUrl = ApiController.instance.baseUrl;
-      ApiController.instance.setBaseUrl(AppConfig.localhostBaseUrl);
-      final serverStatus = await AuthApiService.instance.checkServerStatus(
-        false,
-        timeout: const Duration(seconds: 2),
-        maxRetries: 0,
-      );
-      ApiController.instance.setBaseUrl(savedBaseUrl);
+      final restoreBaseUrl = ApiController.instance
+          .overrideBaseUrlTemporarily(AppConfig.localhostBaseUrl);
+      final serverStatus = await AuthApiService.instance
+          .checkServerStatus(
+            false,
+            timeout: const Duration(seconds: 2),
+            maxRetries: 0,
+          )
+          .whenComplete(restoreBaseUrl);
       if (serverStatus.isNasCabServer) {
         final id = (serverStatus.serverData?['serverId'] ?? '').toString();
         print('[SameMachine] 127.0.0.1 探测成功, serverId=$id');

@@ -188,6 +188,28 @@ class ApiController extends GetxController {
     }
   }
 
+  /// 临时切换 baseUrl（本机探测等短生命周期场景）。
+  ///
+  /// 与 [setBaseUrl] 的区别：
+  /// - 切换时仅修改内存状态，不触发 connectChannelRevision、不持久化，
+  ///   避免壁纸等 URL 驱动组件在探测窗口内用临时地址重建请求；
+  /// - 恢复时触发一次 connectChannelRevision，让探测窗口内构建的
+  ///   URL 驱动组件立即用正确地址重建；
+  /// - 探测期间 baseUrl 被并发修改为其他值（如用户切换服务器）时不
+  ///   覆盖、不通知，避免踩掉并发写入的新地址。
+  ///
+  /// 返回恢复函数，调用方必须保证请求结束（含异常）后执行，
+  /// 建议 `.whenComplete(restore)` 或 try/finally。
+  void Function() overrideBaseUrlTemporarily(String tempBaseUrl) {
+    final saved = _state.baseUrl;
+    _state = _state.copyWith(baseUrl: tempBaseUrl);
+    return () {
+      if (_state.baseUrl != tempBaseUrl) return;
+      _state = _state.copyWith(baseUrl: saved);
+      _bumpConnectChannelRevision();
+    };
+  }
+
   bool get isP2pEnabled => _p2pChannel != null;
   String get p2pPairCode => _p2pPairCode;
   bool get isP2pReady => _p2pReady;

@@ -201,7 +201,10 @@ class CustomExtendedImage extends StatefulWidget {
         .catchError((_) {}); // 吸收 catchError 回调内可能的异常，避免未捕获错误
     final future = completer.future;
     _inFlightLoads[url] = future;
-    future.whenComplete(() => _inFlightLoads.remove(url));
+    // whenComplete 派生的 future 会携带原 future 的错误，直接丢弃会被
+    // zone 上报为 Unhandled Exception；ignore() 显式声明该派生 future
+    // 的错误无需处理（原 future 的错误仍由调用方正常捕获）
+    future.whenComplete(() => _inFlightLoads.remove(url)).ignore();
     return future;
   }
 
@@ -239,7 +242,10 @@ class CustomExtendedImage extends StatefulWidget {
         .catchError((_) {}); // 吸收 catchError 回调内可能的异常，避免未捕获错误
     final future = completer.future;
     _inFlightLoads[url] = future;
-    future.whenComplete(() => _inFlightLoads.remove(url));
+    // whenComplete 派生的 future 会携带原 future 的错误，直接丢弃会被
+    // zone 上报为 Unhandled Exception；ignore() 显式声明该派生 future
+    // 的错误无需处理（原 future 的错误仍由调用方正常捕获）
+    future.whenComplete(() => _inFlightLoads.remove(url)).ignore();
     return future;
   }
 
