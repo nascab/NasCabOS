@@ -38,7 +38,10 @@ class P2pApiStreamResponse {
 }
 
 class P2pRtcClient {
-  /// 中继(relay)候选延迟发送时间，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继
+  /// 中继(relay)候选延迟发送时间，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继。
+  ///
+  /// Web 保持 4s 延迟：_shouldAutoUpgradeRelayToDirect 排除 kIsWeb，
+  /// Web 端无后台直连升级能力，需保直连路径（与原生端平台自适应策略不同）。
   static const Duration _relayCandidateDelay = Duration(seconds: 4);
 
   /// 非正常结束流式响应体：用 [StreamController.addError] 结束，避免监听方把 [StreamController.close] 当成「整包读完」。

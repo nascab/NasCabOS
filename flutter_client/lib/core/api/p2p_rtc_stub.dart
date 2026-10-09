@@ -37,8 +37,19 @@ class P2pApiStreamResponse {
 }
 
 class P2pRtcClient {
-  /// 中继(relay)候选延迟发送时间，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继
-  static const Duration _relayCandidateDelay = Duration(seconds: 4);
+  /// 中继(relay)候选发送延迟，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继。
+  ///
+  /// 现统一为立即发送（提速：打洞困难用户不再干等中继候选），尽快连上让用户先进入服务器；
+  /// 若因此落中继，登录后由 scheduleP2pDirectUpgrade 后台探测直连并热升级；
+  /// 强制中继(relayOnly)策略不经此延迟（skipRelayCandidateDelay）。
+  static Duration get _relayCandidateDelay {
+    // Windows 曾单独保持 4s 延迟（该平台未启用后台直连升级，优先保直连路径），
+    // 已按要求注释统一立即发送；如需恢复取消下行注释：
+    // if (defaultTargetPlatform == TargetPlatform.windows) {
+    //   return const Duration(seconds: 4);
+    // }
+    return Duration.zero;
+  }
 
   /// 非正常结束流式响应体：用 [StreamController.addError] 结束，避免监听方把 [StreamController.close] 当成「整包读完」。
   static void _failP2pStreamBody(StreamController<Uint8List> c, Object error) {
@@ -783,9 +794,11 @@ class P2pRtcClient {
       }
 
       if (typ == 'relay' && !skipRelayCandidateDelay) {
-        // 延迟发送中继候选，让直连（IPv4/IPv6 host、srflx）优先被测试和 nominated
-        // 若延迟内已直连成功，则丢弃该中继候选，避免被随机选中
-        Timer(_relayCandidateDelay, () {
+        // 中继候选发送策略：优先让直连（IPv4/IPv6 host、srflx）被测试和 nominated；
+        // 延迟为 0 时立即发送（尽快连上，打洞困难用户不再干等）；
+        // 若延迟窗口内已直连成功，则丢弃该中继候选，避免被随机选中
+        final relayDelay = _relayCandidateDelay;
+        Timer(relayDelay, () {
           if (_pc != pc) return;
           final cs = pc.connectionState;
           if (cs == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
@@ -794,7 +807,10 @@ class P2pRtcClient {
             );
             return;
           }
-          debugPrint('[P2P-ICE] 发送延迟中继候选 $proto $typ $addr:$port | sid=$sid');
+          debugPrint(
+            '[P2P-ICE] ${relayDelay == Duration.zero ? "立即发送" : "延迟发送"}'
+            '中继候选 $proto $typ $addr:$port | sid=$sid',
+          );
           doSend();
         });
       } else {
