@@ -44,6 +44,13 @@ abstract class BaseApiService {
     return createHttpClient();
   }
 
+  /// 独立探测用的 HTTP 客户端（自签名证书放行 + 代理旁路配置）。
+  /// 供不经过全局 baseUrl 路由的一次性探测请求使用
+  /// （如服务器点击流程的 LAN/P2P 并行探测，避免与 P2P 建连的 baseUrl 写入互相竞争）
+  http.Client createDirectClient() {
+    return createHttpClient();
+  }
+
   bool _shouldUseP2pProxy() {
     return apiController.baseUrl.trim() == ApiController.p2pBaseUrl;
   }

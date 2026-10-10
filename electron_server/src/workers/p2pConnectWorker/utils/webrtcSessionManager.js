@@ -1,7 +1,10 @@
 const { attachDataChannel } = require('./dataChannelProxy');
 
-/** 中继(relay)候选延迟发送时间(ms)，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继 */
-const RELAY_CANDIDATE_DELAY_MS = 4000;
+/** 中继(relay)候选延迟发送时间(ms)：给直连候选一个先发优势。
+ * 延迟为 0 时 TURN 与信令服务同机部署的 relay 对会先于直连被 nominate
+ * （ICE nominate 后不抢占），直连可用也会永久走中继；窗口内已连接则丢弃。
+ * 与客户端（stub/web）的 _relayCandidateDelay 保持一致 */
+const RELAY_CANDIDATE_DELAY_MS = 1500;
 
 /** ICE 配置是否仅有 TURN（客户端中继模式下发），此时无直连候选意义，不应延迟 relay */
 function iceServersAreRelayOnly(iceServers) {
@@ -219,8 +222,8 @@ function createWebRtcSessionManager({ proxyPendingStore, getSignalingClient, wsI
       const doSend = () => sendSignal({ type: 'webrtc:candidate', sessionId: sid, candidate: c });
 
       if (typ === 'relay' && !skipRelayDelay) {
-        // 延迟 4s 发送中继候选，让直连（IPv4/IPv6 host、srflx）优先被测试和 nominated
-        // 若 4s 内已直连成功，则丢弃该中继候选，避免被随机选中
+        // 延迟发送中继候选，让直连（IPv4/IPv6 host、srflx）优先被测试和 nominated
+        // 若延迟窗口内已直连成功，则丢弃该中继候选，避免直连可用仍走中继
         setTimeout(() => {
           const cur2 = webrtcSessions.get(sid);
           if (!cur2 || cur2.pc !== pc) return;

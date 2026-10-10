@@ -73,6 +73,10 @@ class ApiController extends GetxController {
   String _p2pLastPairCode = '';
   String _p2pSessionId = '';
   String _p2pPairCode = '';
+  /// P2P 建连意图在途标记：connectP2pByPairCode 入口同步写入（含建连队列
+  /// 排队阶段）。用于覆盖 session/create HTTP 窗口的在途检测盲区——此时
+  /// _p2pChannel 尚未赋值、isP2pEnabled=false，点击流程的在途检查不可见
+  String? _p2pConnectingPairCode;
   List<dynamic> _p2pIceServers = const [];
   P2pRtcClient? _p2pRtc;
   bool _p2pReady = false;
@@ -86,6 +90,8 @@ class ApiController extends GetxController {
   int _p2pLastAutoSwitchProbeAtMs = 0;
   int _p2pNextConnectAllowedAtMs = 0;
   Future<bool>? _p2pReconnectInFlight;
+  /// P2P 链路断开统一收尾（清理+调度重连）的防重入标志
+  bool _p2pConnectionLostHandling = false;
   Future<bool>? _manualConnectChannelRefreshInFlight;
 
   Future<bool> _failoverQueue = Future.value(false);
@@ -212,6 +218,10 @@ class ApiController extends GetxController {
 
   bool get isP2pEnabled => _p2pChannel != null;
   String get p2pPairCode => _p2pPairCode;
+  /// P2P 建连尝试是否在途（含建连队列排队与 session/create HTTP 窗口）
+  bool get isP2pConnectAttemptInFlight => _p2pConnectingPairCode != null;
+  /// 在途建连的目标配对码（无在途时为空字符串）
+  String get p2pConnectingPairCode => _p2pConnectingPairCode ?? '';
   bool get isP2pReady => _p2pReady;
   bool get isP2pMode => baseUrl.trim() == p2pBaseUrl;
 

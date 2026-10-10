@@ -38,11 +38,11 @@ class P2pApiStreamResponse {
 }
 
 class P2pRtcClient {
-  /// 中继(relay)候选延迟发送时间，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继。
-  ///
-  /// Web 保持 4s 延迟：_shouldAutoUpgradeRelayToDirect 排除 kIsWeb，
-  /// Web 端无后台直连升级能力，需保直连路径（与原生端平台自适应策略不同）。
-  static const Duration _relayCandidateDelay = Duration(seconds: 4);
+  /// 中继(relay)候选发送延迟：给直连候选 1.5s 先发优势。
+  /// 延迟为 0 时 TURN 与信令服务同机部署的 relay 对会先于直连被 nominate
+  /// （ICE nominate 后不抢占），导致直连可用也永久走中继；窗口内已连接则丢弃。
+  /// 强制中继(relayOnly)策略不经此延迟
+  static const Duration _relayCandidateDelay = Duration(milliseconds: 1500);
 
   /// 非正常结束流式响应体：用 [StreamController.addError] 结束，避免监听方把 [StreamController.close] 当成「整包读完」。
   static void _failP2pStreamBody(StreamController<Uint8List> c, Object error) {
@@ -70,6 +70,17 @@ class P2pRtcClient {
   web.RTCPeerConnection? _pc;
   final Map<P2pRtcChannel, _RtcChannelState> _channels = {};
   Timer? _apiHeartbeatTimer;
+
+  /// 连接意外断开（pc failed/closed 且非本端主动 close）时的通知回调。
+  /// 由 controller 注册，用于触发资源清理与自动重连
+  void Function()? onConnectionLost;
+
+  /// 是否由本端主动 close：主动关闭引发的 pc closed 不视为意外断连
+  bool _closedByUs = false;
+
+  /// offer 是否已发出：预热模式下先缓冲候选，offer 发出后直发。
+  /// 实例字段（而非 start 局部变量）以避免闭包捕获的流分析死代码误报
+  bool _offerSent = false;
 
   bool _isBulkChannel(P2pRtcChannel c) {
     return c == P2pRtcChannel.upload ||
@@ -852,10 +863,28 @@ class P2pRtcClient {
     return st;
   }
 
-  Future<void> start({List<P2pRtcChannel>? channels}) async {
+  /// [readySignal]：预热模式的放行信号（如 WS session:ready）。
+  /// 传入时：PC 创建、通道 attach、createOffer、setLocalDescription 立即执行
+  /// （ICE gather 提前启动，与 WS 建连并行）；offer 发送等待信号，信号前的
+  /// 候选先缓冲、随 offer 一并 flush（服务端对先于 offer 到达的候选有
+  /// pending 队列，乱序安全）。
+  Future<void> start({
+    List<P2pRtcChannel>? channels,
+    Future<void>? readySignal,
+  }) async {
     final sid = sessionId.trim();
     if (sid.isEmpty) {
       throw Exception('p2p_session_invalid');
+    }
+
+    // offer 发出前的信令（本地候选）先缓冲，offer 发送时一并 flush
+    final pendingOutgoingSignals = <Map<String, dynamic>>[];
+    void sendOrBufferSignal(Map<String, dynamic> payload) {
+      if (_offerSent) {
+        sendWsJson(payload);
+      } else {
+        pendingOutgoingSignals.add(payload);
+      }
     }
 
     final jsIceServers = <web.RTCIceServer>[];
@@ -921,12 +950,12 @@ class P2pRtcClient {
         // 延迟发送中继候选，让直连（IPv4/IPv6 host、srflx）优先被测试和 nominated
         // 若延迟内已直连成功，则丢弃该中继候选，避免被随机选中
         Timer(_relayCandidateDelay, () {
-          if (_pc == null) return;
-          if (_pc!.connectionState == 'connected') return;
-          sendWsJson(payload);
+          if (_pc != pc) return;
+          if (pc.connectionState == 'connected') return;
+          sendOrBufferSignal(payload);
         });
       } else {
-        sendWsJson(payload);
+        sendOrBufferSignal(payload);
       }
     }).toJS;
 
@@ -934,14 +963,24 @@ class P2pRtcClient {
       final cs = pc.connectionState;
       // `disconnected` 在 ICE 重启/路径切换时常为瞬时状态，不应立即 teardown，否则下载流会被 close 误判为成功结束。
       if (cs == 'failed' || cs == 'closed') {
+        // 先取值再 close：close() 入口会置位 _closedByUs
+        final closedByUs = _closedByUs;
         unawaited(close());
+        if (!closedByUs) {
+          // 意外断开：通知 controller 清理并调度重连
+          onConnectionLost?.call();
+        }
       }
     }).toJS;
 
     pc.oniceconnectionstatechange = ((web.Event _) {
       final cs = pc.iceConnectionState;
       if (cs == 'failed' || cs == 'closed') {
+        final closedByUs = _closedByUs;
         unawaited(close());
+        if (!closedByUs) {
+          onConnectionLost?.call();
+        }
       }
     }).toJS;
 
@@ -1030,11 +1069,29 @@ class P2pRtcClient {
           web.RTCLocalSessionDescriptionInit(type: offerType, sdp: offerSdp),
         )
         .toDart;
-    sendWsJson({'type': 'webrtc:offer', 'sessionId': sid, 'offer': offerMap});
 
-    await Future.wait(
-      _channels.values.map((e) => e.ready.future),
-    ).timeout(const Duration(seconds: 20));
+    if (readySignal != null) {
+      await readySignal;
+      // 等待期间预热可能被废弃（session:ready 的 iceServers 与预热不一致、
+      // 或外部清理 close）：不再发送 offer
+      if (_pc == null || _closedByUs) {
+        throw Exception('p2p_prewarm_aborted');
+      }
+    }
+
+    _offerSent = true;
+    sendWsJson({'type': 'webrtc:offer', 'sessionId': sid, 'offer': offerMap});
+    for (final payload in pendingOutgoingSignals) {
+      sendWsJson(payload);
+    }
+
+    // 只 gate api 通道：主连接（api）可用即视为建连成功。file/upload/
+    // download/video 与 api 同一 PC 协商、随后陆续 open；请求侧已有
+    // ready 等待（15s）+ waitChannelOpen 兜底，无需在此阻塞等全部握手
+    final apiState = _channels[P2pRtcChannel.api];
+    if (apiState != null) {
+      await apiState.ready.future.timeout(const Duration(seconds: 10));
+    }
   }
 
   Future<Map<String, String>> getTransportStats() async {
@@ -1067,6 +1124,24 @@ class P2pRtcClient {
     final ch = _channels[P2pRtcChannel.video];
     if (ch == null) return false;
     return ch.dc.readyState == 'open';
+  }
+
+  /// 等待指定通道进入 open 状态（轮询 readyState，默认 5s）。
+  /// 建连成功只 gate api 通道，其余通道可能尚在握手：请求侧先等一小段，
+  /// 避免把「握手未完成」误判为 p2p_dc_not_open 触发全局 forceReconnect
+  Future<bool> waitChannelOpen(
+    P2pRtcChannel channel, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (true) {
+      final st = _channels[channel];
+      if (st == null) return false;
+      if (st.dc.readyState == 'open') return true;
+      if (_pc == null || _closedByUs) return false;
+      if (DateTime.now().isAfter(deadline)) return false;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
   }
 
   /// 是否有正在进行中的请求（任意通道）。
@@ -2135,6 +2210,7 @@ class P2pRtcClient {
   }
 
   Future<void> close() async {
+    _closedByUs = true;
     try {
       _apiHeartbeatTimer?.cancel();
     } catch (_) {}
@@ -2161,6 +2237,10 @@ class P2pRtcClient {
         try {
           st.dc.close();
         } catch (_) {}
+        // 与 stub 端对齐：close 时完成未决的 ready，让 gate 等待尽快失败
+        if (!st.ready.isCompleted) {
+          st.ready.completeError(Exception('p2p_closed'));
+        }
       }
     } catch (_) {}
     _channels.clear();

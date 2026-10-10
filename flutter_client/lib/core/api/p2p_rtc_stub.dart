@@ -39,11 +39,13 @@ class P2pApiStreamResponse {
 class P2pRtcClient {
   /// 中继(relay)候选发送延迟，优先让 IPv4/IPv6 host、srflx 直连被测试，避免直连可用时仍走中继。
   ///
-  /// 现统一为立即发送（提速：打洞困难用户不再干等中继候选），尽快连上让用户先进入服务器；
-  /// 若因此落中继，登录后由 scheduleP2pDirectUpgrade 后台探测直连并热升级；
+  /// 延迟不可为 0：TURN 与信令服务同机部署时 relay 对的连通性检查几乎瞬时完成，
+  /// 会先于直连对被 nominate（ICE nominate 后不抢占），导致直连可用也永久走中继；
+  /// 取 1.5s 作为直连候选的先发优势（局域网 <0.1s、公网打洞通常 <1s 即直连成功），
+  /// 窗口内已连接则丢弃中继候选；打洞慢或不可行场景由 scheduleP2pDirectUpgrade 热升级兜底；
   /// 强制中继(relayOnly)策略不经此延迟（skipRelayCandidateDelay）。
   static Duration get _relayCandidateDelay {
-    return Duration.zero;
+    return const Duration(milliseconds: 1500);
   }
 
   /// 非正常结束流式响应体：用 [StreamController.addError] 结束，避免监听方把 [StreamController.close] 当成「整包读完」。
@@ -72,6 +74,18 @@ class P2pRtcClient {
   RTCPeerConnection? _pc;
   final Map<P2pRtcChannel, _RtcChannelState> _channels = {};
   Timer? _apiHeartbeatTimer;
+
+  /// 连接意外断开（pc Failed/Closed 且非本端主动 close）时的通知回调。
+  /// 由 controller 注册，用于触发资源清理与自动重连；
+  /// 此前 pc Failed/Closed 仅内部 close 不上报，链路死亡后上层无感知（假在线）
+  void Function()? onConnectionLost;
+
+  /// 是否由本端主动 close：主动关闭引发的 pc Closed 不视为意外断连
+  bool _closedByUs = false;
+
+  /// offer 是否已发出：预热模式下先缓冲候选，offer 发出后直发。
+  /// 实例字段（而非 start 局部变量）以避免闭包捕获的流分析死代码误报
+  bool _offerSent = false;
 
   bool _isBulkChannel(P2pRtcChannel c) {
     return c == P2pRtcChannel.upload ||
@@ -738,10 +752,28 @@ class P2pRtcClient {
     return st;
   }
 
-  Future<void> start({List<P2pRtcChannel>? channels}) async {
+  /// [readySignal]：预热模式的放行信号（如 WS session:ready）。
+  /// 传入时：PC 创建、通道 attach、createOffer、setLocalDescription 立即执行
+  /// （ICE gather 提前启动，与 WS 建连并行）；offer 发送等待信号，信号前的
+  /// 候选先缓冲、随 offer 一并 flush（服务端对先于 offer 到达的候选有
+  /// pending 队列，乱序安全）。
+  Future<void> start({
+    List<P2pRtcChannel>? channels,
+    Future<void>? readySignal,
+  }) async {
     final sid = sessionId.trim();
     if (sid.isEmpty) {
       throw Exception('p2p_session_invalid');
+    }
+
+    // offer 发出前的信令（本地候选）先缓冲，offer 发送时一并 flush
+    final pendingOutgoingSignals = <Map<String, dynamic>>[];
+    void sendOrBufferSignal(Map<String, dynamic> payload) {
+      if (_offerSent) {
+        sendWsJson(payload);
+      } else {
+        pendingOutgoingSignals.add(payload);
+      }
     }
 
     final config = <String, dynamic>{
@@ -777,7 +809,7 @@ class P2pRtcClient {
       );
 
       void doSend() {
-        sendWsJson(<String, dynamic>{
+        sendOrBufferSignal(<String, dynamic>{
           'type': 'webrtc:candidate',
           'sessionId': sid,
           'candidate': <String, dynamic>{
@@ -790,8 +822,7 @@ class P2pRtcClient {
 
       if (typ == 'relay' && !skipRelayCandidateDelay) {
         // 中继候选发送策略：优先让直连（IPv4/IPv6 host、srflx）被测试和 nominated；
-        // 延迟为 0 时立即发送（尽快连上，打洞困难用户不再干等）；
-        // 若延迟窗口内已直连成功，则丢弃该中继候选，避免被随机选中
+        // 延迟窗口内已直连成功则丢弃该中继候选，避免直连可用仍走中继
         final relayDelay = _relayCandidateDelay;
         Timer(relayDelay, () {
           if (_pc != pc) return;
@@ -888,7 +919,13 @@ class P2pRtcClient {
       // `Disconnected` 在 ICE 重启/路径切换时常为瞬时状态，不应立即 teardown。
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
+        // 先取值再 close：close() 入口会置位 _closedByUs
+        final closedByUs = _closedByUs;
         unawaited(close());
+        if (!closedByUs) {
+          // 意外断开（网络切换/NAT 超时/远端销毁）：通知 controller 清理并调度重连
+          onConnectionLost?.call();
+        }
       }
     };
 
@@ -956,21 +993,38 @@ class P2pRtcClient {
             P2pRtcChannel.video,
           ]
         : channels;
-    for (final c in wanted) {
-      await attachChannel(c);
-    }
+    // 并行 attach：5 条通道创建互不依赖，串行徒增建连耗时
+    await Future.wait(wanted.map(attachChannel));
 
     final offer = await pc.createOffer(<String, dynamic>{});
     await pc.setLocalDescription(offer);
+
+    if (readySignal != null) {
+      await readySignal;
+      // 等待期间预热可能被废弃（session:ready 的 iceServers 与预热不一致、
+      // 或外部清理 close）：不再发送 offer
+      if (_pc == null || _closedByUs) {
+        throw Exception('p2p_prewarm_aborted');
+      }
+    }
+
+    _offerSent = true;
     sendWsJson(<String, dynamic>{
       'type': 'webrtc:offer',
       'sessionId': sid,
       'offer': <String, dynamic>{'type': offer.type, 'sdp': offer.sdp},
     });
+    for (final payload in pendingOutgoingSignals) {
+      sendWsJson(payload);
+    }
 
-    await Future.wait(
-      _channels.values.map((e) => e.ready.future),
-    ).timeout(const Duration(seconds: 20));
+    // 只 gate api 通道：主连接（api）可用即视为建连成功。file/upload/
+    // download/video 与 api 同一 PC 协商、随后陆续 open；请求侧已有
+    // ready 等待（15s）+ waitChannelOpen 兜底，无需在此阻塞等全部握手
+    final apiState = _channels[P2pRtcChannel.api];
+    if (apiState != null) {
+      await apiState.ready.future.timeout(const Duration(seconds: 10));
+    }
   }
 
   Future<Map<String, String>> getTransportStats() async {
@@ -1180,6 +1234,24 @@ class P2pRtcClient {
     final ch = _channels[P2pRtcChannel.video];
     if (ch == null) return false;
     return ch.dc.state == RTCDataChannelState.RTCDataChannelOpen;
+  }
+
+  /// 等待指定通道进入 open 状态（轮询 dc.state，默认 5s）。
+  /// 建连成功只 gate api 通道，其余通道可能尚在握手：请求侧先等一小段，
+  /// 避免把「握手未完成」误判为 p2p_dc_not_open 触发全局 forceReconnect
+  Future<bool> waitChannelOpen(
+    P2pRtcChannel channel, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (true) {
+      final st = _channels[channel];
+      if (st == null) return false;
+      if (st.dc.state == RTCDataChannelState.RTCDataChannelOpen) return true;
+      if (_pc == null || _closedByUs) return false;
+      if (DateTime.now().isAfter(deadline)) return false;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
   }
 
   /// 是否有正在进行中的请求（任意通道）。
@@ -2259,6 +2331,7 @@ class P2pRtcClient {
   }
 
   Future<void> close() async {
+    _closedByUs = true;
     _apiHeartbeatTimer?.cancel();
     _apiHeartbeatTimer = null;
 

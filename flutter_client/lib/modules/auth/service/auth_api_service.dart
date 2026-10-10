@@ -228,6 +228,60 @@ class AuthApiService extends BaseApiService {
     } finally {}
   }
 
+  /// 在指定 baseUrl 上独立探测服务器状态（不经过全局 baseUrl 路由、
+  /// 不触发 connectChannelRevision、不影响 P2P 建连期间的 baseUrl 写入）。
+  ///
+  /// 供服务器点击流程的 LAN/P2P 并行探测使用：探测请求直连目标地址，
+  /// 失败返回 success=false（不抛异常），由调用方按结果决定通道取舍。
+  Future<ServerStatusResponse> checkServerStatusAt(
+    String baseUrl, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final normalizedBase = baseUrl.trim();
+    if (normalizedBase.isEmpty) {
+      return ServerStatusResponse(success: false, isNasCabServer: false);
+    }
+    final client = createDirectClient();
+    try {
+      final uri = Uri.parse('$normalizedBase/api/auth/isNasCabServer');
+      print('🟣 [CheckServerAt] 独立探测: $uri, timeout: $timeout');
+      final response = await client.get(uri).timeout(timeout);
+      Map<String, dynamic>? jsonBody;
+      try {
+        jsonBody = jsonDecode(response.body) as Map<String, dynamic>?;
+      } catch (_) {}
+      if (jsonBody == null) {
+        return ServerStatusResponse(success: false, isNasCabServer: false);
+      }
+      final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+        response.statusCode,
+        jsonBody,
+        dataParser: (json, code) => json,
+      );
+      if (!apiResponse.success) {
+        return ServerStatusResponse(
+          success: false,
+          message: apiResponse.message,
+          isNasCabServer: false,
+          serverData: null,
+        );
+      }
+      final isNasCabServer = apiResponse.data?['isNasCabOSServer'] == true;
+      print('🟣 [CheckServerAt] 结果: isNasCabOSServer=$isNasCabServer');
+      return ServerStatusResponse(
+        success: true,
+        message: apiResponse.message,
+        isNasCabServer: isNasCabServer,
+        serverData: apiResponse.data,
+      );
+    } catch (e) {
+      print('🟣 [CheckServerAt] 探测失败: $e');
+      return ServerStatusResponse(success: false, isNasCabServer: false);
+    } finally {
+      client.close();
+    }
+  }
+
   /// 刷新访问令牌
   Future<LoginResponse> refreshTokenApi(String refreshToken) async {
     final refreshUrl = '/api/auth/refreshJwt';

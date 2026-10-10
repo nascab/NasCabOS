@@ -1734,7 +1734,7 @@ class ZhCn extends Translations {
       'server_menu_edit_pair_code': '修改配对码',
       'server_saved': '已保存服务器',
       'server_ignore_local_proxy': '忽略本地代理',
-      'server_ignore_local_proxy_help': '如果您依赖本地代理连接服务端，请取消勾选此项',
+      'server_ignore_local_proxy_help': '如果您依赖本地代理连接服务端（如使用了Tailscale/ZeroTier 等组网工具），请取消勾选此项',
       'server_listTitle': '登录NasCabOS服务器',
       'server_add': '添加服务器',
       'server_localServer': '本机',

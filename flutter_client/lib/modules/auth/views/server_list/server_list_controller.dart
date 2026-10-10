@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../service/server_storage_service.dart';
 import '../../beans/server_info_bean.dart';
@@ -391,67 +390,154 @@ class ServerListController extends GetxController {
           serverItem.serverUrl.trim().isNotEmpty &&
           serverItem.serverUrl.trim() != ApiController.p2pBaseUrl;
 
-      // 合并网络检测，避免重复 Connectivity 查询
-      final network = await _checkNetworkType();
-
       try {
         ServerStatusResponse? status;
         var usingP2p = false;
 
-        // ═══════════════════════════════════════════════════
-        // Phase 1: 局域网直连（WiFi/有线网络）
-        // ═══════════════════════════════════════════════════
+        // ── 直连候选（serverUrl 优先，lanIpv4 兜底）──
+        // 注：蜂窝网络下不跳过私网 IP——组网软件（Tailscale/ZeroTier 等）会在
+        // 蜂窝下经虚拟网卡私网 IP 直连，跳过会误伤该场景；不可达时 800ms 探测
+        // 超时由并行 P2P 建连掩盖，不增加总耗时
+        final directCandidates = <({String url, bool requireServerIdMatch})>[];
         if (hasDirectUrl) {
-          // 蜂窝网络 + 私有 IP → 必然不可达，跳过直连
-          // final isPrivateLanServerUrl = _isUrlPrivateLan(serverItem.serverUrl);
-          // if (!(network.isCellular && isPrivateLanServerUrl)) {
-            // P2P 已就绪或同配对码建连进行中时保留（直连探测按 baseUrl 路由，不受影响），
-            // 供直连失败后的 Phase 2 直接复用或排队短路，避免「先拆后建」竞态
-            if (!_isP2pReusableFor(serverItem) &&
-                !_isP2pConnectInFlightFor(serverItem)) {
-              await ApiController.instance.disconnectP2p().catchError((_) {});
-            }
-            ApiController.instance.setBaseUrl(serverItem.serverUrl);
-            status = await AuthApiService.instance.checkServerStatus(
-              false,
-              timeout: const Duration(seconds: 2),
-              maxRetries: 0,
-            );
-            print('✅ 直连服务器状态: $status');
-          // }
-
-          // serverUrl 失败，尝试 lanIpv4（避免重复探测相同 URL）
-          if ((status == null || !status.success || !status.isNasCabServer) &&
-              hasPairCode) {
+          final serverUrl = serverItem.serverUrl.trim();
+          directCandidates.add((url: serverUrl, requireServerIdMatch: false));
+          if (hasPairCode) {
             final lan = (serverItem.lanIpv4 ?? '').trim();
             final port = _resolveHttpPort(serverItem);
             final lanUrl = lan.isNotEmpty ? 'http://$lan:$port' : '';
             final lanAlreadyTried =
                 lanUrl.isNotEmpty &&
-                _normalizeUrl(lanUrl) == _normalizeUrl(serverItem.serverUrl);
+                _normalizeUrl(lanUrl) == _normalizeUrl(serverUrl);
             if (lan.isNotEmpty && !lanAlreadyTried) {
-              if (!_isP2pReusableFor(serverItem) &&
-                  !_isP2pConnectInFlightFor(serverItem)) {
-                await ApiController.instance.disconnectP2p().catchError((_) {});
-              }
-              ApiController.instance.setBaseUrl(lanUrl);
-              final lanStatus = await AuthApiService.instance.checkServerStatus(
-                false,
-                timeout: const Duration(seconds: 2),
-                maxRetries: 0,
-              );
-              if (_matchServerId(lanStatus, serverItem)) {
-                status = lanStatus;
-              }
+              directCandidates.add((url: lanUrl, requireServerIdMatch: true));
             }
           }
         }
 
-        // ═══════════════════════════════════════════════════
-        // Phase 2: P2P 自动探测直连/中继，先连上者优先
-        // ═══════════════════════════════════════════════════
-        if ((status == null || !status.success || !status.isNasCabServer) &&
-            hasPairCode) {
+        if (directCandidates.isNotEmpty && hasPairCode) {
+          // ═══════════════════════════════════════════════════
+          // Phase 1+2 并行：LAN 直连探测与 P2P 建连同时进行，先成功者胜
+          // ═══════════════════════════════════════════════════
+          // 直连探测用 checkServerStatusAt 独立请求（不动全局 baseUrl），
+          // 与 P2P 建连内部的 setBaseUrl(p2p.local) 无竞争；
+          // LAN 可达时约 0.8s 内胜出（无需先等 P2P 或串行二次探测），
+          // LAN 不可达时 P2P 已并行建连约 1.6s，省去原串行流程的 4s 等待
+          final p2pReusable = _isP2pReusableFor(serverItem);
+
+          final decided = Completer<void>();
+          String? lanWinUrl;
+          ServerStatusResponse? lanWinStatus;
+          var p2pWon = false;
+          var lanDone = false;
+          var p2pDone = p2pReusable;
+          var p2pFailed = false;
+          Object? p2pError;
+
+          void settle() {
+            if (decided.isCompleted) return;
+            if (lanWinUrl != null) {
+              decided.complete(); // LAN 命中即胜（可复用 P2P 保留，LAN 优先）
+            } else if (lanDone) {
+              // LAN 探测已结束且未命中：P2P 就绪则胜，双败则收尾
+              if (p2pReusable || (p2pDone && !p2pFailed)) {
+                p2pWon = true;
+                decided.complete();
+              } else if (p2pDone && p2pFailed) {
+                decided.complete();
+              }
+            } else if (!p2pReusable && p2pDone && !p2pFailed) {
+              // LAN 尚未出结果而 P2P 先连上：谁先通用谁
+              p2pWon = true;
+              decided.complete();
+            }
+          }
+
+          // LAN 探测任务：逐候选独立请求（800ms/个，失败不抛）
+          unawaited(() async {
+            for (final c in directCandidates) {
+              try {
+                final s = await AuthApiService.instance.checkServerStatusAt(
+                  c.url,
+                  timeout: const Duration(milliseconds: 800),
+                );
+                if (s.success &&
+                    s.isNasCabServer &&
+                    (!c.requireServerIdMatch || _matchServerId(s, serverItem))) {
+                  lanWinUrl = c.url;
+                  lanWinStatus = s;
+                  break;
+                }
+              } catch (_) {}
+            }
+            lanDone = true;
+            settle();
+          }());
+
+          // P2P 建连任务（已可复用则无需启动；在途同码经建连队列排队短路）
+          if (!p2pReusable) {
+            unawaited(() async {
+              try {
+                await _ensureP2pConnected(serverItem);
+                p2pFailed = !ApiController.instance.isP2pReady;
+              } catch (e) {
+                p2pError = e;
+                p2pFailed = true;
+              } finally {
+                p2pDone = true;
+                settle();
+              }
+            }());
+          } else {
+            settle();
+          }
+
+          await decided.future;
+          if (p2pWon) {
+            usingP2p = true;
+            ApiController.instance.setBaseUrl(ApiController.p2pBaseUrl);
+            status = await AuthApiService.instance.checkServerStatus(
+              false,
+              timeout: const Duration(seconds: 3),
+              maxRetries: 0,
+            );
+          } else if (lanWinUrl != null) {
+            // LAN 胜：作废在途 P2P 建连（token 递增使其在检查点自行中止）；
+            // 已就绪的同码 P2P 连接保留，供后续复用
+            if (!ApiController.instance.isP2pReady) {
+              await ApiController.instance.disconnectP2p().catchError((_) {});
+            }
+            ApiController.instance.setBaseUrl(lanWinUrl!);
+            status = lanWinStatus;
+          } else {
+            // 双败：优先抛 P2P 错误（含具体失败原因），走统一错误弹窗
+            throw p2pError ?? Exception('server_connect_fail');
+          }
+        } else if (directCandidates.isNotEmpty) {
+          // ═══════════════════════════════════════════════════
+          // 仅直连（无配对码）：独立探测，胜者设为全局 baseUrl
+          // ═══════════════════════════════════════════════════
+          if (!_isP2pReusableFor(serverItem) &&
+              !_isP2pConnectInFlightFor(serverItem)) {
+            await ApiController.instance.disconnectP2p().catchError((_) {});
+          }
+          for (final c in directCandidates) {
+            final s = await AuthApiService.instance.checkServerStatusAt(
+              c.url,
+              timeout: const Duration(seconds: 2),
+            );
+            if (s.success &&
+                s.isNasCabServer &&
+                (!c.requireServerIdMatch || _matchServerId(s, serverItem))) {
+              status = s;
+              ApiController.instance.setBaseUrl(c.url);
+              break;
+            }
+          }
+        } else if (hasPairCode) {
+          // ═══════════════════════════════════════════════════
+          // 仅 P2P（无可用直连地址，如蜂窝网络 + 私有 IP）
+          // ═══════════════════════════════════════════════════
           usingP2p = true;
           if (_isP2pReusableFor(serverItem)) {
             // 复用 Failover 已建好的同配对码就绪连接，跳过断开与全量重建。
@@ -693,6 +779,12 @@ class ServerListController extends GetxController {
     final code = (serverItem.pairCode ?? '').trim();
     if (code.isEmpty) return false;
     final api = ApiController.instance;
+    // 覆盖 session/create HTTP 窗口与建连队列排队阶段：
+    // 此时 _p2pChannel 尚未赋值（isP2pEnabled=false），旧检测存在盲区
+    if (api.isP2pConnectAttemptInFlight &&
+        api.p2pConnectingPairCode.trim() == code) {
+      return true;
+    }
     return !api.isP2pReady &&
         api.isP2pEnabled &&
         api.p2pPairCode.trim() == code;
@@ -724,27 +816,6 @@ class ServerListController extends GetxController {
     }
   }
 
-  /// 合并网络类型检测，避免重复 Connectivity 查询。
-  /// 返回 ({bool onWifi, bool isCellular}) 记录。
-  Future<({bool onWifi, bool isCellular})> _checkNetworkType() async {
-    if (!DeviceUtils.isMobile) return (onWifi: true, isCellular: false);
-    try {
-      final result = await Connectivity().checkConnectivity();
-      return (
-        onWifi: result.any(
-          (r) =>
-              r == ConnectivityResult.wifi ||
-              r == ConnectivityResult.ethernet ||
-              r == ConnectivityResult.other ||
-              r == ConnectivityResult.vpn,
-        ),
-        isCellular: result.contains(ConnectivityResult.mobile),
-      );
-    } catch (_) {
-      return (onWifi: true, isCellular: false);
-    }
-  }
-
   /// 标准化 URL 用于比较（去除末尾斜杠、统一小写 scheme+host）
   String _normalizeUrl(String url) {
     try {
@@ -758,30 +829,6 @@ class ServerListController extends GetxController {
     } catch (_) {
       return url.trim().toLowerCase();
     }
-  }
-
-  /// 检测URL是否是私有局域网地址
-  bool _isUrlPrivateLan(String url) {
-    try {
-      final uri = Uri.tryParse(url);
-      if (uri == null) return false;
-      return _isPrivateIpv4(uri.host);
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// 检测是否是私有IPv4地址（局域网/回环地址）
-  bool _isPrivateIpv4(String host) {
-    if (!_isIpv4(host)) return false;
-    final parts = host.split('.');
-    final a = int.tryParse(parts[0]) ?? -1;
-    final b = int.tryParse(parts[1]) ?? -1;
-    if (a == 10) return true;
-    if (a == 172 && b >= 16 && b <= 31) return true;
-    if (a == 192 && b == 168) return true;
-    if (a == 127) return true;
-    return false;
   }
 
   /// 显示错误对话框
@@ -1063,20 +1110,6 @@ class ServerListController extends GetxController {
         ? httpPort!.trim()
         : ((httpsPort ?? '').trim().isNotEmpty ? httpsPort!.trim() : '9000');
     return 'http://$lan:$port';
-  }
-
-  bool _isIpv4(String host) {
-    final s = host.trim();
-    if (s.isEmpty) return false;
-    final m = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(s);
-    if (!m) return false;
-    final parts = s.split('.');
-    if (parts.length != 4) return false;
-    for (final p in parts) {
-      final v = int.tryParse(p);
-      if (v == null || v < 0 || v > 255) return false;
-    }
-    return true;
   }
 
   /// 处理菜单选择
