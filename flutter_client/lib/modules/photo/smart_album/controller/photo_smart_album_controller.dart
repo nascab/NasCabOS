@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../utils/cache_manager.dart';
 import '../models/photo_smart_album_model.dart';
+import '../photo_smart_album_holiday.dart';
 import '../service/photo_smart_album_api_service.dart';
 
 class PhotoSmartAlbumController extends GetxController {
@@ -238,6 +239,13 @@ class PhotoSmartAlbumController extends GetxController {
 
     if (type == 'smart_date') {
       final mode = (filter['mode'] ?? '').toString();
+      if (mode == 'holiday') {
+        final holiday = filter['holiday']?.toString();
+        if (!isValidSmartAlbumHolidayKey(holiday)) return null;
+        return 'smart_album_tooltip_holiday'.trParams({
+          'holiday': smartAlbumHolidayName(holiday),
+        });
+      }
       if (mode == 'anniversary') {
         final repeat = (filter['repeat'] ?? 'year').toString();
         final day = (filter['day'] as num?)?.toInt();

@@ -1,3 +1,5 @@
+const photoSmartAlbumHolidayUtil = require('./photoSmartAlbumHolidayUtil');
+
 function _isDateString(s) {
   if (!s || typeof s !== 'string') return false;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -121,7 +123,60 @@ function applySmartDateFilter(query, filterContent, tableAlias) {
     if (!_isDateString(start) || !_isDateString(end)) return;
     const [s, e] = start <= end ? [start, end] : [end, start];
     query.whereBetween(`${tableAlias}.original_date`, [s, e]);
+    return;
   }
+
+  if (mode === 'holiday') {
+    applyHolidayFilter(query, filterContent, tableAlias);
+  }
+}
+
+function applyHolidayFilter(query, filterContent, tableAlias) {
+  const holidayKey = String(filterContent.holiday || '').trim();
+  if (!photoSmartAlbumHolidayUtil.isValidHolidayKey(holidayKey)) return;
+
+  const column = `${tableAlias}.original_date`;
+
+  // 公历固定月日的节日（元旦/劳动节/国庆/妇女节等）直接按月-日匹配
+  const fixed = photoSmartAlbumHolidayUtil.getFixedMonthDayRange(holidayKey);
+  if (fixed) {
+    if (fixed.start === fixed.end) {
+      query.whereRaw(`strftime('%m-%d', ${column}) = ?`, [fixed.start]);
+    } else {
+      query.whereRaw(`strftime('%m-%d', ${column}) BETWEEN ? AND ?`, [
+        fixed.start,
+        fixed.end,
+      ]);
+    }
+    return;
+  }
+
+  // 农历节日/清明/复活节：展开支持年份范围内的公历日期，按区间 OR 匹配
+  const windows = photoSmartAlbumHolidayUtil.getHolidayWindows(holidayKey);
+  if (windows.length === 0) return;
+  query.where(builder => {
+    windows.forEach((w, idx) => {
+      if (idx === 0) {
+        builder.whereBetween(column, [w.start, w.end]);
+      } else {
+        builder.orWhereBetween(column, [w.start, w.end]);
+      }
+    });
+  });
+}
+
+/**
+ * 校验筛选内容是否合法（仅对节假日模式做严格校验，其他模式保持兼容）
+ */
+function isValidSmartAlbumFilter(type, filterContent) {
+  const t = String(type || 'condition').trim();
+  if (t !== 'smart_date') return true;
+  const content =
+    filterContent && typeof filterContent === 'object' ? filterContent : {};
+  if (String(content.mode || '').trim() === 'holiday') {
+    return photoSmartAlbumHolidayUtil.isValidHolidayKey(content.holiday);
+  }
+  return true;
 }
 
 function applySmartAlbumFilter(query, type, filterContent, tableAlias) {
@@ -138,4 +193,6 @@ module.exports = {
   applySmartAlbumFilter,
   applySmartDateFilter,
   applyConditionFilter,
+  applyHolidayFilter,
+  isValidSmartAlbumFilter,
 };

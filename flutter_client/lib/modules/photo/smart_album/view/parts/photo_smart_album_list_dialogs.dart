@@ -5,11 +5,13 @@ Future<void> _showCreateDialog(
   PhotoSmartAlbumController controller,
 ) async {
   var name = '';
+  final nameCtrl = TextEditingController();
   var type = 'smart_date';
   var conditionLogic = 'and';
   final conditionItems = <_SmartConditionItem>[];
 
   var dateMode = 'anniversary';
+  var holidayKey = kPhotoSmartAlbumHolidays.first.key;
   var fixedOperator = 'on';
   final now = DateTime.now();
   DateTime? fixedDate = DateTime(now.year, now.month, now.day);
@@ -20,6 +22,7 @@ Future<void> _showCreateDialog(
   var anniversaryDay = now.day;
 
   void disposeLocal() {
+    nameCtrl.dispose();
     for (final c in conditionItems) {
       c.dispose();
     }
@@ -45,6 +48,7 @@ Future<void> _showCreateDialog(
               anniversaryRepeat: anniversaryRepeat,
               anniversaryMonth: anniversaryMonth,
               anniversaryDay: anniversaryDay,
+              holidayKey: holidayKey,
             );
 
             final canSubmit = nameOk && filter != null;
@@ -53,7 +57,7 @@ Future<void> _showCreateDialog(
               title: Text('create'.tr),
               content: _buildSmartAlbumCreateEditDialogContent(
                 context: context,
-                nameValue: name,
+                nameController: nameCtrl,
                 onNameChanged: (v) {
                   name = v;
                   setState(() {});
@@ -112,6 +116,18 @@ Future<void> _showCreateDialog(
                 anniversaryDay: anniversaryDay,
                 onAnniversaryDayChanged: (v) =>
                     setState(() => anniversaryDay = v),
+                holidayKey: holidayKey,
+                onHolidayKeyChanged: (v) => setState(() {
+                  holidayKey = v;
+                  // 选择节假日时，自动用节日名称替换相册名称
+                  final newName = smartAlbumHolidayName(v);
+                  name = newName;
+                  nameCtrl.value = TextEditingValue(
+                    text: newName,
+                    selection:
+                        TextSelection.collapsed(offset: newName.length),
+                  );
+                }),
               ),
               actions: [
                 TextButton(
@@ -133,6 +149,7 @@ Future<void> _showCreateDialog(
                             anniversaryRepeat: anniversaryRepeat,
                             anniversaryMonth: anniversaryMonth,
                             anniversaryDay: anniversaryDay,
+                            holidayKey: holidayKey,
                           );
                           if (payload == null) return;
                           final suc = await controller.createSmartAlbum(
@@ -166,12 +183,14 @@ Future<void> _showEditDialog(
   PhotoSmartAlbumItem album,
 ) async {
   var name = album.name;
+  final nameCtrl = TextEditingController(text: name);
   var type = album.type.isNotEmpty ? album.type : 'condition';
 
   var conditionLogic = _parseConditionLogic(album.filterContent);
   final conditionItems = _parseConditionItems(album.filterContent);
 
   var dateMode = _parseDateMode(album.filterContent);
+  var holidayKey = _parseHolidayKey(album.filterContent);
   var fixedOperator = _parseFixedOperator(album.filterContent);
   DateTime? fixedDate = _parseDate(album.filterContent['date']);
   DateTime? rangeStart = _parseDate(album.filterContent['start']);
@@ -181,6 +200,7 @@ Future<void> _showEditDialog(
   var anniversaryDay = _parseAnniversaryDay(album.filterContent);
 
   void disposeLocal() {
+    nameCtrl.dispose();
     for (final c in conditionItems) {
       c.dispose();
     }
@@ -206,6 +226,7 @@ Future<void> _showEditDialog(
               anniversaryRepeat: anniversaryRepeat,
               anniversaryMonth: anniversaryMonth,
               anniversaryDay: anniversaryDay,
+              holidayKey: holidayKey,
             );
 
             final canSubmit = nameOk && filter != null;
@@ -214,7 +235,7 @@ Future<void> _showEditDialog(
               title: Text('edit'.tr),
               content: _buildSmartAlbumCreateEditDialogContent(
                 context: context,
-                nameValue: name,
+                nameController: nameCtrl,
                 onNameChanged: (v) {
                   name = v;
                   setState(() {});
@@ -273,6 +294,18 @@ Future<void> _showEditDialog(
                 anniversaryDay: anniversaryDay,
                 onAnniversaryDayChanged: (v) =>
                     setState(() => anniversaryDay = v),
+                holidayKey: holidayKey,
+                onHolidayKeyChanged: (v) => setState(() {
+                  holidayKey = v;
+                  // 选择节假日时，自动用节日名称替换相册名称
+                  final newName = smartAlbumHolidayName(v);
+                  name = newName;
+                  nameCtrl.value = TextEditingValue(
+                    text: newName,
+                    selection:
+                        TextSelection.collapsed(offset: newName.length),
+                  );
+                }),
               ),
               actions: [
                 TextButton(
@@ -294,6 +327,7 @@ Future<void> _showEditDialog(
                             anniversaryRepeat: anniversaryRepeat,
                             anniversaryMonth: anniversaryMonth,
                             anniversaryDay: anniversaryDay,
+                            holidayKey: holidayKey,
                           );
                           if (payload == null) return;
                           final suc = await controller.updateSmartAlbum(
@@ -340,7 +374,7 @@ Future<void> _confirmDelete(
 
 Widget _buildSmartAlbumCreateEditDialogContent({
   required BuildContext context,
-  required String nameValue,
+  required TextEditingController nameController,
   required ValueChanged<String> onNameChanged,
   required String type,
   required ValueChanged<String> onTypeChanged,
@@ -365,6 +399,8 @@ Widget _buildSmartAlbumCreateEditDialogContent({
   required ValueChanged<int> onAnniversaryMonthChanged,
   required int anniversaryDay,
   required ValueChanged<int> onAnniversaryDayChanged,
+  required String holidayKey,
+  required ValueChanged<String> onHolidayKeyChanged,
 }) {
   return ConstrainedBox(
     constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
@@ -372,7 +408,7 @@ Widget _buildSmartAlbumCreateEditDialogContent({
       mainAxisSize: MainAxisSize.min,
       children: [
         TextFormField(
-          initialValue: nameValue,
+          controller: nameController,
           autofocus: true,
           onChanged: onNameChanged,
           decoration: InputDecoration(
@@ -422,6 +458,8 @@ Widget _buildSmartAlbumCreateEditDialogContent({
             onAnniversaryMonthChanged: onAnniversaryMonthChanged,
             anniversaryDay: anniversaryDay,
             onAnniversaryDayChanged: onAnniversaryDayChanged,
+            holidayKey: holidayKey,
+            onHolidayKeyChanged: onHolidayKeyChanged,
           )
         else
           _buildConditionEditor(
@@ -455,6 +493,8 @@ Widget _buildSmartDateEditor({
   required ValueChanged<int> onAnniversaryMonthChanged,
   required int anniversaryDay,
   required ValueChanged<int> onAnniversaryDayChanged,
+  required String holidayKey,
+  required ValueChanged<String> onHolidayKeyChanged,
 }) {
   final inputBorder = const OutlineInputBorder();
   final locale = Get.locale ?? Localizations.localeOf(context);
@@ -495,6 +535,12 @@ Widget _buildSmartDateEditor({
             value: 'anniversary',
             child: Text('smart_album_date_mode_anniversary'.tr),
           ),
+          // 节假日模式需要新版本服务端支持；编辑已存在的节假日相册时始终展示
+          if (isSmartAlbumHolidaySupported() || mode == 'holiday')
+            DropdownMenuItem(
+              value: 'holiday',
+              child: Text('smart_album_date_mode_holiday'.tr),
+            ),
         ],
         onChanged: (v) {
           if (v == null) return;
@@ -502,6 +548,9 @@ Widget _buildSmartDateEditor({
         },
       ),
       const SizedBox(height: 12),
+      if (mode == 'holiday') ...[
+        SmartAlbumHolidayField(value: holidayKey, onChanged: onHolidayKeyChanged),
+      ],
       if (mode == 'fixed') ...[
         DropdownButtonFormField<String>(
           value: fixedOperator,
@@ -923,8 +972,13 @@ Map<String, dynamic>? _buildFilterContent({
   required String anniversaryRepeat,
   required int anniversaryMonth,
   required int anniversaryDay,
+  required String holidayKey,
 }) {
   if (type == 'smart_date') {
+    if (dateMode == 'holiday') {
+      if (!isValidSmartAlbumHolidayKey(holidayKey)) return null;
+      return {'mode': 'holiday', 'holiday': holidayKey};
+    }
     if (dateMode == 'fixed') {
       if (fixedDate == null) return null;
       return {
@@ -1018,8 +1072,19 @@ List<_SmartConditionItem> _parseConditionItems(
 
 String _parseDateMode(Map<String, dynamic> filterContent) {
   final m = filterContent['mode']?.toString();
-  if (m == 'anniversary' || m == 'fixed' || m == 'range') return m!;
+  if (m == 'anniversary' ||
+      m == 'fixed' ||
+      m == 'range' ||
+      m == 'holiday') {
+    return m!;
+  }
   return 'fixed';
+}
+
+String _parseHolidayKey(Map<String, dynamic> filterContent) {
+  final v = filterContent['holiday']?.toString();
+  if (isValidSmartAlbumHolidayKey(v)) return v!;
+  return kPhotoSmartAlbumHolidays.first.key;
 }
 
 String _parseFixedOperator(Map<String, dynamic> filterContent) {

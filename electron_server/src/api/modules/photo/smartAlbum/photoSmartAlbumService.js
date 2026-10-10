@@ -160,7 +160,15 @@ class PhotoSmartAlbumService {
     if (!name) throw new Error('common.PARAM_ERROR');
 
     const type = this._normalizeType(payload.type);
-    const filterContentText = this._stringifyFilterContent(payload.filter_content);
+    const filterContent = smartAlbumFilterUtil.parseFilterContentText(
+      typeof payload.filter_content === 'string'
+        ? payload.filter_content
+        : JSON.stringify(payload.filter_content || {})
+    );
+    if (!smartAlbumFilterUtil.isValidSmartAlbumFilter(type, filterContent)) {
+      throw new Error('common.PARAM_ERROR');
+    }
+    const filterContentText = JSON.stringify(filterContent);
 
     const dup = await knexPhoto('photo_smart_album').where({ uid, name }).first();
     if (dup) {
@@ -216,6 +224,16 @@ class PhotoSmartAlbumService {
     }
 
     if (Object.keys(data).length === 0) throw new Error('common.PARAM_ERROR');
+
+    const effectiveType = data.type || existing.type;
+    const effectiveFilterText = data.filter_content || existing.filter_content;
+    const effectiveFilter = smartAlbumFilterUtil.parseFilterContentText(
+      effectiveFilterText
+    );
+    if (!smartAlbumFilterUtil.isValidSmartAlbumFilter(effectiveType, effectiveFilter)) {
+      throw new Error('common.PARAM_ERROR');
+    }
+
     await knexPhoto('photo_smart_album').where({ id }).update(data);
     return true;
   }

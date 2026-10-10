@@ -14,6 +14,7 @@ import '../../../../utils/context_menu_util.dart';
 import '../../../../utils/dialog_util.dart';
 import '../controller/photo_smart_album_controller.dart';
 import '../models/photo_smart_album_model.dart';
+import '../photo_smart_album_holiday.dart';
 import '../../timeline/view/pc_photo_timeline.dart';
 part 'parts/photo_smart_album_list_card.dart';
 part 'parts/photo_smart_album_list_dialogs.dart';
