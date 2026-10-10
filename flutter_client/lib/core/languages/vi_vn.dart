@@ -468,6 +468,14 @@ class ViVn extends Translations {
       'dev_connect_mode_direct': 'Kết nối trực tiếp',
       'dev_connect_mode_p2p_direct': 'P2P trực tiếp',
       'dev_connect_mode_p2p_relay': 'P2P chuyển tiếp',
+      'server_remote_connect_pref': 'Tùy chọn kết nối từ xa',
+      'remote_pref_direct_first': 'Ưu tiên trực tiếp P2P',
+      'remote_pref_relay_first': 'Ưu tiên chuyển tiếp P2P',
+      'remote_pref_direct_first_desc':
+          'Ưu tiên kết nối trực tiếp P2P: khi thành công sẽ kết nối thẳng đến máy chủ của bạn, nhanh hơn, dữ liệu không đi qua node từ xa; nếu kết nối trực tiếp thất bại sẽ chuyển sang chế độ chuyển tiếp',
+      'remote_pref_relay_first_desc':
+          'Không thử kết nối trực tiếp P2P; dữ liệu được chuyển tiếp qua máy chủ từ xa nên chậm hơn',
+      'server_move_to_top': 'Di chuyển lên đầu danh sách',
       'server_p2p_relay_not_available':
           'Máy chủ hiện tại không cung cấp kênh chuyển tiếp khả dụng',
 

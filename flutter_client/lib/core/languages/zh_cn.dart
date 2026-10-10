@@ -432,6 +432,13 @@ class ZhCn extends Translations {
       'dev_connect_mode_direct': '直连',
       'dev_connect_mode_p2p_direct': 'P2P直连',
       'dev_connect_mode_p2p_relay': 'P2P中继',
+      'server_remote_connect_pref': '远程连接偏好',
+      'remote_pref_direct_first': 'P2P直连优先',
+      'remote_pref_relay_first': 'P2P中继优先',
+      'remote_pref_direct_first_desc':
+          '优先点对点直连，成功后直连您的服务端，速度快，数据不经过远端节点，直连失败时回退到中继模式',
+      'remote_pref_relay_first_desc': '不尝试点对点直连，数据经过远端服务器中转，速度较慢',
+      'server_move_to_top': '移动到列表顶部',
       'server_p2p_relay_not_available': '当前服务器未提供可用的中继通道',
 
       // 文件类型

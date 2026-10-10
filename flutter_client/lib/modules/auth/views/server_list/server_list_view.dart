@@ -276,6 +276,10 @@ class _ServerListViewContent extends StatelessWidget {
             },
             onSettingsTap: (String value) =>
                 serverListController.handleMenuSelection(value, serverItem),
+            onEditConnectPref: () =>
+                serverListController.showRemoteConnectPref(serverItem),
+            // 已保存服务器多于一个时才允许置顶（自动发现项不渲染菜单，传值无影响）
+            showMoveToTop: serverListController.savedServers.length > 1,
           );
         }),
         if (serverItems.any((e) => e == null))

@@ -494,6 +494,14 @@ class RuRu extends Translations {
       'dev_connect_mode_direct': 'Прямое',
       'dev_connect_mode_p2p_direct': 'P2P прямое',
       'dev_connect_mode_p2p_relay': 'P2P ретрансляция',
+      'server_remote_connect_pref': 'Предпочтение удалённого подключения',
+      'remote_pref_direct_first': 'Приоритет прямого P2P',
+      'remote_pref_relay_first': 'Приоритет ретрансляции P2P',
+      'remote_pref_direct_first_desc':
+          'Приоритет прямому P2P-подключению: после успеха подключается к серверу напрямую, выше скорость, данные не проходят через удалённые узлы; при неудаче прямого подключения происходит откат на ретрансляцию',
+      'remote_pref_relay_first_desc':
+          'Без попытки прямого P2P-подключения: данные проходят через удалённый сервер, скорость ниже',
+      'server_move_to_top': 'Переместить в начало списка',
       'server_p2p_relay_not_available': 'Нет доступного канала ретрансляции',
       'user_type_user': 'Пользователь',
       'user_type_admin': 'Администратор',

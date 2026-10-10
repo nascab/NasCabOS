@@ -453,6 +453,14 @@ class ThTh extends Translations {
       'dev_connect_mode_direct': 'เชื่อมต่อตรง',
       'dev_connect_mode_p2p_direct': 'P2P ตรง',
       'dev_connect_mode_p2p_relay': 'P2P รีเลย์',
+      'server_remote_connect_pref': 'แนวทางการเชื่อมต่อระยะไกล',
+      'remote_pref_direct_first': 'P2P ตรงก่อน',
+      'remote_pref_relay_first': 'P2P รีเลย์ก่อน',
+      'remote_pref_direct_first_desc':
+          'ให้ความสำคัญกับการเชื่อมต่อแบบ P2P โดยตรง เมื่อสำเร็จจะเชื่อมต่อกับเซิร์ฟเวอร์ของคุณโดยตรง รวดเร็ว ข้อมูลไม่ผ่านโหนดระยะไกล หากการเชื่อมต่อตรงล้มเหลวจะเปลี่ยนไปใช้โหมดรีเลย์',
+      'remote_pref_relay_first_desc':
+          'ไม่พยายามเชื่อมต่อแบบ P2P โดยตรง ข้อมูลจะถูกส่งผ่านเซิร์ฟเวอร์ระยะไกล ทำให้ช้ากว่า',
+      'server_move_to_top': 'ย้ายไปด้านบนสุดของรายการ',
       'server_p2p_relay_not_available':
           'เซิร์ฟเวอร์ปัจจุบันไม่มีช่องรีเลย์ที่ใช้ได้',
       'dir': 'โฟลเดอร์',

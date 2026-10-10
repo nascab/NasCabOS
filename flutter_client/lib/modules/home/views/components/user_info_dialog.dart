@@ -203,6 +203,7 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
                                 await _showDevConnectModePicker(
                                   context,
                                   hasPairCode: hasPairCode,
+                                  currentServer: currentServer,
                                 );
                               } catch (e) {
                                 ToastUtil.show(
@@ -315,17 +316,17 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
   Future<void> _showDevConnectModePicker(
     BuildContext context, {
     required bool hasPairCode,
+    ServerInfoBean? currentServer,
   }) async {
+    // P2P直连/P2P中继即当前服务器的「远程连接偏好」（不再有独立的全局 ICE
+    // 偏好），✓ 标识当前服务器级偏好状态
+    final relayPreferred = currentServer?.p2pRelayPreferred ?? false;
     final selected = await showDialog<DevConnectMode>(
       context: context,
       builder: (context) {
         return SimpleDialog(
           title: Text('server_connect_channel'.tr),
           children: [
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(DevConnectMode.auto),
-              child: Text('auto'.tr),
-            ),
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(DevConnectMode.direct),
               child: Text('dev_connect_mode_direct'.tr),
@@ -334,12 +335,18 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
               SimpleDialogOption(
                 onPressed: () =>
                     Navigator.of(context).pop(DevConnectMode.p2pDirect),
-                child: Text('dev_connect_mode_p2p_direct'.tr),
+                child: Text(
+                  (relayPreferred ? '' : '✓ ') +
+                      'dev_connect_mode_p2p_direct'.tr,
+                ),
               ),
               SimpleDialogOption(
                 onPressed: () =>
                     Navigator.of(context).pop(DevConnectMode.p2pRelay),
-                child: Text('dev_connect_mode_p2p_relay'.tr),
+                child: Text(
+                  (relayPreferred ? '✓ ' : '') +
+                      'dev_connect_mode_p2p_relay'.tr,
+                ),
               ),
             ],
           ],
@@ -347,6 +354,30 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
       },
     );
     if (selected == null) return;
+
+    // 同步服务器级「远程连接偏好」：P2P中继→true、P2P直连→false（默认）。
+    // 偏好随服务器条目持久化，此后所有建连（点击/自动重连/Failover）按此
+    // 偏好解析，两处设置不再冲突
+    if (hasPairCode && currentServer != null) {
+      final newRelayPref = selected == DevConnectMode.p2pRelay;
+      final affectsPref =
+          selected == DevConnectMode.p2pRelay ||
+          selected == DevConnectMode.p2pDirect;
+      if (affectsPref && newRelayPref != currentServer.p2pRelayPreferred) {
+        currentServer.p2pRelayPreferred = newRelayPref;
+        try {
+          final saved = ServerStorageService.loadServers();
+          for (var i = 0; i < saved.length; i++) {
+            if (ServerStorageService.isSameIdentity(saved[i], currentServer)) {
+              saved[i].p2pRelayPreferred = newRelayPref;
+              await ServerStorageService.saveServers(saved);
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
     await ApiController.instance.setDevConnectMode(selected);
     if (mounted) setState(() {});
   }

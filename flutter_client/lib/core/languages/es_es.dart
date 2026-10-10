@@ -508,6 +508,14 @@ class EsEs extends Translations {
       'dev_connect_mode_direct': 'Directo',
       'dev_connect_mode_p2p_direct': 'P2P Directo',
       'dev_connect_mode_p2p_relay': 'P2P Relay',
+      'server_remote_connect_pref': 'Preferencia de conexión remota',
+      'remote_pref_direct_first': 'P2P directo primero',
+      'remote_pref_relay_first': 'P2P relé primero',
+      'remote_pref_direct_first_desc':
+          'Prioriza la conexión directa P2P: al tener éxito se conecta directamente a su servidor, es más rápida y los datos no pasan por nodos remotos; si falla, recurre al modo relé',
+      'remote_pref_relay_first_desc':
+          'No intenta la conexión directa P2P; los datos se retransmiten a través de un servidor remoto, lo que es más lento',
+      'server_move_to_top': 'Mover al principio de la lista',
       'server_p2p_relay_not_available':
           'No hay canal de relay disponible para este servidor',
       'user_type_user': 'Usuario',

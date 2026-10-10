@@ -366,6 +366,33 @@ extension ApiControllerP2p on ApiController {
     await _cleanupP2p(disableReconnect: true);
   }
 
+  /// 按配对码查服务器级「远程连接偏好」是否中继优先。
+  /// 仅匹配已保存的服务器（发现列表中未保存的不参与）；
+  /// 参照 _loadServerInfosById 的用户域口径：优先匹配当前用户名下的条目
+  bool _isP2pRelayPreferredForPairCode(String pairCode) {
+    try {
+      final target = pairCode.trim();
+      if (target.isEmpty) return false;
+      final currentUsername =
+          (CurrentUserController.instance.current?.username ?? '').trim();
+      final all = ServerStorageService.loadServers();
+      if (currentUsername.isNotEmpty) {
+        for (final s in all) {
+          if ((s.pairCode ?? '').trim() != target) continue;
+          if ((s.username ?? '').trim() != currentUsername) continue;
+          if (s.p2pRelayPreferred) return true;
+        }
+      }
+      for (final s in all) {
+        if ((s.pairCode ?? '').trim() != target) continue;
+        if (s.p2pRelayPreferred) return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> connectP2pByPairCode(
     String pairCode, {
     P2pIcePreference? icePreference,
@@ -381,21 +408,21 @@ extension ApiControllerP2p on ApiController {
                 : P2pTransportKind.unknown);
       _bumpConnectChannelRevision();
     } else {
-      // 恢复为开发连接模式对应的 ICE 偏好（非 Debug 恒为 auto）。
-      // `_p2pIcePreference` 会被运行时改写（relay fallback、directOnly 升级探测），
-      // 裸重连（自动重连/网络变化重检）直接沿用残留值会导致实际路径与
-      // 用户设置脱节（如强制中继模式实际直连、连接通道 UI 显示错误）
-      final P2pIcePreference restored;
-      switch (_devConnectMode) {
-        case DevConnectMode.p2pDirect:
-          restored = P2pIcePreference.directOnly;
-        case DevConnectMode.p2pRelay:
-          restored = P2pIcePreference.relayOnly;
-        default:
-          restored = P2pIcePreference.auto;
+      // 全局不再持有 ICE 偏好：P2P直连/P2P中继均为一次性切换，切换时同步
+      // 写入服务器级偏好；dev 连接模式（auto/direct/p2p）不区分 ICE 偏好。
+      // 此处恒从 auto 出发（不沿用 `_p2pIcePreference` 的运行时残留，如
+      // relay fallback、directOnly 升级探测），再按目标服务器偏好覆盖
+      var effective = P2pIcePreference.auto;
+      // 服务器级「远程连接偏好」：已保存服务器勾选「P2P中继优先」时，覆盖
+      // 为强制中继（任何时候建连都优先走中继）。仅作用于 null 偏好入口
+      // （点击服务器/自动重连/Failover 切换）；显式传入的偏好（一次性切换、
+      // 中继→直连升级探测 directOnly/auto）不经过此分支，天然不受影响
+      if (effective != P2pIcePreference.relayOnly &&
+          _isP2pRelayPreferredForPairCode(code)) {
+        effective = P2pIcePreference.relayOnly;
       }
-      _p2pIcePreference = restored;
-      _p2pTransportKind = restored == P2pIcePreference.relayOnly
+      _p2pIcePreference = effective;
+      _p2pTransportKind = effective == P2pIcePreference.relayOnly
           ? P2pTransportKind.relay
           : P2pTransportKind.unknown;
       _bumpConnectChannelRevision();

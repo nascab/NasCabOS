@@ -520,6 +520,14 @@ class FrFr extends Translations {
       'dev_connect_mode_direct': 'Direct',
       'dev_connect_mode_p2p_direct': 'P2P Direct',
       'dev_connect_mode_p2p_relay': 'P2P Relais',
+      'server_remote_connect_pref': 'Préférence de connexion distante',
+      'remote_pref_direct_first': 'P2P direct en priorité',
+      'remote_pref_relay_first': 'P2P relais en priorité',
+      'remote_pref_direct_first_desc':
+          "Priorise la connexion directe P2P : une fois réussie, elle relie directement votre serveur, plus rapide, les données ne passent par aucun nœud distant ; en cas d'échec, bascule en mode relais",
+      'remote_pref_relay_first_desc':
+          'Sans tentative de connexion directe P2P ; les données transitent par un serveur distant, ce qui est plus lent',
+      'server_move_to_top': 'Déplacer en haut de la liste',
       'server_p2p_relay_not_available':
           'Aucun canal relais disponible pour ce serveur',
       // Types d'utilisateurs

@@ -223,12 +223,18 @@ class ServerListController extends GetxController {
         server.isLocalServer = false;
       }
     }
-    // 排序：isLocalServer为true的排在前面
-    serverList.sort((a, b) {
-      if (a.isLocalServer && !b.isLocalServer) return -1;
-      if (!a.isLocalServer && b.isLocalServer) return 1;
-      return 0;
-    });
+    // 稳定分区：本机排在前面，其余保持既有（持久化）顺序。
+    // 不能用 List.sort（Dart sort 不保证稳定），否则手动置顶等持久化顺序
+    // 在元素较多时可能被重排
+    final locals = <ServerInfoBean>[];
+    final others = <ServerInfoBean>[];
+    for (final server in serverList) {
+      (server.isLocalServer ? locals : others).add(server);
+    }
+    serverList
+      ..clear()
+      ..addAll(locals)
+      ..addAll(others);
   }
 
   // 检测本机是否启用了nascab服务
@@ -1127,10 +1133,150 @@ class ServerListController extends GetxController {
         // 显示忘记密码页面
         goToRecover(serverItem);
         break;
+      case 'remote_connect_pref':
+        // 远程连接偏好设置
+        unawaited(showRemoteConnectPref(serverItem));
+        break;
+      case 'move_to_top':
+        // 移动到列表顶部
+        unawaited(moveServerToTop(serverItem));
+        break;
       case 'delete':
         print('删除服务器: ${serverItem.serverName}');
         _showDeleteConfirmDialog(serverItem);
         break;
+    }
+  }
+
+  /// 服务器级「远程连接偏好」设置弹窗（P2P直连优先 / P2P中继优先）。
+  ///
+  /// 偏好随服务器条目持久化；此后所有 null 偏好建连（点击服务器、自动重连、
+  /// Failover 切换）都会在 connectP2pByPairCode 入口按此偏好解析为强制中继，
+  /// 保证「任何时候都优先走中继」。若当前已以 P2P 连接该服务器，则立即按
+  /// 新偏好断开重建（同配对码就绪连接会被短路复用，必须先断开才会真正重建），
+  /// 重建期间常见请求瞬时失败属预期。
+  Future<void> showRemoteConnectPref(ServerInfoBean item) async {
+    final code = (item.pairCode ?? '').trim();
+    if (code.isEmpty) return;
+    final ctx = Get.overlayContext;
+    if (ctx == null) return;
+    final relayPreferred = item.p2pRelayPreferred;
+    final selected = await showDialog<bool>(
+      context: ctx,
+      builder: (dialogContext) {
+        return SimpleDialog(
+          title: Text('server_remote_connect_pref'.tr),
+          children: [
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (relayPreferred ? '' : '✓ ') +
+                        'remote_pref_direct_first'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'remote_pref_direct_first_desc'.tr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(dialogContext)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (relayPreferred ? '✓ ' : '') +
+                        'remote_pref_relay_first'.tr,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'remote_pref_relay_first_desc'.tr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(dialogContext)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    // 未选择或与当前值相同：仅关窗返回
+    if (selected == null || selected == relayPreferred) return;
+
+    // 更新内存值并持久化：在已保存列表中按身份定位更新（未保存的发现项
+    // 仅更新内存值即可），随后刷新列表 UI
+    item.p2pRelayPreferred = selected;
+    try {
+      final saved = ServerStorageService.loadServers();
+      var persisted = false;
+      for (var i = 0; i < saved.length; i++) {
+        if (ServerStorageService.isSameIdentity(saved[i], item)) {
+          saved[i].p2pRelayPreferred = selected;
+          persisted = true;
+          break;
+        }
+      }
+      if (persisted) {
+        await ServerStorageService.saveServers(saved);
+      }
+    } catch (_) {}
+    await refreshSavedServers();
+
+    // 当前正以 P2P 连接该服务器时，立即按新偏好重建
+    final api = ApiController.instance;
+    if (api.isP2pMode && api.p2pPairCode.trim() == code) {
+      try {
+        await api.disconnectP2p();
+        await api.connectP2pByPairCode(
+          code,
+          icePreference: selected
+              ? P2pIcePreference.relayOnly
+              : P2pIcePreference.auto,
+        );
+      } catch (e) {
+        ToastUtil.show(ApiController.formatP2pConnectError(e));
+      }
+    }
+  }
+
+  /// 将指定已保存服务器移动到列表顶部，并持久化新顺序。
+  ///
+  /// 顺序由持久化数组本身承载（无需额外排序字段）；加载时 addLocalSignToServerList
+  /// 仅做「本机在前」的稳定分区，不会打乱其余项的持久化相对顺序。
+  Future<void> moveServerToTop(ServerInfoBean item) async {
+    try {
+      final saved = ServerStorageService.loadServers();
+      if (saved.length <= 1) return;
+      final index = saved.indexWhere(
+        (s) => ServerStorageService.isSameIdentity(s, item),
+      );
+      // 未找到（自动发现项不应出现此菜单）或已在顶部：无需处理
+      if (index <= 0) return;
+      final moved = saved.removeAt(index);
+      saved.insert(0, moved);
+      await ServerStorageService.saveServers(saved);
+      await refreshSavedServers();
+    } catch (e) {
+      print('❌ 移动服务器到顶部失败: $e');
     }
   }
 

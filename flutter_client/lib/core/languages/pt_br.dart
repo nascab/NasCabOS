@@ -514,6 +514,14 @@ class PtBr extends Translations {
       'dev_connect_mode_direct': 'Direto',
       'dev_connect_mode_p2p_direct': 'P2P Direto',
       'dev_connect_mode_p2p_relay': 'P2P Relay',
+      'server_remote_connect_pref': 'Preferência de conexão remota',
+      'remote_pref_direct_first': 'P2P direto primeiro',
+      'remote_pref_relay_first': 'P2P relay primeiro',
+      'remote_pref_direct_first_desc':
+          'Prioriza a conexão direta P2P: ao ter sucesso, conecta-se diretamente ao seu servidor, é mais rápida e os dados não passam por nós remotos; em caso de falha, retorna ao modo relé',
+      'remote_pref_relay_first_desc':
+          'Não tenta conexão direta P2P; os dados são retransmitidos por um servidor remoto, o que é mais lento',
+      'server_move_to_top': 'Mover para o topo da lista',
       'server_p2p_relay_not_available':
           'Nenhum canal de relay disponível para este servidor',
       // 用户类型

@@ -489,6 +489,14 @@ class ArAr extends Translations {
       'dev_connect_mode_direct': 'مباشر',
       'dev_connect_mode_p2p_direct': 'P2P مباشر',
       'dev_connect_mode_p2p_relay': 'P2P ترحيل',
+      'server_remote_connect_pref': 'تفضيل الاتصال عن بُعد',
+      'remote_pref_direct_first': 'اتصال P2P المباشر أولاً',
+      'remote_pref_relay_first': 'ترحيل P2P أولاً',
+      'remote_pref_direct_first_desc':
+          'يفضّل الاتصال المباشر P2P: عند النجاح يتصل مباشرة بخادمك، أسرع، والبيانات لا تمر عبر عُقد بعيدة؛ وعند فشل الاتصال المباشر يتراجع إلى وضع الترحيل',
+      'remote_pref_relay_first_desc':
+          'لا يحاول الاتصال المباشر P2P؛ تُمرَّر البيانات عبر خادم بعيد وهو أبطأ',
+      'server_move_to_top': 'نقله إلى أعلى القائمة',
       'server_p2p_relay_not_available': 'لا توجد قناة ترحيل متاحة لهذا الخادم',
       'user_type_user': 'مستخدم',
       'user_type_admin': 'مسؤول',

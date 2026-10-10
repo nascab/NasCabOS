@@ -435,6 +435,14 @@ class JaJp extends Translations {
       'dev_connect_mode_direct': 'ダイレクト',
       'dev_connect_mode_p2p_direct': 'P2P ダイレクト',
       'dev_connect_mode_p2p_relay': 'P2P リレー',
+      'server_remote_connect_pref': 'リモート接続の優先',
+      'remote_pref_direct_first': 'P2Pダイレクト優先',
+      'remote_pref_relay_first': 'P2Pリレー優先',
+      'remote_pref_direct_first_desc':
+          'ピアツーピアの直接接続を優先します。成功するとサーバーへ直接接続され、高速でデータが遠隔ノードを経由しません。直接接続に失敗した場合はリレーモードにフォールバックします',
+      'remote_pref_relay_first_desc':
+          'ピアツーピアの直接接続を試みません。データは遠隔サーバー経由で中継されるため、速度は低下します',
+      'server_move_to_top': 'リストの先頭に移動',
       'server_p2p_relay_not_available': 'このサーバーには利用可能なリレーチャンネルがありません',
       // ユーザータイプ
       "user_type_user": "ユーザー",

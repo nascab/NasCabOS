@@ -25,6 +25,9 @@ class ServerInfoBean {
   String? refreshToken;
   DateTime? lastLoginTime;
   bool needInputPwdEveryTime; // 是否每次登录都需要输入密码
+
+  /// 服务器级「远程连接偏好」：是否 P2P 中继优先（false=P2P 直连优先，默认）
+  bool p2pRelayPreferred;
   ServerInfoBean({
     required this.serverId,
     required this.serverUrl,
@@ -49,6 +52,7 @@ class ServerInfoBean {
     this.refreshToken,
     this.lastLoginTime,
     this.needInputPwdEveryTime = false,
+    this.p2pRelayPreferred = false,
   });
 
   bool get hasPairCode => (pairCode ?? '').trim().isNotEmpty;
@@ -100,6 +104,7 @@ class ServerInfoBean {
       'refreshToken': refreshToken,
       'lastLoginTime': lastLoginTime?.toIso8601String(),
       'needInputPwdEveryTime': needInputPwdEveryTime,
+      'p2pRelayPreferred': p2pRelayPreferred,
     };
   }
 
@@ -139,6 +144,7 @@ class ServerInfoBean {
           ? DateTime.parse(json['lastLoginTime'])
           : null,
       needInputPwdEveryTime: json['needInputPwdEveryTime'] == true,
+      p2pRelayPreferred: json['p2pRelayPreferred'] == true,
     );
   }
   @override

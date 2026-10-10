@@ -441,6 +441,14 @@ class KoKr extends Translations {
       'dev_connect_mode_direct': '직접 연결',
       'dev_connect_mode_p2p_direct': 'P2P 직접 연결',
       'dev_connect_mode_p2p_relay': 'P2P 중계',
+      'server_remote_connect_pref': '원격 연결 우선',
+      'remote_pref_direct_first': 'P2P 직접 연결 우선',
+      'remote_pref_relay_first': 'P2P 중계 우선',
+      'remote_pref_direct_first_desc':
+          'P2P 직접 연결을 우선합니다. 성공하면 서버에 직접 연결되어 속도가 빠르고 데이터가 원격 노드를 경유하지 않습니다. 직접 연결에 실패하면 중계 모드로 전환됩니다',
+      'remote_pref_relay_first_desc':
+          'P2P 직접 연결을 시도하지 않습니다. 데이터가 원격 서버를 경유하여 중계되므로 속도가 느립니다',
+      'server_move_to_top': '목록 맨 위로 이동',
       'server_p2p_relay_not_available': '현재 서버에서 사용 가능한 중계 채널을 제공할 수 없습니다',
 
       // 文件类型

@@ -471,6 +471,14 @@ class IdId extends Translations {
       'dev_connect_mode_direct': 'Langsung',
       'dev_connect_mode_p2p_direct': 'P2P Langsung',
       'dev_connect_mode_p2p_relay': 'P2P Relay',
+      'server_remote_connect_pref': 'Preferensi koneksi jarak jauh',
+      'remote_pref_direct_first': 'Prioritas direct P2P',
+      'remote_pref_relay_first': 'Prioritas relay P2P',
+      'remote_pref_direct_first_desc':
+          'Memprioritaskan koneksi langsung P2P: saat berhasil tersambung langsung ke server Anda, lebih cepat, dan data tidak melewati node jarak jauh; jika koneksi langsung gagal akan beralih ke mode relay',
+      'remote_pref_relay_first_desc':
+          'Tidak mencoba koneksi langsung P2P; data diteruskan melalui server jarak jauh sehingga lebih lambat',
+      'server_move_to_top': 'Pindahkan ke atas daftar',
       'server_p2p_relay_not_available':
           'Server saat ini tidak menyediakan channel relay yang tersedia',
 

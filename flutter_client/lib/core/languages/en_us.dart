@@ -509,6 +509,14 @@ class EnUs extends Translations {
       'dev_connect_mode_direct': 'Direct',
       'dev_connect_mode_p2p_direct': 'P2P Direct',
       'dev_connect_mode_p2p_relay': 'P2P Relay',
+      'server_remote_connect_pref': 'Remote connection preference',
+      'remote_pref_direct_first': 'P2P direct first',
+      'remote_pref_relay_first': 'P2P relay first',
+      'remote_pref_direct_first_desc':
+          'Prefers a direct peer-to-peer connection: faster, and data never passes through remote relay nodes. Falls back to relay mode if the direct connection fails',
+      'remote_pref_relay_first_desc':
+          'Does not attempt a direct peer-to-peer connection. Data is relayed through a remote server, which is slower',
+      'server_move_to_top': 'Move to top of list',
       'server_p2p_relay_not_available':
           'No relay channel available for this server',
       //用户类型

@@ -516,6 +516,14 @@ class DeDe extends Translations {
       'dev_connect_mode_direct': 'Direkt',
       'dev_connect_mode_p2p_direct': 'P2P Direkt',
       'dev_connect_mode_p2p_relay': 'P2P Relay',
+      'server_remote_connect_pref': 'Präferenz für Remote-Verbindung',
+      'remote_pref_direct_first': 'P2P-Direkt bevorzugt',
+      'remote_pref_relay_first': 'P2P-Relay bevorzugt',
+      'remote_pref_direct_first_desc':
+          'Bevorzugt direkte Peer-to-Peer-Verbindung: bei Erfolg direkt mit Ihrem Server verbunden, schneller, Daten laufen über keine Remote-Knoten; bei Fehlschlag Rückfall auf Relay-Modus',
+      'remote_pref_relay_first_desc':
+          'Kein Versuch einer direkten Peer-to-Peer-Verbindung; Daten werden über einen Remote-Server weitergeleitet und sind langsamer',
+      'server_move_to_top': 'An den Anfang der Liste verschieben',
       'server_p2p_relay_not_available':
           'Kein Relay-Kanal für diesen Server verfügbar',
       // 用户类型

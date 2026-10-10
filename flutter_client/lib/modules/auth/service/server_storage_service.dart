@@ -157,6 +157,9 @@ class ServerStorageService {
           : existing.refreshToken,
       lastLoginTime: incoming.lastLoginTime ?? existing.lastLoginTime,
       needInputPwdEveryTime: incoming.needInputPwdEveryTime,
+      // 「中继优先」偏好默认 false，取 OR 避免未带该值的瞬态对象（发现项/
+      // 配对码候选）合并时冲掉已保存的偏好；关闭仅经偏好设置入口显式落库
+      p2pRelayPreferred: existing.p2pRelayPreferred || incoming.p2pRelayPreferred,
     );
 
     out.isP2p =
