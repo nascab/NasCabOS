@@ -23,7 +23,7 @@ class _TopBarState extends State<_TopBar> {
           // 创建按钮
           CustomBorderedIconButton(
             icon: Icons.add,
-            onTap: () => _showCreateDialog(context, controller),
+            onTap: () => showSmartAlbumCreateDialog(context, controller),
             tooltip: 'create'.tr,
           ),
           const SizedBox(width: 4),

@@ -3,7 +3,6 @@ import 'package:NasCabOS/modules/base/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/api/api_controller.dart';
 import '../../../base/components/custom_album.dart';
 import '../../../base/components/custom_extended_image.dart';
@@ -11,13 +10,11 @@ import '../../../base/components/custom_no_data.dart';
 import '../../../base/components/custom_expandable_search_bar.dart';
 import '../../../base/components/custom_popup_select_button.dart';
 import '../../../../utils/context_menu_util.dart';
-import '../../../../utils/dialog_util.dart';
 import '../controller/photo_smart_album_controller.dart';
 import '../models/photo_smart_album_model.dart';
-import '../photo_smart_album_holiday.dart';
 import '../../timeline/view/pc_photo_timeline.dart';
+import 'photo_smart_album_dialog.dart';
 part 'parts/photo_smart_album_list_card.dart';
-part 'parts/photo_smart_album_list_dialogs.dart';
 part 'parts/photo_smart_album_list_top_bar.dart';
 part 'parts/photo_smart_album_list_timeline_overlay.dart';
 
@@ -45,7 +42,7 @@ class _PhotoSmartAlbumListViewState extends State<PhotoSmartAlbumListView> {
           _didAutoOpenCreate = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            _showCreateDialog(context, ctrl);
+            showSmartAlbumCreateDialog(context, ctrl);
           });
         }
         final content = Obx(() {
@@ -79,8 +76,10 @@ class _PhotoSmartAlbumListViewState extends State<PhotoSmartAlbumListView> {
                           onOpen: () {
                             ctrl.openAlbum(album);
                           },
-                          onEdit: () => _showEditDialog(context, ctrl, album),
-                          onDelete: () => _confirmDelete(context, ctrl, album),
+                          onEdit: () =>
+                              showSmartAlbumEditDialog(context, ctrl, album),
+                          onDelete: () =>
+                              confirmDeleteSmartAlbum(context, ctrl, album),
                         );
                       }, childCount: ctrl.items.length),
                     ),

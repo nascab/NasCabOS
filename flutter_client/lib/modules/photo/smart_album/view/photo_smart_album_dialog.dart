@@ -1,6 +1,17 @@
-part of '../photo_smart_album_list_view.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import '../../../../utils/dialog_util.dart';
+import '../controller/photo_smart_album_controller.dart';
+import '../models/photo_smart_album_model.dart';
+import '../photo_smart_album_holiday.dart';
 
-Future<void> _showCreateDialog(
+/// 智能相册创建/编辑弹窗（PC 与移动端共用）
+///
+/// 该文件收敛了此前在 PC（part of 视图）与移动端页面中重复的两套弹窗逻辑，
+/// 对外仅暴露三个入口，其余构建器/解析器均为库内私有。
+
+Future<void> showSmartAlbumCreateDialog(
   BuildContext context,
   PhotoSmartAlbumController controller,
 ) async {
@@ -124,8 +135,7 @@ Future<void> _showCreateDialog(
                   name = newName;
                   nameCtrl.value = TextEditingValue(
                     text: newName,
-                    selection:
-                        TextSelection.collapsed(offset: newName.length),
+                    selection: TextSelection.collapsed(offset: newName.length),
                   );
                 }),
               ),
@@ -177,7 +187,7 @@ Future<void> _showCreateDialog(
   }
 }
 
-Future<void> _showEditDialog(
+Future<void> showSmartAlbumEditDialog(
   BuildContext context,
   PhotoSmartAlbumController controller,
   PhotoSmartAlbumItem album,
@@ -302,8 +312,7 @@ Future<void> _showEditDialog(
                   name = newName;
                   nameCtrl.value = TextEditingValue(
                     text: newName,
-                    selection:
-                        TextSelection.collapsed(offset: newName.length),
+                    selection: TextSelection.collapsed(offset: newName.length),
                   );
                 }),
               ),
@@ -356,7 +365,7 @@ Future<void> _showEditDialog(
   }
 }
 
-Future<void> _confirmDelete(
+Future<void> confirmDeleteSmartAlbum(
   BuildContext context,
   PhotoSmartAlbumController controller,
   PhotoSmartAlbumItem album,
@@ -404,73 +413,75 @@ Widget _buildSmartAlbumCreateEditDialogContent({
 }) {
   return ConstrainedBox(
     constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextFormField(
-          controller: nameController,
-          autofocus: true,
-          onChanged: onNameChanged,
-          decoration: InputDecoration(
-            labelText: 'photo_album_name'.tr,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: type,
-          decoration: InputDecoration(
-            labelText: 'type'.tr,
-            border: const OutlineInputBorder(),
-          ),
-          items: [
-            DropdownMenuItem(
-              value: 'smart_date',
-              child: Text('smart_date_album'.tr),
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: nameController,
+            autofocus: true,
+            onChanged: onNameChanged,
+            decoration: InputDecoration(
+              labelText: 'photo_album_name'.tr,
+              border: const OutlineInputBorder(),
             ),
-            DropdownMenuItem(
-              value: 'condition',
-              child: Text('condition_album'.tr),
-            ),
-          ],
-          onChanged: (v) {
-            if (v == null) return;
-            onTypeChanged(v);
-          },
-        ),
-        const SizedBox(height: 12),
-        if (type == 'smart_date')
-          _buildSmartDateEditor(
-            context: context,
-            mode: dateMode,
-            onModeChanged: onDateModeChanged,
-            fixedOperator: fixedOperator,
-            onFixedOperatorChanged: onFixedOperatorChanged,
-            fixedDate: fixedDate,
-            onPickFixedDate: onPickFixedDate,
-            rangeStart: rangeStart,
-            rangeEnd: rangeEnd,
-            onPickRangeStart: onPickRangeStart,
-            onPickRangeEnd: onPickRangeEnd,
-            anniversaryRepeat: anniversaryRepeat,
-            onAnniversaryRepeatChanged: onAnniversaryRepeatChanged,
-            anniversaryMonth: anniversaryMonth,
-            onAnniversaryMonthChanged: onAnniversaryMonthChanged,
-            anniversaryDay: anniversaryDay,
-            onAnniversaryDayChanged: onAnniversaryDayChanged,
-            holidayKey: holidayKey,
-            onHolidayKeyChanged: onHolidayKeyChanged,
-          )
-        else
-          _buildConditionEditor(
-            context: context,
-            logic: conditionLogic,
-            onLogicChanged: onConditionLogicChanged,
-            items: conditionItems,
-            onAdd: onAddCondition,
-            onRemove: onRemoveCondition,
           ),
-      ],
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: type,
+            decoration: InputDecoration(
+              labelText: 'type'.tr,
+              border: const OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'smart_date',
+                child: Text('smart_date_album'.tr),
+              ),
+              DropdownMenuItem(
+                value: 'condition',
+                child: Text('condition_album'.tr),
+              ),
+            ],
+            onChanged: (v) {
+              if (v == null) return;
+              onTypeChanged(v);
+            },
+          ),
+          const SizedBox(height: 12),
+          if (type == 'smart_date')
+            _buildSmartDateEditor(
+              context: context,
+              mode: dateMode,
+              onModeChanged: onDateModeChanged,
+              fixedOperator: fixedOperator,
+              onFixedOperatorChanged: onFixedOperatorChanged,
+              fixedDate: fixedDate,
+              onPickFixedDate: onPickFixedDate,
+              rangeStart: rangeStart,
+              rangeEnd: rangeEnd,
+              onPickRangeStart: onPickRangeStart,
+              onPickRangeEnd: onPickRangeEnd,
+              anniversaryRepeat: anniversaryRepeat,
+              onAnniversaryRepeatChanged: onAnniversaryRepeatChanged,
+              anniversaryMonth: anniversaryMonth,
+              onAnniversaryMonthChanged: onAnniversaryMonthChanged,
+              anniversaryDay: anniversaryDay,
+              onAnniversaryDayChanged: onAnniversaryDayChanged,
+              holidayKey: holidayKey,
+              onHolidayKeyChanged: onHolidayKeyChanged,
+            )
+          else
+            _buildConditionEditor(
+              context: context,
+              logic: conditionLogic,
+              onLogicChanged: onConditionLogicChanged,
+              items: conditionItems,
+              onAdd: onAddCondition,
+              onRemove: onRemoveCondition,
+            ),
+        ],
+      ),
     ),
   );
 }
@@ -549,7 +560,10 @@ Widget _buildSmartDateEditor({
       ),
       const SizedBox(height: 12),
       if (mode == 'holiday') ...[
-        SmartAlbumHolidayField(value: holidayKey, onChanged: onHolidayKeyChanged),
+        SmartAlbumHolidayField(
+          value: holidayKey,
+          onChanged: onHolidayKeyChanged,
+        ),
       ],
       if (mode == 'fixed') ...[
         DropdownButtonFormField<String>(
@@ -1072,10 +1086,7 @@ List<_SmartConditionItem> _parseConditionItems(
 
 String _parseDateMode(Map<String, dynamic> filterContent) {
   final m = filterContent['mode']?.toString();
-  if (m == 'anniversary' ||
-      m == 'fixed' ||
-      m == 'range' ||
-      m == 'holiday') {
+  if (m == 'anniversary' || m == 'fixed' || m == 'range' || m == 'holiday') {
     return m!;
   }
   return 'fixed';

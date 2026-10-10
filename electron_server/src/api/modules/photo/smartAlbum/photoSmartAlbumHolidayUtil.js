@@ -235,14 +235,28 @@ function getHolidayYearWindows(key, year) {
 
 /**
  * 展开支持年份范围内的所有区间（农历/清明/复活节用）
+ * 仅依赖日历算法，与照片数据无关，故在模块加载时一次性算好
  */
-function getHolidayWindows(key) {
-  if (!isValidHolidayKey(key)) return [];
+function _computeAllWindows(key) {
   const windows = [];
   for (let year = HOLIDAY_MIN_YEAR; year <= HOLIDAY_MAX_YEAR; year++) {
     windows.push(...getHolidayYearWindows(key, year));
   }
   return windows;
+}
+
+/**
+ * 各节假日支持年份范围内的全部公历日期区间（不可变常量）
+ * 只含「节假日 → 日期」的日历计算结果，与实际照片数据无关；
+ * 照片匹配仍由每次请求实时 SQL 完成，此处缓存不影响数据实时性。
+ */
+const HOLIDAY_WINDOWS = Object.freeze(
+  Object.fromEntries(HOLIDAY_KEYS.map(key => [key, _computeAllWindows(key)])),
+);
+
+function getHolidayWindows(key) {
+  if (!isValidHolidayKey(key)) return [];
+  return HOLIDAY_WINDOWS[key];
 }
 
 module.exports = {
