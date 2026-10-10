@@ -380,9 +380,24 @@ extension ApiControllerP2p on ApiController {
                 ? P2pTransportKind.direct
                 : P2pTransportKind.unknown);
       _bumpConnectChannelRevision();
-    } else if (!kDebugMode) {
-      _p2pIcePreference = P2pIcePreference.auto;
-      _p2pTransportKind = P2pTransportKind.unknown;
+    } else {
+      // 恢复为开发连接模式对应的 ICE 偏好（非 Debug 恒为 auto）。
+      // `_p2pIcePreference` 会被运行时改写（relay fallback、directOnly 升级探测），
+      // 裸重连（自动重连/网络变化重检）直接沿用残留值会导致实际路径与
+      // 用户设置脱节（如强制中继模式实际直连、连接通道 UI 显示错误）
+      final P2pIcePreference restored;
+      switch (_devConnectMode) {
+        case DevConnectMode.p2pDirect:
+          restored = P2pIcePreference.directOnly;
+        case DevConnectMode.p2pRelay:
+          restored = P2pIcePreference.relayOnly;
+        default:
+          restored = P2pIcePreference.auto;
+      }
+      _p2pIcePreference = restored;
+      _p2pTransportKind = restored == P2pIcePreference.relayOnly
+          ? P2pTransportKind.relay
+          : P2pTransportKind.unknown;
       _bumpConnectChannelRevision();
     }
     if (resetReconnectAttempts) {
@@ -572,6 +587,7 @@ extension ApiControllerP2p on ApiController {
             iceTransportPolicy: _p2pIcePreference == P2pIcePreference.relayOnly
                 ? 'relay'
                 : null,
+            directOnly: _p2pIcePreference == P2pIcePreference.directOnly,
             sendWsJson: (payload) {
               try {
                 final bytes = encodeSignaling(payload);
@@ -768,6 +784,7 @@ extension ApiControllerP2p on ApiController {
             iceTransportPolicy: _p2pIcePreference == P2pIcePreference.relayOnly
                 ? 'relay'
                 : null,
+            directOnly: _p2pIcePreference == P2pIcePreference.directOnly,
             sendWsJson: (payload) {
               try {
                 final bytes = encodeSignaling(payload);
@@ -859,6 +876,9 @@ extension ApiControllerP2p on ApiController {
               if (type == 'relay') {
                 _p2pTransportKind = P2pTransportKind.relay;
                 _bumpConnectChannelRevision();
+                // 中继确认后主动调度直连升级探测：NetMonitor 等触发点可能在
+                // 统计确认前检查（kind 尚为 unknown）而漏触发，导致长期滞留中继
+                scheduleP2pDirectUpgrade();
               } else if (type == 'host' || type == 'srflx' || type == 'prflx') {
                 _p2pTransportKind = P2pTransportKind.direct;
                 _bumpConnectChannelRevision();

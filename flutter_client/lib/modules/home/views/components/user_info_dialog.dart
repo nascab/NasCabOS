@@ -94,8 +94,6 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
     final serverIdLabel = 'server_id'.tr;
     final serverIpv4Value =
         kIsWeb ? '' : _resolveServerIpv4(currentServer, currentBaseUrl);
-
-    final channelValue = api.connectChannelDisplayValue;
     final hasPairCode = (currentServer?.pairCode ?? '').trim().isNotEmpty;
 
     final sessionCh = (api.customHostname ?? '').trim();
@@ -189,28 +187,35 @@ class _UserInfoDialogState extends State<UserInfoDialog> {
                 icon: _getPlatformIconPath(currentServer?.serverPlatform),
               ),
               const SizedBox(height: 16),
-              _buildInfoRow(
-                context,
-                channelLabel,
-                channelValue,
-                trailing: (!kIsWeb || kDebugMode)
-                    ? TextButton(
-                        onPressed: () async {
-                          try {
-                            await _showDevConnectModePicker(
-                              context,
-                              hasPairCode: hasPairCode,
-                            );
-                          } catch (e) {
-                            ToastUtil.show(
-                              ApiController.formatP2pConnectError(e),
-                            );
-                          }
-                        },
-                        child: Text('dev_switch'.tr),
-                      )
-                    : null,
-                wrapTooltip: true,
+              Obx(
+                () {
+                  // 传输类型在连接后 ~800ms 异步确认（还可能热升级 relay→direct），
+                  // 监听 revision 避免对话框内定格打开时的值
+                  final _ = api.connectChannelRevision.value;
+                  return _buildInfoRow(
+                    context,
+                    channelLabel,
+                    api.connectChannelDisplayValue,
+                    trailing: (!kIsWeb || kDebugMode)
+                        ? TextButton(
+                            onPressed: () async {
+                              try {
+                                await _showDevConnectModePicker(
+                                  context,
+                                  hasPairCode: hasPairCode,
+                                );
+                              } catch (e) {
+                                ToastUtil.show(
+                                  ApiController.formatP2pConnectError(e),
+                                );
+                              }
+                            },
+                            child: Text('dev_switch'.tr),
+                          )
+                        : null,
+                    wrapTooltip: true,
+                  );
+                },
               ),
               if (!kIsWeb) ...[
                 const SizedBox(height: 16),

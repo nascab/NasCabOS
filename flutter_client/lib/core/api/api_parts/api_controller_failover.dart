@@ -539,11 +539,11 @@ extension ApiControllerFailover on ApiController {
     final previousWasP2p = isP2pMode;
 
     try {
-      print('🟡 [Failover] 尝试 P2P 自动模式: pairCode=$code');
-      await connectP2pByPairCode(
-        code,
-        icePreference: P2pIcePreference.auto,
-      ).timeout(const Duration(seconds: 25));
+      // 不显式传 ICE 偏好：入口按开发连接模式恢复，避免强制中继/强制直连
+      // 被 failover 切换绕过（请求失败触发的 failover 已有 devConnectMode==auto
+      // 门槛拦截，不受影响；auto 模式下行为与原先一致）
+      print('🟡 [Failover] 尝试切换到 P2P: pairCode=$code');
+      await connectP2pByPairCode(code).timeout(const Duration(seconds: 25));
       final ok = await _probeHealthP2p(expectedServerId: expectedServerId);
       if (ok) {
         // 自动模式连接成功；若落在中继，后台尝试升级为直连
@@ -699,12 +699,21 @@ extension ApiControllerFailover on ApiController {
         ? const Duration(seconds: 4)
         : ApiController._failoverProbeTimeout;
     try {
-      final res = await client.get(uri).timeout(timeout);
-      if (res.statusCode != 200) return false;
-      final json = _tryDecodeJsonMap(res.body);
-      if (json == null) return false;
-      return _isHealthOk(json, expectedServerId: expectedServerId);
-    } catch (_) {
+      // 网络层异常快速重试一次：网络刚切换时 ARP/路由可能未收敛（或 WiFi
+      // 漫游抖动），单次探测偶发失败会误判「直连不可用」，可直连的网络
+      // 继续走 P2P；已收到响应但校验失败（非200/serverId 不匹配）不重试
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          final res = await client.get(uri).timeout(timeout);
+          if (res.statusCode != 200) return false;
+          final json = _tryDecodeJsonMap(res.body);
+          if (json == null) return false;
+          return _isHealthOk(json, expectedServerId: expectedServerId);
+        } catch (_) {}
+        if (attempt == 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        }
+      }
       return false;
     } finally {
       client.close();

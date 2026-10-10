@@ -800,10 +800,11 @@ class ServerListController extends GetxController {
     const retryDelay = Duration(milliseconds: 1500);
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        await ApiController.instance.connectP2pByPairCode(
-          code,
-          icePreference: P2pIcePreference.auto,
-        );
+        // 不显式传 ICE 偏好：connectP2pByPairCode 入口按开发连接模式恢复
+        // （p2pDirect→directOnly、p2pRelay→relayOnly、其余→auto），与配对码
+        // 添加/自动重连口径一致。此前硬编码 auto 会绕过强制中继/强制直连
+        // 设置，出现「点击连接实际直连、断线裸重连又变强制中继」的偏好翻转
+        await ApiController.instance.connectP2pByPairCode(code);
         return;
       } catch (e) {
         final isOfflineError = e.toString().contains('P2P_DEVICE_OFFLINE');

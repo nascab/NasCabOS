@@ -126,12 +126,16 @@ class ApiController extends GetxController {
   }
 
   String get connectChannelDisplayValue {
-    final isRelay =
-        isP2pMode &&
-        (devConnectMode == DevConnectMode.p2pRelay ||
-            p2pTransportKind == P2pTransportKind.relay);
-    final relayAddress = p2pRelayAddress.trim();
     if (isP2pMode) {
+      final relayAddress = p2pRelayAddress.trim();
+      // 实际传输类型优先（连接后 ~800ms 统计确认，还可能热升级 relay→direct，
+      // 强制中继模式下实际连接也可能被 Failover 以 auto 重建为直连）；
+      // kind 未确认（unknown，建连中）时按意图（强制中继模式）显示
+      final kind = p2pTransportKind;
+      final isRelay =
+          kind == P2pTransportKind.relay ||
+          (kind == P2pTransportKind.unknown &&
+              devConnectMode == DevConnectMode.p2pRelay);
       if (isRelay) {
         return relayAddress.isNotEmpty ? 'P2P $relayAddress' : 'P2P ';
       }
@@ -261,7 +265,13 @@ class ApiController extends GetxController {
       final raw = (CacheManager().getString(_cacheKeyDevConnectMode) ?? '')
           .trim()
           .toLowerCase();
-      _devConnectMode = _parseDevConnectMode(raw);
+      var mode = _parseDevConnectMode(raw);
+      // p2pDirect/p2pRelay 为一次性切换动作（仅作用于切换时的当前连接），
+      // 不跨启动持久：启动恢复一律回到 auto（每次进入自动检测、优先直连）
+      if (mode == DevConnectMode.p2pDirect || mode == DevConnectMode.p2pRelay) {
+        mode = DevConnectMode.auto;
+      }
+      _devConnectMode = mode;
     } catch (_) {}
   }
 
@@ -317,7 +327,25 @@ class ApiController extends GetxController {
       );
     } catch (_) {}
     if (applyNow) {
-      await applyDevConnectModeNow();
+      try {
+        await applyDevConnectModeNow();
+      } finally {
+        // p2pDirect/p2pRelay 为一次性切换：仅把当前连接切到强制 ICE 偏好，
+        // 应用后（含切换失败）立即回到 auto 并持久化，保证下次进入/重启
+        // 恢复「自动检测、优先直连」。当前连接的强制偏好由 _p2pIcePreference
+        // 保持（阻断自动升级探测），直至下次建连按 auto 重新解析
+        if (mode == DevConnectMode.p2pDirect ||
+            mode == DevConnectMode.p2pRelay) {
+          _devConnectMode = DevConnectMode.auto;
+          _bumpConnectChannelRevision();
+          try {
+            CacheManager().setString(
+              _cacheKeyDevConnectMode,
+              _serializeDevConnectMode(DevConnectMode.auto),
+            );
+          } catch (_) {}
+        }
+      }
     }
   }
 

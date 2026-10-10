@@ -63,12 +63,18 @@ class P2pRtcClient {
     required this.sessionId,
     required this.iceServers,
     this.iceTransportPolicy,
+    this.directOnly = false,
     required this.sendWsJson,
   });
 
   final String sessionId;
   final List<dynamic> iceServers;
   final String? iceTransportPolicy;
+
+  /// 纯直连探测（P2pIcePreference.directOnly）：本地已滤除 TURN，同时也
+  /// 丢弃对端发来的 relay 候选（对端 PC 仍配 TURN 会照常发出），防止
+  /// client-host × server-relay 中继对抢跑导致探测误判「直连不可用」
+  final bool directOnly;
   final void Function(Map<String, dynamic>) sendWsJson;
 
   RTCPeerConnection? _pc;
@@ -1857,6 +1863,10 @@ class P2pRtcClient {
       if (c is Map) {
         final candidate = (c['candidate'] ?? '').toString();
         if (candidate.isEmpty) return;
+        if (directOnly && candidate.contains(' typ relay')) {
+          debugPrint('[P2P-ICE] directOnly 探测：丢弃对端中继候选 $candidate');
+          return;
+        }
         final sdpMid = c['sdpMid']?.toString();
         final idx = c['sdpMLineIndex'];
         final sdpMLineIndex = idx is int ? idx : int.tryParse('$idx');
