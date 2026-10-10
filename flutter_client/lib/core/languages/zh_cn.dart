@@ -439,6 +439,8 @@ class ZhCn extends Translations {
           '优先点对点直连，成功后直连您的服务端，速度快，数据不经过远端节点，直连失败时回退到中继模式',
       'remote_pref_relay_first_desc': '不尝试点对点直连，数据经过远端服务器中转，速度较慢',
       'server_move_to_top': '移动到列表顶部',
+      'server_auto_login': '启动时自动登录',
+      'server_auto_login_cancel': '取消自动登录',
       'remote_pref_pair_code_hint': '（使用配对码连接时生效）',
       'server_p2p_relay_not_available': '当前服务器未提供可用的中继通道',
 

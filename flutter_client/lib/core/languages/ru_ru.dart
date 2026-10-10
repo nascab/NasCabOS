@@ -502,6 +502,8 @@ class RuRu extends Translations {
       'remote_pref_relay_first_desc':
           'Без попытки прямого P2P-подключения: данные проходят через удалённый сервер, скорость ниже',
       'server_move_to_top': 'Переместить в начало списка',
+      'server_auto_login': 'Автоматический вход при запуске',
+      'server_auto_login_cancel': 'Отменить автоматический вход',
       'remote_pref_pair_code_hint':
           ' (действует при подключении по коду сопряжения)',
       'server_p2p_relay_not_available': 'Нет доступного канала ретрансляции',

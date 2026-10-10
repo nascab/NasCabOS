@@ -57,10 +57,18 @@ class ServerListController extends GetxController {
   bool _initFlowStarted = false;
   bool _privacyDialogShowing = false;
 
-  bool _loginCancelled = false; //本次点击登录是否已被用户取消
+  bool _loginCancelled = false; //本次点击登录是否已用户取消
   Completer<void>? _tapCancelCompleter; //取消信号，与各等待点竞速
   ServerInfoBean? _tappingServerItem; //当前点击登录的服务器
   bool _tapLoadingProgrammaticDismiss = false; //loading是否由代码主动关闭（区分遮罩/返回键）
+
+  /// 进程内“冷启动自动登录”是否已处理。
+  ///
+  /// 仅应用进程冷启动后首次进入服务器列表时为 false；自动登录尝试后立即置为
+  /// true。应用内登出走 Get.offAllNamed(/server_list) 会重建本控制器实例，
+  /// 但该进程级 static 已为 true，不会再次触发自动登录，避免“登出后立刻被
+  /// 自动登录拉回、永远无法选择其他服务器”
+  static bool _launchAutoLoginHandled = false;
 
   @override
   void onInit() {
@@ -102,6 +110,48 @@ class ServerListController extends GetxController {
 
     final themeMode = ThemeManager().getThemeMode();
     Get.changeThemeMode(themeMode);
+
+    // 冷启动自动登录：仅进程首次进入服务器列表时触发（应用内登出不触发）
+    if (!_launchAutoLoginHandled) {
+      _launchAutoLoginHandled = true;
+      unawaited(_tryAutoLoginOnLaunch());
+    }
+  }
+
+  /// 冷启动时若存在开启「启动时自动登录」的服务器，自动执行登录。
+  ///
+  /// 复用 handleServerTap：会显示带取消按钮的登录对话框，用户仍可取消并
+  /// 选择其他服务器；以下情况静默跳过：
+  /// - Web 端（启动入口为登录页而非服务器列表）
+  /// - 无开启该选项的服务器
+  /// - 该服务器设置了每次输入密码 / 无已保存密码（无法免输入登录）
+  Future<void> _tryAutoLoginOnLaunch() async {
+    if (kIsWeb) return;
+    ServerInfoBean? target;
+    for (final s in savedServersRx) {
+      if (s.autoLoginOnStartup) {
+        target = s;
+        break;
+      }
+    }
+    if (target == null) return;
+    if (target.needInputPwdEveryTime || (target.password ?? '').trim().isEmpty) {
+      print('[AutoLogin] 目标服务器需要输入密码或无已保存密码，跳过自动登录');
+      return;
+    }
+    // 等待 overlay 就绪（本函数不持有 BuildContext，避免跨 async gap 使用）
+    final ctxReady = await _getOverlayContextWithRetry() != null;
+    if (isClosed || !ctxReady) return;
+    // 在无前置 async gap 的函数内同步获取 context 并发起登录
+    await _startAutoLogin(target);
+  }
+
+  /// 由 [_tryAutoLoginOnLaunch] 在 overlay 就绪后调用：同步取得 context，
+  /// 复用 handleServerTap 完成自动登录
+  Future<void> _startAutoLogin(ServerInfoBean target) async {
+    final ctx = Get.overlayContext;
+    if (ctx == null) return;
+    await handleServerTap(ctx, target);
   }
 
   void _openLegalFromPrivacyDialog(String url, String title) {
@@ -1417,6 +1467,10 @@ class ServerListController extends GetxController {
         // 远程连接偏好设置
         unawaited(showRemoteConnectPref(serverItem));
         break;
+      case 'auto_login':
+        // 启动时自动登录（全局互斥）
+        unawaited(toggleAutoLogin(serverItem));
+        break;
       case 'move_to_top':
         // 移动到列表顶部
         unawaited(moveServerToTop(serverItem));
@@ -1561,6 +1615,29 @@ class ServerListController extends GetxController {
     } catch (e) {
       print('❌ 移动服务器到顶部失败: $e');
     }
+  }
+
+  /// 切换某服务器的「启动时自动登录」。
+  ///
+  /// 该选项在所有服务器中互斥：开启时先清空全部条目标志，再置目标为 true；
+  /// 关闭时仅清自身。随后刷新列表，菜单文案与 URL 左侧标识即时更新
+  Future<void> toggleAutoLogin(ServerInfoBean item) async {
+    final enable = !item.autoLoginOnStartup;
+    item.autoLoginOnStartup = enable;
+    try {
+      final saved = ServerStorageService.loadServers();
+      for (var i = 0; i < saved.length; i++) {
+        if (enable && ServerStorageService.isSameIdentity(saved[i], item)) {
+          saved[i].autoLoginOnStartup = true;
+        } else {
+          saved[i].autoLoginOnStartup = false;
+        }
+      }
+      await ServerStorageService.saveServers(saved);
+    } catch (e) {
+      print('❌ 切换启动自动登录失败: $e');
+    }
+    await refreshSavedServers();
   }
 
   Future<void> _showEditPairCodeDialog(ServerInfoBean serverItem) async {

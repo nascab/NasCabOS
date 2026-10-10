@@ -142,6 +142,26 @@ class ServerItemView extends StatelessWidget {
                                 ],
                               ),
                             ),
+                          // 启动时自动登录（已开启则显示“取消自动登录”）
+                          PopupMenuItem<String>(
+                            value: 'auto_login',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  serverItem.autoLoginOnStartup
+                                      ? Icons.power_off_rounded
+                                      : Icons.bolt_rounded,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  serverItem.autoLoginOnStartup
+                                      ? 'server_auto_login_cancel'.tr
+                                      : 'server_auto_login'.tr,
+                                ),
+                              ],
+                            ),
+                          ),
                           PopupMenuItem<String>(
                             value: 'delete',
                             child: Row(
@@ -166,15 +186,34 @@ class ServerItemView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                // 服务器地址
-                Text(
-                  serverItem.isP2p ? 'P2P' : serverItem.serverUrl,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                // 服务器地址（开启启动自动登录时，左侧显示闪电标识图标）
+                Row(
+                  children: [
+                    if (serverItem.autoLoginOnStartup) ...[
+                      Tooltip(
+                        message: 'server_auto_login'.tr,
+                        child: Icon(
+                          Icons.bolt_rounded,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Expanded(
+                      child: Text(
+                        serverItem.isP2p ? 'P2P' : serverItem.serverUrl,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
                 if (pairCode.isNotEmpty) ...[
                   const SizedBox(height: 4),

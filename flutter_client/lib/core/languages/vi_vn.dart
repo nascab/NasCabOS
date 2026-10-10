@@ -476,6 +476,8 @@ class ViVn extends Translations {
       'remote_pref_relay_first_desc':
           'Không thử kết nối trực tiếp P2P; dữ liệu được chuyển tiếp qua máy chủ từ xa nên chậm hơn',
       'server_move_to_top': 'Di chuyển lên đầu danh sách',
+      'server_auto_login': 'Tự động đăng nhập khi khởi động',
+      'server_auto_login_cancel': 'Hủy tự động đăng nhập',
       'remote_pref_pair_code_hint':
           ' (có hiệu lực khi kết nối bằng mã ghép nối)',
       'server_p2p_relay_not_available':

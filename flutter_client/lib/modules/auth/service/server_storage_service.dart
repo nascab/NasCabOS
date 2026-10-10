@@ -160,6 +160,10 @@ class ServerStorageService {
       // 「中继优先」偏好默认 false，取 OR 避免未带该值的瞬态对象（发现项/
       // 配对码候选）合并时冲掉已保存的偏好；关闭仅经偏好设置入口显式落库
       p2pRelayPreferred: existing.p2pRelayPreferred || incoming.p2pRelayPreferred,
+      // 「启动自动登录」全局仅一个开启，同样取 OR，避免瞬态对象合并时冲掉；
+      // 关闭仅经菜单入口显式落库
+      autoLoginOnStartup:
+          existing.autoLoginOnStartup || incoming.autoLoginOnStartup,
     );
 
     out.isP2p =
