@@ -57,6 +57,11 @@ class ServerListController extends GetxController {
   bool _initFlowStarted = false;
   bool _privacyDialogShowing = false;
 
+  bool _loginCancelled = false; //本次点击登录是否已被用户取消
+  Completer<void>? _tapCancelCompleter; //取消信号，与各等待点竞速
+  ServerInfoBean? _tappingServerItem; //当前点击登录的服务器
+  bool _tapLoadingProgrammaticDismiss = false; //loading是否由代码主动关闭（区分遮罩/返回键）
+
   @override
   void onInit() {
     super.onInit();
@@ -389,6 +394,9 @@ class ServerListController extends GetxController {
   ) async {
     if (_serverTapLocked) return;
     _serverTapLocked = true;
+    _loginCancelled = false;
+    _tapCancelCompleter = Completer<void>();
+    _tappingServerItem = serverItem;
     _showTapLoadingDialog(context);
     try {
       final hasPairCode = (serverItem.pairCode ?? '').trim().isNotEmpty;
@@ -498,15 +506,27 @@ class ServerListController extends GetxController {
             settle();
           }
 
-          await decided.future;
+          await Future.any<void>([
+            decided.future,
+            _tapCancelCompleter!.future,
+          ]);
+          if (_loginCancelled) {
+            return;
+          }
           if (p2pWon) {
             usingP2p = true;
             ApiController.instance.setBaseUrl(ApiController.p2pBaseUrl);
-            status = await AuthApiService.instance.checkServerStatus(
-              false,
-              timeout: const Duration(seconds: 3),
-              maxRetries: 0,
-            );
+            status = await Future.any<ServerStatusResponse?>([
+              AuthApiService.instance.checkServerStatus(
+                false,
+                timeout: const Duration(seconds: 3),
+                maxRetries: 0,
+              ),
+              _tapCancelCompleter!.future.then((_) => null),
+            ]);
+            if (_loginCancelled) {
+              return;
+            }
           } else if (lanWinUrl != null) {
             // LAN 胜：作废在途 P2P 建连（token 递增使其在检查点自行中止）；
             // 已就绪的同码 P2P 连接保留，供后续复用
@@ -528,11 +548,21 @@ class ServerListController extends GetxController {
             await ApiController.instance.disconnectP2p().catchError((_) {});
           }
           for (final c in directCandidates) {
-            final s = await AuthApiService.instance.checkServerStatusAt(
-              c.url,
-              timeout: const Duration(seconds: 2),
-            );
-            if (s.success &&
+            if (_loginCancelled) {
+              return;
+            }
+            final s = await Future.any<ServerStatusResponse?>([
+              AuthApiService.instance.checkServerStatusAt(
+                c.url,
+                timeout: const Duration(seconds: 2),
+              ),
+              _tapCancelCompleter!.future.then((_) => null),
+            ]);
+            if (_loginCancelled) {
+              return;
+            }
+            if (s != null &&
+                s.success &&
                 s.isNasCabServer &&
                 (!c.requireServerIdMatch || _matchServerId(s, serverItem))) {
               status = s;
@@ -557,16 +587,29 @@ class ServerListController extends GetxController {
               await ApiController.instance.disconnectP2p().catchError((_) {});
             }
             await _ensureP2pConnected(serverItem);
+            if (_loginCancelled) {
+              return;
+            }
           }
-          status = await AuthApiService.instance.checkServerStatus(
-            false,
-            timeout: const Duration(seconds: 3),
-            maxRetries: 0,
-          );
+          status = await Future.any<ServerStatusResponse?>([
+            AuthApiService.instance.checkServerStatus(
+              false,
+              timeout: const Duration(seconds: 3),
+              maxRetries: 0,
+            ),
+            _tapCancelCompleter!.future.then((_) => null),
+          ]);
+          if (_loginCancelled) {
+            return;
+          }
         }
 
         if (status == null || !status.success || !status.isNasCabServer) {
           _showErrorDialog('server_connect_fail'.tr);
+          return;
+        }
+
+        if (_loginCancelled) {
           return;
         }
 
@@ -632,6 +675,10 @@ class ServerListController extends GetxController {
       }
     } catch (e) {
       _dismissTapLoadingDialog();
+      // 用户主动取消：静默收尾，不弹错误框（P2P断连会抛 p2p_connect_cancelled 等）
+      if (_loginCancelled) {
+        return;
+      }
       _showErrorDialog(
         ApiController.shouldFormatAsP2pConnectError(e)
             ? ApiController.formatP2pConnectError(e)
@@ -664,9 +711,67 @@ class ServerListController extends GetxController {
     return statusServerId == itemServerId;
   }
 
+  /// 对话框展示用服务器名称：自定义名称 → 主机名 → 地址 → 默认名
+  String _serverDisplayName(ServerInfoBean? s) {
+    final n = s?.serverName.trim() ?? '';
+    if (n.isNotEmpty) return n;
+    final h = s?.displayHostName.trim() ?? '';
+    if (h.isNotEmpty) return h;
+    final u = s?.serverUrl.trim() ?? '';
+    if (u.isNotEmpty) return u;
+    return 'NasCab Server';
+  }
+
+  /// 登录信息条目：小号标签在上，值在下（长 URL/配对码自动省略）
+  Widget _buildLoginInfoItem(
+    ThemeData theme,
+    String label,
+    String value, {
+    bool dimmed = false,
+  }) {
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: dimmed
+                  ? colorScheme.onSurface.withValues(alpha: 0.35)
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginInfoDivider(ColorScheme colorScheme) {
+    return Divider(
+      height: 1,
+      thickness: 0.6,
+      color: colorScheme.onSurface.withValues(alpha: 0.08),
+    );
+  }
+
   void _showTapLoadingDialog(BuildContext context) {
     if (_tapLoadingActive) return;
     _tapLoadingActive = true;
+    _tapLoadingProgrammaticDismiss = false;
     final token = ++_tapLoadingToken;
 
     // 记录 route 以便精确移除：dismiss 时若用 Navigator.pop() 会盲 pop 栈顶，
@@ -678,31 +783,169 @@ class ServerListController extends GetxController {
       builder: (dialogContext) {
         _tapLoadingDialogContext = dialogContext;
         final theme = Theme.of(dialogContext);
+        final colorScheme = theme.colorScheme;
+        final server = _tappingServerItem;
+
+        final name = _serverDisplayName(server);
+        final url = server?.serverUrl.trim() ?? '';
+        final pair = (server?.pairCode ?? '').trim();
+        final user = (server?.username ?? '').trim();
+        final platform = server?.getPlatformFriendlyName() ?? '';
+        final host = server?.displayHostName.trim() ?? '';
+        final subtitle = [
+          host.isNotEmpty ? host : null,
+          (platform.isNotEmpty && platform != 'unknown') ? platform : null,
+        ].whereType<String>().join(' · ');
+
+        final screenWidth = MediaQuery.sizeOf(dialogContext).width;
+        // 手机上取屏幕宽 80%（375px 屏约 300px）；PC 显示器 80% 会超过
+        // 1500px 反而显得过宽，因此与 300px 封顶取较小值
+        final dialogWidth =
+            screenWidth * 0.8 > 300 ? 300.0 : screenWidth * 0.8;
+
         return Dialog(
           insetPadding: const EdgeInsets.all(24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.6,
-                    color: theme.colorScheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: SizedBox(
+            width: dialogWidth,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 头部：服务器图标 + 名称 + 主机名/平台
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          server?.isLocalServer == true
+                              ? Icons.computer_rounded
+                              : pair.isNotEmpty
+                              ? Icons.cloud_rounded
+                              : Icons.dns_rounded,
+                          color: colorScheme.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (subtitle.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.55,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 14),
-                Flexible(
-                  child: Text(
-                    'auth_login_loading'.tr,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium,
+                  const SizedBox(height: 16),
+                  // 服务器详细信息
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.45,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLoginInfoItem(
+                          theme,
+                          'server_add_address_label'.tr,
+                          url.isEmpty ? '—' : url,
+                          dimmed: url.isEmpty,
+                        ),
+                        _buildLoginInfoDivider(colorScheme),
+                        _buildLoginInfoItem(
+                          theme,
+                          'server_pair_code_label'.tr,
+                          pair.isEmpty ? '—' : pair,
+                          dimmed: pair.isEmpty,
+                        ),
+                        if (user.isNotEmpty) ...[
+                          _buildLoginInfoDivider(colorScheme),
+                          _buildLoginInfoItem(
+                            theme,
+                            'username'.tr,
+                            user,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  // 登录进度
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'auth_login_loading'.tr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // 取消按钮单独一行横向居中，位置更醒目
+                  // 补右侧 8px 使本行左右内边距均为 20，保证视觉上严格居中
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Center(
+                      child: TextButton(
+                        onPressed: _cancelLogin,
+                        child: Text('cancel'.tr),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -711,13 +954,39 @@ class ServerListController extends GetxController {
     _tapLoadingRoute = route;
     Navigator.of(context, rootNavigator: true).push(route).then((_) {
       if (_tapLoadingToken == token) {
+        final dismissedByUser =
+            !_tapLoadingProgrammaticDismiss && !_loginCancelled;
         _tapLoadingActive = false;
         _tapLoadingDialogContext = null;
+        // 点击遮罩/返回键关闭对话框等同取消登录
+        if (dismissedByUser) {
+          _cancelLogin();
+        }
       }
       if (identical(_tapLoadingRoute, route)) {
         _tapLoadingRoute = null;
       }
     });
+  }
+
+  /// 取消本次登录：置取消标志、在各等待点立即放行，并作废在途 P2P 建连。
+  /// 仅当 P2P 与本次登录相关（在途建连或当前正走 P2P）时才断开，
+  /// 避免误伤 Failover 与其他服务器的连接。
+  void _cancelLogin() {
+    if (_loginCancelled) return;
+    _loginCancelled = true;
+    final completer = _tapCancelCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+    final tapping = _tappingServerItem;
+    if (tapping != null && (tapping.pairCode ?? '').trim().isNotEmpty) {
+      final api = ApiController.instance;
+      if (_isP2pConnectInFlightFor(tapping) || api.isP2pMode) {
+        unawaited(api.disconnectP2p().catchError((_) {}));
+      }
+    }
+    _dismissTapLoadingDialog();
   }
 
   bool _showTapLoadingDialogFromOverlay() {
@@ -730,6 +999,7 @@ class ServerListController extends GetxController {
   void _dismissTapLoadingDialog() {
     if (!_tapLoadingActive) return;
     _tapLoadingActive = false;
+    _tapLoadingProgrammaticDismiss = true;
     final ctx = _tapLoadingDialogContext;
     _tapLoadingDialogContext = null;
     // 优先精确移除自身 route，避免盲 pop 栈顶误关后弹的错误/确认弹窗或新页面
@@ -921,6 +1191,10 @@ class ServerListController extends GetxController {
         requestServer,
         showLoading: false,
       );
+      // 请求返回前用户已取消：静默丢弃结果（服务端可能已登录成功，下次点击会重新登录）
+      if (_loginCancelled) {
+        return;
+      }
       if (loginResult.success) {
         if (loginResult.twoFactorRequired == true &&
             (loginResult.tempToken ?? '').isNotEmpty) {
@@ -943,6 +1217,9 @@ class ServerListController extends GetxController {
               : '',
         );
       } else {
+        if (_loginCancelled) {
+          return;
+        }
         if (loginResult.code == 999) {
           // 密码错误，弹出带输入框的密码输入框
           _dismissTapLoadingDialog();
@@ -960,6 +1237,9 @@ class ServerListController extends GetxController {
     } catch (e) {
       // 关闭loading对话框
       _dismissTapLoadingDialog();
+      if (_loginCancelled) {
+        return;
+      }
       _showErrorDialog('${'auth_login_failure'.tr}: $e');
     }
   }
