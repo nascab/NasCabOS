@@ -516,6 +516,8 @@ class EsEs extends Translations {
       'remote_pref_relay_first_desc':
           'No intenta la conexión directa P2P; los datos se retransmiten a través de un servidor remoto, lo que es más lento',
       'server_move_to_top': 'Mover al principio de la lista',
+      'remote_pref_pair_code_hint':
+          ' (se aplica al conectar con código de emparejamiento)',
       'server_p2p_relay_not_available':
           'No hay canal de relay disponible para este servidor',
       'user_type_user': 'Usuario',

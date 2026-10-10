@@ -497,6 +497,7 @@ class ArAr extends Translations {
       'remote_pref_relay_first_desc':
           'لا يحاول الاتصال المباشر P2P؛ تُمرَّر البيانات عبر خادم بعيد وهو أبطأ',
       'server_move_to_top': 'نقله إلى أعلى القائمة',
+      'remote_pref_pair_code_hint': '(يسري عند الاتصال برمز الاقتران)',
       'server_p2p_relay_not_available': 'لا توجد قناة ترحيل متاحة لهذا الخادم',
       'user_type_user': 'مستخدم',
       'user_type_admin': 'مسؤول',

@@ -12,6 +12,9 @@ class CustomAuthHeader extends StatelessWidget {
   final List<Widget>? actions;
   final bool showDivider;
 
+  /// 标题行下方、分割线上方的附加内容（如设置项行）
+  final Widget? bottom;
+
   const CustomAuthHeader({
     super.key,
     required this.title,
@@ -20,6 +23,7 @@ class CustomAuthHeader extends StatelessWidget {
     this.onBack,
     this.actions,
     this.showDivider = true,
+    this.bottom,
   });
 
   @override
@@ -31,11 +35,12 @@ class CustomAuthHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
+          // 存在 bottom 时收紧标题行底部间距，由 bottom 自身控制节奏
           padding: EdgeInsets.fromLTRB(
             20,
             20 + (isMobile ? context.mediaQueryPadding.top : 0),
             20,
-            20,
+            bottom != null ? 4 : 20,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -91,6 +96,8 @@ class CustomAuthHeader extends StatelessWidget {
             ],
           ),
         ),
+        // 标题行下方的附加内容（位于分割线之上）
+        if (bottom != null) bottom!,
         // 分割线
         if (showDivider)
           Padding(

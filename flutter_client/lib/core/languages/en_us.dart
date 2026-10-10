@@ -517,6 +517,8 @@ class EnUs extends Translations {
       'remote_pref_relay_first_desc':
           'Does not attempt a direct peer-to-peer connection. Data is relayed through a remote server, which is slower',
       'server_move_to_top': 'Move to top of list',
+      'remote_pref_pair_code_hint':
+          ' (effective when connecting with a pair code)',
       'server_p2p_relay_not_available':
           'No relay channel available for this server',
       //用户类型

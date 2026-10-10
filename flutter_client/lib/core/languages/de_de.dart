@@ -524,6 +524,8 @@ class DeDe extends Translations {
       'remote_pref_relay_first_desc':
           'Kein Versuch einer direkten Peer-to-Peer-Verbindung; Daten werden über einen Remote-Server weitergeleitet und sind langsamer',
       'server_move_to_top': 'An den Anfang der Liste verschieben',
+      'remote_pref_pair_code_hint':
+          ' (gilt bei Verbindung mit Pairing-Code)',
       'server_p2p_relay_not_available':
           'Kein Relay-Kanal für diesen Server verfügbar',
       // 用户类型

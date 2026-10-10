@@ -528,6 +528,8 @@ class FrFr extends Translations {
       'remote_pref_relay_first_desc':
           'Sans tentative de connexion directe P2P ; les données transitent par un serveur distant, ce qui est plus lent',
       'server_move_to_top': 'Déplacer en haut de la liste',
+      'remote_pref_pair_code_hint':
+          " (s'applique lors de la connexion par code de pairage)",
       'server_p2p_relay_not_available':
           'Aucun canal relais disponible pour ce serveur',
       // Types d'utilisateurs

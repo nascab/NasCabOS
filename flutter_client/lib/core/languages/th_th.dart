@@ -461,6 +461,7 @@ class ThTh extends Translations {
       'remote_pref_relay_first_desc':
           'ไม่พยายามเชื่อมต่อแบบ P2P โดยตรง ข้อมูลจะถูกส่งผ่านเซิร์ฟเวอร์ระยะไกล ทำให้ช้ากว่า',
       'server_move_to_top': 'ย้ายไปด้านบนสุดของรายการ',
+      'remote_pref_pair_code_hint': '(มีผลเมื่อเชื่อมต่อด้วยรหัสจับคู่)',
       'server_p2p_relay_not_available':
           'เซิร์ฟเวอร์ปัจจุบันไม่มีช่องรีเลย์ที่ใช้ได้',
       'dir': 'โฟลเดอร์',

@@ -137,9 +137,9 @@ class _ServerListViewContent extends StatelessWidget {
             title: 'server_listTitle'.tr,
             icon: Icons.cloud_done,
             actions: [CustomLanguageSelector(tooltip: 'language'.tr)],
+            // 忽略本地代理：紧贴标题下方（分割线之上），不随服务器列表滚动
+            bottom: _buildIgnoreLocalProxyRow(context, serverListController),
           ),
-          // 忽略本地代理（固定在列表上方，不随服务器列表滚动；勾选后所有网络请求直连）
-          _buildIgnoreLocalProxyRow(context, serverListController),
           // 服务器列表
           Expanded(
             child: Scrollbar(
@@ -180,51 +180,52 @@ class _ServerListViewContent extends StatelessWidget {
     );
   }
 
-  /// 构建忽略本地代理选项（固定于“已保存服务器”标题上方，左侧与其对齐）
+  /// 构建忽略本地代理选项（渲染于标题下方、分割线上方，左侧与标题对齐）
   Widget _buildIgnoreLocalProxyRow(
     BuildContext context,
     ServerListController serverListController,
   ) {
-    final theme = Theme.of(context);
-    return CheckboxListTile(
-      value: serverListController.ignoreLocalProxy.value,
-      onChanged: (bool? value) =>
-          serverListController.setIgnoreLocalProxy(value ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
-      dense: true,
-      visualDensity: VisualDensity.compact,
-      // 左侧与下方“已保存服务器”区域标题左边缘（Dimens.s20）对齐
-      contentPadding: EdgeInsets.fromLTRB(Dimens.s20, 0, Dimens.s20, 0),
-      title: Row(
-        children: [
-          Flexible(
-            child: Text(
-              'server_ignore_local_proxy'.tr,
-              style: TextStyle(
-                fontSize: Dimens.t14,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+    // CheckboxListTile 的复选框与文字间距由 ListTile 内部固定（约16px+控件边距），
+    // 无法精确收窄；这里自定义 Row，复选框与文字间距固定 5px
+    return InkWell(
+      onTap: () => serverListController.setIgnoreLocalProxy(
+        !serverListController.ignoreLocalProxy.value,
+      ),
+      child: Padding(
+        // 左右 20 与标题左缘对齐
+        padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: serverListController.ignoreLocalProxy.value,
+                onChanged: (bool? value) =>
+                    serverListController.setIgnoreLocalProxy(value ?? false),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-          ),
-          SizedBox(width: Dimens.s4),
-          // 圆形帮助图标：点击弹出说明（内层 InkWell 拦截点击，不触发勾选）
-          InkWell(
-            onTap: () => DialogUtil.showInfoDialog(
-              title: 'server_ignore_local_proxy'.tr,
-              content: 'server_ignore_local_proxy_help'.tr,
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text('server_ignore_local_proxy'.tr),
             ),
-            borderRadius: BorderRadius.circular(Dimens.r12),
-            child: Padding(
-              padding: EdgeInsets.all(Dimens.s2),
+            SizedBox(width: Dimens.s4),
+            // 圆形帮助图标：点击弹出说明（内层 InkWell 拦截点击，不触发勾选）
+            InkWell(
+              onTap: () => DialogUtil.showInfoDialog(
+                title: 'server_ignore_local_proxy'.tr,
+                content: 'server_ignore_local_proxy_help'.tr,
+              ),
+              borderRadius: BorderRadius.circular(Dimens.r12),
               child: Icon(
                 Icons.help_outline,
                 size: Dimens.i16,
-                color: theme.colorScheme.primary,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

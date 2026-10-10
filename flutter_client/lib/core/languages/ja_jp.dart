@@ -443,6 +443,7 @@ class JaJp extends Translations {
       'remote_pref_relay_first_desc':
           'ピアツーピアの直接接続を試みません。データは遠隔サーバー経由で中継されるため、速度は低下します',
       'server_move_to_top': 'リストの先頭に移動',
+      'remote_pref_pair_code_hint': '（ペアリングコードでの接続時に有効）',
       'server_p2p_relay_not_available': 'このサーバーには利用可能なリレーチャンネルがありません',
       // ユーザータイプ
       "user_type_user": "ユーザー",

@@ -1165,7 +1165,10 @@ class ServerListController extends GetxController {
       context: ctx,
       builder: (dialogContext) {
         return SimpleDialog(
-          title: Text('server_remote_connect_pref'.tr),
+          title: Text(
+            '${'server_remote_connect_pref'.tr}'
+            '${'remote_pref_pair_code_hint'.tr}',
+          ),
           children: [
             SimpleDialogOption(
               onPressed: () => Navigator.of(dialogContext).pop(false),

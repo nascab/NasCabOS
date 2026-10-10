@@ -522,6 +522,8 @@ class PtBr extends Translations {
       'remote_pref_relay_first_desc':
           'Não tenta conexão direta P2P; os dados são retransmitidos por um servidor remoto, o que é mais lento',
       'server_move_to_top': 'Mover para o topo da lista',
+      'remote_pref_pair_code_hint':
+          ' (aplica-se ao conectar com código de pareamento)',
       'server_p2p_relay_not_available':
           'Nenhum canal de relay disponível para este servidor',
       // 用户类型

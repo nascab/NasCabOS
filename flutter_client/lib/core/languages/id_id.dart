@@ -479,6 +479,8 @@ class IdId extends Translations {
       'remote_pref_relay_first_desc':
           'Tidak mencoba koneksi langsung P2P; data diteruskan melalui server jarak jauh sehingga lebih lambat',
       'server_move_to_top': 'Pindahkan ke atas daftar',
+      'remote_pref_pair_code_hint':
+          ' (berlaku saat terhubung dengan kode pasangan)',
       'server_p2p_relay_not_available':
           'Server saat ini tidak menyediakan channel relay yang tersedia',
 

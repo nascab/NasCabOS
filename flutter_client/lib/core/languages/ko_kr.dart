@@ -449,6 +449,7 @@ class KoKr extends Translations {
       'remote_pref_relay_first_desc':
           'P2P 직접 연결을 시도하지 않습니다. 데이터가 원격 서버를 경유하여 중계되므로 속도가 느립니다',
       'server_move_to_top': '목록 맨 위로 이동',
+      'remote_pref_pair_code_hint': '(페어 코드로 연결 시 적용됨)',
       'server_p2p_relay_not_available': '현재 서버에서 사용 가능한 중계 채널을 제공할 수 없습니다',
 
       // 文件类型
