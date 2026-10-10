@@ -6,6 +6,17 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 allprojects {
     repositories {
+        // JitPack（flutter_webrtc 依赖 com.github.davidliu:audioswitch 等）。
+        // 必须限定 group 且置于镜像之前：国内镜像会先代理到 JitPack 的 POM，
+        // 但 JitPack 按需构建 AAR，镜像短时间内对 AAR 返回 404，Gradle 一旦从
+        // 镜像拿到 POM 就不会再回退到 jitpack.io 取 AAR，导致 ArtifactNotFoundException。
+        maven {
+            url = uri("https://jitpack.io")
+            content {
+                includeGroupByRegex("com\\.github\\..*")
+                includeGroupByRegex("com\\.gitlab\\..*")
+            }
+        }
         // 阿里云镜像
         maven { url = uri("https://maven.aliyun.com/repository/public/") }
         maven { url = uri("https://maven.aliyun.com/repository/google/") }

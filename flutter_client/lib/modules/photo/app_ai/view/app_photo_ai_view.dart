@@ -376,52 +376,56 @@ class _FacePreviewCard extends StatelessWidget {
           borderRadius: 12,
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
           onTap: onTap,
-          child: Column(
-            children: [
-              Container(
-                width: 78,
-                height: 78,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  ),
-                ),
-                child: ClipOval(
-                  child: CustomExtendedImage(
-                    cache: false,
-                    imageUrl: ApiController.instance.getFaceImageUrl(
-                      faceId: faceId,
-                      size: 240,
-                      quality: 85,
+          // 卡片为固定高度的紧凑布局，限制系统字体缩放上限，避免文字撑高导致溢出
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.1,
+            child: Column(
+              children: [
+                Container(
+                  width: 74,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                     ),
-                    width: 78,
-                    height: 78,
-                    fit: BoxFit.cover,
-                    borderRadius: 39,
-                    showLoading: false,
+                  ),
+                  child: ClipOval(
+                    child: CustomExtendedImage(
+                      cache: false,
+                      imageUrl: ApiController.instance.getFaceImageUrl(
+                        faceId: faceId,
+                        size: 240,
+                        quality: 85,
+                      ),
+                      width: 74,
+                      height: 74,
+                      fit: BoxFit.cover,
+                      borderRadius: 37,
+                      showLoading: false,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                shownName,
-                style: theme.textTheme.titleSmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (isAdmin) const SizedBox(height: 2),
-              if (isAdmin)
+                const SizedBox(height: 6),
                 Text(
-                  'total_count'.trParams({'count': '$faceCount'}),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                    fontSize: 10,
-                  ),
+                  shownName,
+                  style: theme.textTheme.titleSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-            ],
+                if (isAdmin) const SizedBox(height: 2),
+                if (isAdmin)
+                  Text(
+                    'total_count'.trParams({'count': '$faceCount'}),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -451,58 +455,62 @@ class _ScenePreviewCard extends StatelessWidget {
           borderRadius: 12,
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
           onTap: onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 152,
-                  height: 104,
-                  child: coverPath.isEmpty
-                      ? Container(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.landscape_outlined,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.55,
+          // 卡片为固定高度的紧凑布局，限制系统字体缩放上限，避免文字撑高导致溢出
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 152,
+                    height: 102,
+                    child: coverPath.isEmpty
+                        ? Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.landscape_outlined,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.55,
+                              ),
+                              size: 40,
                             ),
-                            size: 40,
+                          )
+                        : CustomExtendedImage(
+                            cache: false,
+                            imageUrl: ApiController.instance.getTinyUrl(
+                              coverPath,
+                            ),
+                            width: 152,
+                            height: 102,
+                            fit: BoxFit.cover,
+                            borderRadius: 12,
+                            showLoading: false,
                           ),
-                        )
-                      : CustomExtendedImage(
-                          cache: false,
-                          imageUrl: ApiController.instance.getTinyUrl(
-                            coverPath,
-                          ),
-                          width: 152,
-                          height: 104,
-                          fit: BoxFit.cover,
-                          borderRadius: 12,
-                          showLoading: false,
-                        ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                shownName,
-                style: theme.textTheme.titleSmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (isAdmin) const SizedBox(height: 2),
-              if (isAdmin)
-                Text(
-                  'total_count'.trParams({'count': '$photoCount'}),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                    fontSize: 10,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  shownName,
+                  style: theme.textTheme.titleSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-            ],
+                if (isAdmin) const SizedBox(height: 2),
+                if (isAdmin)
+                  Text(
+                    'total_count'.trParams({'count': '$photoCount'}),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
