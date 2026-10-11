@@ -15,6 +15,7 @@ const {
   getAppAccessScopeConfig,
   setAppAccessScopeConfig,
 } = require('../utils/appAccessScopeUtil');
+const certUtil = require('../utils/certUtil');
 
 function register(ipcMain, app, shell, tableConfig, Logger, getExpressState, getProcessList, getInitUtil) {
   // 服务状态：返回当前 IPv4 列表、Express 是否已启动、HTTP/HTTPS 端口等
@@ -128,6 +129,53 @@ function register(ipcMain, app, shell, tableConfig, Logger, getExpressState, get
     }
   });
 
+  // SSL 证书：返回证书目录与当前自定义证书校验结果（不强制磁盘上已有目录）
+  ipcMain.handle('cert:getInfo', async () => {
+    try {
+      return {
+        certDir: certUtil.getCertDir(),
+        customKeyFile: certUtil.CUSTOM_KEY_FILE,
+        customCertFile: certUtil.CUSTOM_CERT_FILE,
+        result: certUtil.validateCustomCert(),
+      };
+    } catch (e) {
+      return {
+        certDir: certUtil.getCertDir(),
+        customKeyFile: certUtil.CUSTOM_KEY_FILE,
+        customCertFile: certUtil.CUSTOM_CERT_FILE,
+        error: e && e.message ? String(e.message) : String(e),
+      };
+    }
+  });
+
+  // SSL 证书：重新读取文件并校验（用户放入/替换证书后点击“验证证书”）
+  ipcMain.handle('cert:validate', async () => {
+    try {
+      return { success: true, result: certUtil.validateCustomCert() };
+    } catch (e) {
+      return { success: false, error: e && e.message ? String(e.message) : String(e) };
+    }
+  });
+
+  // SSL 证书：打开证书所在目录（目录不存在时先创建，确保 Finder/资源管理器能直接打开）
+  ipcMain.handle('cert:openDir', async () => {
+    const certDir = certUtil.getCertDir();
+    try {
+      fs.mkdirSync(certDir, { recursive: true });
+    } catch (e) {
+      Logger.warn(`cert:openDir mkdir failed: ${e && e.message ? e.message : e}`);
+    }
+    try {
+      const openResult = await shell.openPath(certDir);
+      // openPath 成功返回空字符串，失败返回错误信息字符串
+      if (typeof openResult === 'string' && openResult.trim().length > 0) {
+        return { success: false, certDir, error: openResult };
+      }
+      return { success: true, certDir };
+    } catch (e) {
+      return { success: false, certDir, error: e && e.message ? String(e.message) : String(e) };
+    }
+  });
 
   // 启动选项：开机自启与最小化启动
   ipcMain.handle('settings:getStartupOptions', async () => {

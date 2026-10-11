@@ -36,6 +36,10 @@ contextBridge.exposeInMainWorld('nascab', {
   setFeatureAccessScope: payload => ipcRenderer.invoke('settings:setFeatureAccessScope', payload),
   selectDirectories: () => ipcRenderer.invoke('settings:selectDirectories'),
   vacuumAllDatabases: () => ipcRenderer.invoke('database:vacuumAll'),
+  // SSL 自定义证书：查询信息 / 重新校验 / 打开证书目录
+  getCertInfo: () => ipcRenderer.invoke('cert:getInfo'),
+  validateCert: () => ipcRenderer.invoke('cert:validate'),
+  openCertDir: () => ipcRenderer.invoke('cert:openDir'),
   // Cache statistics & cleanup
   scanCacheFolders: (cacheDir, folders, jobId) => ipcRenderer.invoke('cache:scanFolders', { cacheDir, folders, jobId }),
   cancelCacheScan: jobId => ipcRenderer.invoke('cache:cancelScan', jobId),
@@ -144,6 +148,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return await ipcRenderer.invoke('open:path', path);
   },
   vacuumAllDatabases: () => ipcRenderer.invoke('database:vacuumAll'),
+  // SSL 自定义证书（兼容）
+  getCertInfo: () => ipcRenderer.invoke('cert:getInfo'),
+  validateCert: () => ipcRenderer.invoke('cert:validate'),
+  openCertDir: () => ipcRenderer.invoke('cert:openDir'),
   // 日志推送（兼容：取最近一条）
   onLog: cb => {
     ipcRenderer.on('logs:recent', (_, payload) => {

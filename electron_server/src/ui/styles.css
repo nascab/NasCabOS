@@ -501,6 +501,117 @@ select.form-control option {
   gap: 12px;
 }
 
+/* SSL 证书目录 */
+.ssl-cert-item {
+  border-bottom: none;
+  padding-bottom: 6px;
+}
+
+#open-cert-dir-link {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+#open-cert-dir-link:hover {
+  color: #6aa3ff;
+  text-decoration: underline;
+}
+
+.ssl-cert-hint {
+  margin: 0;
+  padding: 0 0 4px;
+  color: var(--text-sec);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.ssl-cert-state {
+  font-size: 12px;
+  line-height: 1.6;
+  padding-bottom: 4px;
+}
+
+.ssl-cert-state.is-success {
+  color: var(--green);
+}
+
+.ssl-cert-state.is-error {
+  color: var(--red);
+}
+
+.ssl-cert-state.is-neutral {
+  color: var(--text-sec);
+}
+
+/* SSL 证书验证结果弹窗 */
+.ssl-result-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.ssl-result-title.is-success {
+  color: var(--green);
+}
+
+.ssl-result-title.is-error {
+  color: var(--red);
+}
+
+.ssl-result-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.ssl-result-list li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.ssl-result-list.ssl-errors li {
+  color: var(--red);
+}
+
+.ssl-result-list.ssl-warnings li {
+  color: #e0a33e;
+}
+
+.ssl-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.ssl-info-table td {
+  padding: 5px 8px 5px 0;
+  vertical-align: top;
+  text-align: left;
+}
+
+.ssl-info-table td:first-child {
+  color: var(--text-sec);
+  white-space: nowrap;
+}
+
+.ssl-error-detail {
+  font-family: 'SF Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 11.5px;
+  color: var(--text-sec);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+
 .tutorial-cards {
   display: flex;
   flex-direction: column;

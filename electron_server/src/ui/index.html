@@ -105,6 +105,15 @@
               <button type="button" id="cache-stats-btn" class="btn btn-small btn-secondary" data-i18n="cache.statsAndClean">统计和清理</button>
             </span>
           </div>
+          <div class="status-item ssl-cert-item">
+            <span class="status-label" data-i18n="status.sslCertDir">SSL Certificate Directory</span>
+            <span class="status-value status-value-inline-group">
+              <a href="#" id="open-cert-dir-link" class="mono"></a>
+              <button type="button" id="ssl-cert-validate-btn" class="btn btn-small btn-secondary" data-i18n="status.sslValidateBtn">Validate Certificate</button>
+            </span>
+          </div>
+          <div class="ssl-cert-hint" data-i18n="status.sslCertHint">To use your own SSL (HTTPS) certificate, place your Nginx-style PEM files in this directory as key_custom.pem (private key) and cert_custom.pem (certificate, may include the intermediate chain). After validation succeeds, they take effect the next time the HTTPS service starts.</div>
+          <div class="ssl-cert-state" id="ssl-cert-state"></div>
         </div>
 
         <div class="card">
@@ -323,6 +332,16 @@
         <div class="modal-actions">
           <button type="button" id="database-vacuum-cancel-btn" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
           <button type="button" id="database-vacuum-confirm-btn" class="btn btn-primary" data-i18n="common.confirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ssl-cert-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-title" data-i18n="status.sslValidateTitle">SSL Certificate Validation</div>
+        <div class="modal-body" id="ssl-cert-modal-body"></div>
+        <div class="modal-actions">
+          <button type="button" id="ssl-cert-modal-close-btn" class="btn btn-primary" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>

@@ -81,14 +81,33 @@ class ExpressWorker {
   }
 
   // 启动HTTPS服务器
-  startHttpsServer() {
+  // forceDefaultCert=true 时跳过自定义证书，直接使用默认自签名证书（自定义证书启动失败后的兜底）
+  startHttpsServer(forceDefaultCert = false) {
+    let certSelection;
     try {
-      // 确保证书存在（首次启动自动生成自签名证书）
-      const { keyPath, certPath } = certUtil.ensureCert();
+      // 选择证书：自定义证书（key_custom.pem/cert_custom.pem）校验通过时优先，否则回退默认自签名证书
+      certSelection = forceDefaultCert
+        ? { ...certUtil.ensureCert(), source: 'default' }
+        : certUtil.resolveServerCert();
+    } catch (err) {
+      Logger.error(`❌ Failed to resolve SSL certificate:`, err);
+      this.httpsRunning = false;
+      Logger.info(`⚠️  HTTPS unavailable, HTTP only`);
+      return;
+    }
+
+    this._httpsCertSource = certSelection.source;
+    this._httpsCertFallbackUsed = !!forceDefaultCert;
+
+    try {
       const options = {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath),
+        key: fs.readFileSync(certSelection.keyPath),
+        cert: fs.readFileSync(certSelection.certPath),
       };
+
+      if (certSelection.source === 'custom') {
+        Logger.info(`🔐 HTTPS using user custom certificate`);
+      }
 
       // 创建HTTPS服务器
       this.httpsServer = https.createServer(options, this.app);
@@ -116,8 +135,30 @@ class ExpressWorker {
     } catch (err) {
       Logger.error(`❌ HTTPS server start exception:`, err);
       this.httpsRunning = false;
+      if (this._shouldFallbackToDefaultCert(err)) {
+        this._fallbackToDefaultCert(err && err.message ? err.message : err);
+        return;
+      }
       Logger.info(`⚠️  HTTPS unavailable, HTTP only`);
     }
+  }
+
+  // 是否为证书加载类错误（且当前仍有“回退默认证书”的机会）
+  _shouldFallbackToDefaultCert(err) {
+    if (this._httpsCertSource !== 'custom' || this._httpsCertFallbackUsed) return false;
+    const msg = String((err && (err.code || err.message)) || err || '').toUpperCase();
+    return /PEM|X509|SSL|CERT|PRIVATE KEY|ASN1|BAD DECRYPT|EVP_|OSSL/.test(msg);
+  }
+
+  // 自定义证书导致 HTTPS 启动失败时，清理后改用默认证书重试一次
+  _fallbackToDefaultCert(reason) {
+    if (this._httpsCertFallbackUsed) return;
+    this._httpsCertFallbackUsed = true;
+    Logger.error(
+      `Custom certificate failed during HTTPS startup (${reason}), retrying with the default certificate`
+    );
+    this._cleanupHttpsServer();
+    this.startHttpsServer(true);
   }
 
   _handleHttpsError(err) {
@@ -126,9 +167,15 @@ class ExpressWorker {
 
     if (err && err.code === 'EADDRINUSE') {
       Logger.error(`HTTPS port ${this.httpsPort} in use, trying fallback`);
+      const retryWithDefault = !!this._httpsCertFallbackUsed;
       this._cleanupHttpsServer();
       this.httpsPort = this.httpsPort + 1;
-      this.startHttpsServer();
+      this.startHttpsServer(retryWithDefault);
+      return;
+    }
+
+    if (this._shouldFallbackToDefaultCert(err)) {
+      this._fallbackToDefaultCert(err && err.message ? err.message : err);
       return;
     }
 

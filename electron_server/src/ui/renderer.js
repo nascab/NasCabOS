@@ -725,6 +725,9 @@ function applyI18n(lang) {
   renderFeatureAccessSettings();
   loadAdminSecurity();
   refreshDatabaseTotalSizeLabel();
+  renderCertState(certInfoCache);
+  const sslValidateBtnEl = document.getElementById('ssl-cert-validate-btn');
+  if (sslValidateBtnEl) sslValidateBtnEl.textContent = t('status.sslValidateBtn');
   if (document.getElementById('process-tab') && document.getElementById('process-tab').classList.contains('active')) {
     loadProcessList();
   }
@@ -863,6 +866,187 @@ if (goAdminLink) {
 
 // 初始化时也加载路径信息
 window.electronAPI.getServiceStatus().then(loadPaths);
+
+// ==================== SSL 自定义证书 ====================
+
+let certInfoCache = null;
+
+function getCertApi() {
+  return window.nascab && typeof window.nascab.getCertInfo === 'function' ? window.nascab : window.electronAPI;
+}
+
+async function loadCertInfo() {
+  try {
+    const info = await getCertApi().getCertInfo();
+    certInfoCache = info;
+    renderCertState(info);
+    return info;
+  } catch (e) {
+    return null;
+  }
+}
+
+function renderCertState(info) {
+  const link = document.getElementById('open-cert-dir-link');
+  const stateEl = document.getElementById('ssl-cert-state');
+  if (!link || !stateEl) return;
+  const certDir = info && info.certDir ? info.certDir : '';
+  link.textContent = certDir || 'N/A';
+  const r = info && info.result;
+  stateEl.className = 'ssl-cert-state';
+  stateEl.textContent = '';
+  if (!r) return;
+  if (!r.configured) {
+    stateEl.classList.add('is-neutral');
+    stateEl.textContent = t('status.sslStateNone');
+  } else if (r.valid) {
+    stateEl.classList.add('is-success');
+    stateEl.textContent = t('status.sslStateCustomReady');
+  } else {
+    stateEl.classList.add('is-error');
+    stateEl.textContent = t('status.sslStateCustomInvalid');
+  }
+}
+
+function sslErrorText(code) {
+  const key = `status.ssl.err.${code}`;
+  const text = t(key);
+  return text === key ? t('status.ssl.err.UNKNOWN') : text;
+}
+
+function sslWarningText(code, params) {
+  const key = `status.ssl.warn.${code}`;
+  let text = t(key);
+  if (text === key) text = t('status.ssl.warn.UNKNOWN');
+  if (code === 'EXPIRING_SOON' && params && params.EXPIRING_SOON) {
+    text = text.replace('{days}', String(params.EXPIRING_SOON.days));
+  }
+  return text;
+}
+
+function formatCertDate(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value || '-');
+  return d.toLocaleDateString(CURRENT_LANG, { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+function sslInfoRow(label, value) {
+  return `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(String(value))}</td></tr>`;
+}
+
+function showCertValidateModal(info) {
+  const modal = document.getElementById('ssl-cert-modal');
+  const body = document.getElementById('ssl-cert-modal-body');
+  if (!modal || !body) return;
+  const r = info && info.result;
+  let html = '';
+
+  if (!r) {
+    html += `<div class="ssl-result-title is-error">${escapeHtml(t('status.sslValidateFailed'))}</div>`;
+    if (info && info.error) {
+      html += `<div class="ssl-error-detail">${escapeHtml(info.error)}</div>`;
+    }
+  } else if (!r.configured) {
+    html += `<div class="ssl-result-title is-error">${escapeHtml(t('status.sslModalNotConfigured'))}</div>`;
+    if (r.errors && r.errors.length) {
+      html += `<ul class="ssl-result-list ssl-errors">${r.errors
+        .map(code => `<li>${escapeHtml(sslErrorText(code))}</li>`)
+        .join('')}</ul>`;
+    }
+  } else if (r.valid) {
+    html += `<div class="ssl-result-title is-success">${escapeHtml(t('status.sslModalValid'))}</div>`;
+  } else {
+    html += `<div class="ssl-result-title is-error">${escapeHtml(t('status.sslModalInvalid'))}</div>`;
+    if (r.errors && r.errors.length) {
+      html += `<ul class="ssl-result-list ssl-errors">${r.errors
+        .map(code => `<li>${escapeHtml(sslErrorText(code))}</li>`)
+        .join('')}</ul>`;
+    }
+  }
+
+  if (r && r.warnings && r.warnings.length) {
+    html += `<div class="ssl-result-title">${escapeHtml(t('status.sslWarnings'))}</div>`;
+    html += `<ul class="ssl-result-list ssl-warnings">${r.warnings
+      .map(code => `<li>${escapeHtml(sslWarningText(code, r.warningParams))}</li>`)
+      .join('')}</ul>`;
+  }
+
+  if (r && r.cert) {
+    const c = r.cert;
+    html += '<table class="ssl-info-table">';
+    html += sslInfoRow(t('status.sslFieldSubject'), c.subject || '-');
+    html += sslInfoRow(t('status.sslFieldIssuer'), c.issuer || '-');
+    html += sslInfoRow(t('status.sslFieldValidity'), `${formatCertDate(c.validFrom)} ~ ${formatCertDate(c.validTo)}`);
+    if (c.daysRemaining !== null && c.daysRemaining !== undefined) {
+      html += sslInfoRow(t('status.sslFieldDaysRemaining'), `${c.daysRemaining} ${t('status.sslDaysUnit')}`);
+    }
+    if (c.chainLength > 1) {
+      html += sslInfoRow(t('status.sslFieldChainLength'), String(c.chainLength));
+    }
+    html += '</table>';
+  }
+
+  if (r && r.errorDetails && r.errorDetails.length) {
+    html += `<div class="ssl-error-detail">${r.errorDetails.map(escapeHtml).join('\n')}</div>`;
+  }
+
+  body.innerHTML = html;
+  modal.classList.remove('hidden');
+}
+
+function hideCertValidateModal() {
+  const modal = document.getElementById('ssl-cert-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+const openCertDirLink = document.getElementById('open-cert-dir-link');
+if (openCertDirLink) {
+  openCertDirLink.addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      const res = await getCertApi().openCertDir();
+      if (!res || res.success === false) {
+        showToast(t('status.sslOpenDirFailed'), 'error');
+      }
+    } catch (_) {
+      showToast(t('status.sslOpenDirFailed'), 'error');
+    }
+  });
+}
+
+const sslCertValidateBtn = document.getElementById('ssl-cert-validate-btn');
+if (sslCertValidateBtn) {
+  sslCertValidateBtn.addEventListener('click', async e => {
+    e.preventDefault();
+    sslCertValidateBtn.disabled = true;
+    sslCertValidateBtn.textContent = t('status.sslValidating');
+    try {
+      const resp = await getCertApi().validateCert();
+      if (resp && resp.success && resp.result) {
+        certInfoCache = { ...(certInfoCache || {}), result: resp.result };
+        renderCertState(certInfoCache);
+        showCertValidateModal({ result: resp.result });
+      } else {
+        showCertValidateModal({ error: resp && resp.error ? resp.error : '' });
+      }
+    } catch (err) {
+      showCertValidateModal({ error: err && err.message ? err.message : String(err) });
+    } finally {
+      sslCertValidateBtn.disabled = false;
+      sslCertValidateBtn.textContent = t('status.sslValidateBtn');
+    }
+  });
+}
+
+const sslCertModalCloseBtn = document.getElementById('ssl-cert-modal-close-btn');
+if (sslCertModalCloseBtn) {
+  sslCertModalCloseBtn.addEventListener('click', e => {
+    e.preventDefault();
+    hideCertValidateModal();
+  });
+}
+
+loadCertInfo();
 
 // 如果支持推送服务状态事件，则订阅并直接更新状态（主进程 API 启动成功会立即推送，确保界面必刷新）
 if (window.nascab && typeof window.nascab.onServiceStatus === 'function') {
