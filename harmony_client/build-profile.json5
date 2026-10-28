@@ -7,24 +7,24 @@
         "material": {
           "certpath": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BD9A2423D6421C9C115AEA41FF350BE2B45FC8799FC52362EEE2D2F3184B803B0C68A13096CC1B7",
+          "keyPassword": "0000001BD0FDAA63C19FCD9E431963482D619E02A5CFD4291B90059EAFAB1E5A154E065BECAE1F315E160C",
           "profile": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.p12",
-          "storePassword": "0000001BEE162AA97CDC002790B3644FC17A628EE4C353D10087BAA89F8DF28C68EF7E5121A768120772F3"
+          "storePassword": "0000001B06F18CD982CA4BDB9846FCFCC20846D438A8ACA4EBD8B3B9FB3D620C01592BF95234AAF96D1F03"
         }
       },
       {
         "name": "publish",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/publish-key.p12",
-          "storePassword": "0000001BF3E19F39590380561A55E431E9E68C64B95E21803EBF0C940780137A470168FF354804B1DC03FE",
+          "certpath": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/nascabos-new.cer",
           "keyAlias": "nascabos",
-          "keyPassword": "0000001B270F96BF2F30E1E0C2078257E7ABDDD8B810A5C95193872AF67FF4A8E5AFF4F256BC52EC823490",
-          "signAlg": "SHA256withECDSA",
+          "keyPassword": "0000001B3A95DB9A0877262B43F4F0D778B768F051668F2B336EDE8CE1C9260FDB988CE352E5019C67D8EB",
           "profile": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/nascabosRelease.p7b",
-          "certpath": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/nascabos-new.cer"
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/publish-key.p12",
+          "storePassword": "0000001B4EA206010E852DB22FF620EEF1FD8D853DAC58D2A83FF472ADB7234DB3AD08B3BF14C7F633582A"
         }
       }
     ],
@@ -44,7 +44,7 @@
       },
       {
         "name": "default",
-        "signingConfig": "publish",
+        "signingConfig": "default",
         "targetSdkVersion": "6.0.2(22)",
         "compatibleSdkVersion": "6.0.2(22)",
         "runtimeOS": "HarmonyOS",

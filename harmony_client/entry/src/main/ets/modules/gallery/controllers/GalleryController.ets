@@ -64,6 +64,36 @@ function baseName(v: string): string {
   return i >= 0 && i < clean.length - 1 ? clean.substring(i + 1) : clean;
 }
 
+/** 是否 GIF 条目（对齐 Flutter _hasGifExtension：name/path/url 任一为 .gif） */
+function hasGifExtension(value: string): boolean {
+  const raw = value.trim();
+  if (raw.length === 0) {
+    return false;
+  }
+  const clean = raw.split('?')[0].trim().toLowerCase();
+  return clean.endsWith('.gif');
+}
+
+/**
+ * GIF 的 rawFile URL 补 raw=1 以保留原文件（动画）；
+ * 非 GIF 不加 raw=1，交由服务端解码/按 EXIF 旋转后返回 JPEG（对齐 Flutter _normalizeGifUrl）。
+ */
+function normalizeGifUrl(url: string, isGif: boolean): string {
+  const trimmed = url.trim();
+  if (!isGif || trimmed.length === 0) {
+    return trimmed;
+  }
+  const q = trimmed.indexOf('?');
+  const base = q >= 0 ? trimmed.substring(0, q) : trimmed;
+  if (!base.endsWith('/api/file/rawFile')) {
+    return trimmed;
+  }
+  if (/(\?|&)raw=1(&|$)/.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed}${q >= 0 ? '&' : '?'}raw=1`;
+}
+
 function asNum(v: Object | undefined | null): number {
   if (v === undefined || v === null) {
     return 0;
@@ -154,7 +184,17 @@ export class GalleryController {
       it.liveFilename = src.liveFilename;
       it.rawFilename = src.rawFilename;
       it.fileHash = src.fileHash;
-      it.url = src.url.length > 0 ? src.url : (isUrl(src.path) ? src.path : await ApiUrls.getRawFileUrl(src.path));
+      // URL 构建对齐 Flutter galleryItems setter：GIF 才带 raw=1，其余交给服务端转码输出 JPEG
+      const isGif = hasGifExtension(src.name) || hasGifExtension(src.path) || hasGifExtension(src.url);
+      const path = src.path.trim();
+      const existingUrl = src.url.trim();
+      if (path.length > 0 && !isUrl(path)) {
+        it.url = await ApiUrls.getRawFileUrl(path, true, 'file', undefined, isGif);
+      } else if (existingUrl.length > 0) {
+        it.url = normalizeGifUrl(existingUrl, isGif);
+      } else {
+        it.url = normalizeGifUrl(path, isGif);
+      }
       it.liveVideoUrl = await this.buildLiveVideoUrl(it);
       items.push(it);
     }

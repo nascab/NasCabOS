@@ -109,9 +109,14 @@ export class ApiUrls {
     return url;
   }
 
-  /** 原始文件 URL（对齐 Flutter getRawFileUrl；与 getTinyUrl 一致始终携带 accessToken，服务器图片接口需要鉴权） */
+  /**
+   * 原始文件 URL（对齐 Flutter getRawFileUrl；与 getTinyUrl 一致始终携带 accessToken，服务器图片接口需要鉴权）。
+   * isRawFile=false 时不带 raw=1：服务端对图片走 sharp/dcraw 处理（按 EXIF 旋转并转 JPEG，
+   * X3F/ORF 等 RAW 转出可解码预览），与 Flutter 非 GIF 图片浏览一致；GIF 需传 true 保留动画。
+   */
   static async getRawFileUrl(filePath: string, withAccessToken: boolean = true,
-    p2pChannel: string = 'file', accessTokenOverride?: string): Promise<string> {
+    p2pChannel: string = 'file', accessTokenOverride?: string,
+    isRawFile: boolean = true): Promise<string> {
     const api = APIClient.getInstance();
     const base = api.state.baseUrl;
     const token = (accessTokenOverride !== undefined && accessTokenOverride.trim().length > 0)
@@ -121,21 +126,29 @@ export class ApiUrls {
     if (withAccessToken && token.length > 0) {
       params.set('accessToken', token);
     }
-    params.set('raw', '1');
+    if (isRawFile) {
+      params.set('raw', '1');
+    }
     const aes = await ApiUrls.encryptParams(params);
     if (aes.length > 0) {
       let url = `${base}/api/file/rawFile?aes=${encodeURIComponent(aes)}`;
       if (ApiUrls.isP2p()) {
-        url += `&path=${encodeURIComponent(filePath)}&p2pChannel=${encodeURIComponent(p2pChannel)}&raw=1`;
+        url += `&path=${encodeURIComponent(filePath)}&p2pChannel=${encodeURIComponent(p2pChannel)}`;
+        if (isRawFile) {
+          url += '&raw=1';
+        }
         if (withAccessToken && token.length > 0) {
           url += `&accessToken=${encodeURIComponent(token)}`;
         }
       }
       return url;
     }
-    let url = `${base}/api/file/rawFile?path=${encodeURIComponent(filePath)}&raw=1`;
+    let url = `${base}/api/file/rawFile?path=${encodeURIComponent(filePath)}`;
     if (ApiUrls.isP2p()) {
       url += `&p2pChannel=${encodeURIComponent(p2pChannel)}`;
+    }
+    if (isRawFile) {
+      url += '&raw=1';
     }
     if (withAccessToken && token.length > 0) {
       url += `&accessToken=${encodeURIComponent(token)}`;
