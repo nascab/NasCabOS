@@ -1,9 +1,11 @@
 import { promptAction, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { L10n } from '../../../core/localization/L10n';
+import { NetworkConfig } from '../../../core/network/NetworkConfig';
 import { SystemBars } from '../../../common/SystemBars';
 import { WindowStore } from '../../../common/WindowStore';
 import { AppRouter } from '../../../router/AppRouter';
+import { LegalPageParam } from '../../pages/LegalPage';
 import { ServerInfo } from '../models/ServerInfo';
 import { ServerListViewModel, validatePairCodeText } from './server_list/ServerListViewModel';
 import { scanPairCodeQr } from './server_list/PairCodeScanner';
@@ -107,7 +109,7 @@ export struct ServerListPage {
       // 对话框遮罩
       if (this.vm.privacyDialog.visible) {
         DialogOverlay() {
-          ConfirmDialogView({ state: this.vm.privacyDialog })
+          this.PrivacyConsentDialog()
         }
       }
       if (this.vm.confirmDialog.visible) {
@@ -473,6 +475,73 @@ export struct ServerListPage {
     }
     .width('100%')
     .height('100%')
+  }
+
+  /** 隐私政策提示对话框：正文 + 用户协议/隐私政策链接（对齐 Flutter _ensureAndroidPrivacyConsent） */
+  @Builder
+  PrivacyConsentDialog() {
+    Column() {
+      Text(this.vm.privacyDialog.title)
+        .fontSize(17)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(AuthTheme.textMain)
+      Text(this.vm.privacyDialog.message)
+        .fontSize(14)
+        .fontColor(AuthTheme.textMain)
+        .margin({ top: 12 })
+        .constraintSize({ maxHeight: 300 })
+        .maxLines(20)
+        .textOverflow({ overflow: TextOverflow.Clip })
+      // 法律文档入口：点击在应用内打开对应页面，隐私对话框保持可见
+      Row({ space: 8 }) {
+        Text(L10n.authUserAgreement)
+          .fontSize(14)
+          .fontColor(AuthTheme.primary)
+          .padding({ top: 6, bottom: 6, right: 16 })
+          .onClick(() => this.openLegal(L10n.authUserAgreement, 'agreement.html'))
+        Text(L10n.authPrivacyPolicy)
+          .fontSize(14)
+          .fontColor(AuthTheme.primary)
+          .padding({ top: 6, bottom: 6 })
+          .onClick(() => this.openLegal(L10n.authPrivacyPolicy, 'privacy.html'))
+      }
+      .width('100%')
+      .margin({ top: 12 })
+      .justifyContent(FlexAlign.Start)
+      Row({ space: 12 }) {
+        DialogTextButton({
+          label: this.vm.privacyDialog.cancelText,
+          action: () => {
+            this.vm.privacyDialog.close();
+            this.vm.privacyDialog.onCancel();
+          }
+        })
+        DialogTextButton({
+          label: this.vm.privacyDialog.confirmText,
+          action: () => {
+            this.vm.privacyDialog.close();
+            this.vm.privacyDialog.onConfirm();
+          }
+        })
+      }
+      .margin({ top: 20 })
+      .justifyContent(FlexAlign.End)
+      .width('100%')
+    }
+    .width('80%')
+    .constraintSize({ maxWidth: 400 })
+    .padding(20)
+    .borderRadius(12)
+    .backgroundColor(AuthTheme.dialogBg)
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 应用内打开用户协议/隐私政策（对齐 Flutter LegalDocumentOpener 的移动端 WebView 方式） */
+  private openLegal(title: string, fileName: string): void {
+    const param = new LegalPageParam();
+    param.title = title;
+    param.url = `${NetworkConfig.WEBSITE_BASE_URL}/others/${fileName}?language=${L10n.currentLanguageCode}`;
+    this.pageStack.pushPathByName(AppRouter.LEGAL, param);
   }
 
   @Builder
