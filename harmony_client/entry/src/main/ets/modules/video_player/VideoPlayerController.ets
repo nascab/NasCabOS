@@ -27,6 +27,7 @@ import { WindowStore } from '../../common/WindowStore';
 import { window } from '@kit.ArkUI';
 import fs from '@ohos.file.fs';
 import { Player } from '@mpv-ohos/mpv-arkts';
+import { LocalPlaybackProxy } from '../../p2p/LocalPlaybackProxy';
 
 const TAG = 'PlayerCtrl';
 /** P2P 中继下默认转码的大文件阈值（字节，对齐 Flutter 3GB） */
@@ -377,6 +378,12 @@ export class VideoPlayerController {
       }
     }
 
+    // P2P 模式下 p2p.local 是虚拟域名，mpv/ffmpeg 无法解析，
+    // 起播前确保本地代理已就绪，播放地址会改写到 127.0.0.1:<port>
+    if (APIClient.getInstance().isP2pMode) {
+      await LocalPlaybackProxy.getInstance().start();
+    }
+
     const videoUrl = this.currentQuality === 'original'
       ? this.buildOriginalVideoUrl(item, lastPositionMs)
       : this.buildTranscodeVideoUrl(item, keepPosition, lastPositionMs);
@@ -516,7 +523,7 @@ export class VideoPlayerController {
     if (token.length > 0) {
       videoUrl += `&accessToken=${encodeURIComponent(token)}`;
     }
-    return videoUrl;
+    return this.resolvePlaybackUrl(videoUrl);
   }
 
   private buildTranscodeVideoUrl(item: PlayerPlaylistItem, keepPosition: boolean,
@@ -588,7 +595,16 @@ export class VideoPlayerController {
     }
     // 不追加 `#.m3u8` 伪后缀：mpv/ffmpeg 会按 m3u8 内容自动识别 HLS，
     // 而 URL fragment 可能被 mpv 当作本地片段语法解析，导致转码流打开失败。
-    return url;
+    return this.resolvePlaybackUrl(url);
+  }
+
+  /**
+   * P2P 模式下把 `p2p.local` 地址改写到本地代理 `127.0.0.1:<port>`：
+   * mpv/ffmpeg 走系统 DNS，无法解析该虚拟域名，必须由本地代理转发到 P2P 通道。
+   * （转码 m3u8 里的分片地址由服务端按请求 Host 生成，因此同样指向本地代理）
+   */
+  private resolvePlaybackUrl(url: string): string {
+    return LocalPlaybackProxy.getInstance().resolveP2pProxyUrl(url);
   }
 
   // ================================ 流信息 ================================
@@ -929,7 +945,7 @@ export class VideoPlayerController {
     let subtitleUrl = '';
     if (isBitmapSubtitleExt(fileExt(track.path))) {
       // 位图字幕（sup/sub+idx）无编码问题，直接交给 mpv 解析
-      subtitleUrl = await ApiUrls.getRawFileUrl(track.path, true);
+      subtitleUrl = this.resolvePlaybackUrl(await ApiUrls.getRawFileUrl(track.path, true));
     } else {
       const bytes = await this.apiService.getExternalSubtitleBytes(track.path);
       if (bytes === undefined) {

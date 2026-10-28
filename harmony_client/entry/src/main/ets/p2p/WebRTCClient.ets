@@ -34,6 +34,33 @@ class PendingChunk {
   length: number = 0;
   ackPendingBytes: number = 0;
   ackTimerId: number = -1;
+  /** 流式响应：分块边收边回调，不缓存到 chunks */
+  isStream: boolean = false;
+}
+
+/**
+ * 流式响应回调：视频/大文件用，避免整包缓存在内存里。
+ * onBegin 携带状态码与响应头；onChunk 每收到一个分块调用一次；onEnd 表示响应体结束。
+ */
+export interface P2pStreamHandler {
+  onBegin?: (status: number, headers: HeaderMap) => void;
+  onChunk?: (data: Uint8Array) => void;
+  onEnd?: () => void;
+  onError?: (e: Error) => void;
+}
+
+class PendingStream {
+  handler: P2pStreamHandler;
+  method: string = '';
+  path: string = '';
+  /** 空闲超时定时器（每收到分块重新计时） */
+  timerId: number = -1;
+  /** 重新计时（由 sendRequestStream 注入） */
+  touch: () => void = () => {};
+
+  constructor(handler: P2pStreamHandler) {
+    this.handler = handler;
+  }
 }
 
 class ChannelState {
@@ -43,6 +70,7 @@ class ChannelState {
   isReady: boolean = false;
   pending: Map<string, PendingRequest> = new Map();
   pendingChunks: Map<string, PendingChunk> = new Map();
+  pendingStreams: Map<string, PendingStream> = new Map();
 
   constructor(channel: P2pRtcChannel, handle: number) {
     this.channel = channel;
@@ -272,6 +300,23 @@ export class WebRTCClient {
       chunk.status = reader.readVarint() ?? 500;
       chunk.headers = reader.readHeaderMap() ?? new HeaderMap();
       chunk.length = reader.readVarint() ?? 0;
+      const stream = state.pendingStreams.get(id);
+      if (stream) {
+        // 流式响应：先把状态码/响应头交给上层，后续分块边收边写
+        chunk.isStream = true;
+        state.pendingChunks.set(id, chunk);
+        stream.touch();
+        console.error(`[P2P] ${state.prefix} res:begin(stream) id=${id} status=${chunk.status} len=${chunk.length}`);
+        try {
+          if (stream.handler.onBegin !== undefined) {
+            stream.handler.onBegin(chunk.status, chunk.headers);
+          }
+        } catch (e) {
+          const err = e instanceof Error ? e : new Error(JSON.stringify(e));
+          this.failStream(state, id, err, true);
+        }
+        return;
+      }
       state.pendingChunks.set(id, chunk);
       console.error(`[P2P] ${state.prefix} res:begin id=${id} status=${chunk.status} len=${chunk.length}`);
       return;
@@ -279,6 +324,29 @@ export class WebRTCClient {
     if (mt === P2pControlType.RES_END) {
       const id = reader.readString() ?? '';
       const chunk = state.pendingChunks.get(id);
+      const stream = state.pendingStreams.get(id);
+      if (stream) {
+        // 流式响应已边收边写，这里只做收尾
+        state.pendingStreams.delete(id);
+        if (stream.timerId !== -1) {
+          clearTimeout(stream.timerId);
+          stream.timerId = -1;
+        }
+        if (chunk) {
+          this.clearChunkAckTimer(chunk);
+          this.flushChunkAck(state, id, chunk);
+          state.pendingChunks.delete(id);
+        }
+        console.error(`[P2P] ${state.prefix} res(stream) done: id=${id} status=${chunk ? chunk.status : 0}`);
+        try {
+          if (stream.handler.onEnd !== undefined) {
+            stream.handler.onEnd();
+          }
+        } catch (e) {
+          console.error(`[P2P] ${state.prefix} stream onEnd error: ${JSON.stringify(e)}`);
+        }
+        return;
+      }
       if (!chunk) {
         return;
       }
@@ -312,6 +380,12 @@ export class WebRTCClient {
     }
     if (mt === P2pControlType.CANCEL) {
       const id = reader.readString() ?? '';
+      const stream = state.pendingStreams.get(id);
+      if (stream) {
+        // 对端已取消：只清理本地状态并通知上层，不再回发 cancel
+        this.failStream(state, id, P2PError.wsError('p2p_req_canceled') as Error, false);
+        return;
+      }
       const chunk = state.pendingChunks.get(id);
       if (chunk) {
         this.clearChunkAckTimer(chunk);
@@ -349,6 +423,19 @@ export class WebRTCClient {
       return;
     }
     if (payload.length > 0) {
+      if (chunk.isStream) {
+        const stream = state.pendingStreams.get(requestId);
+        if (stream) {
+          stream.touch();
+          // payload 是整帧 buffer 的切片视图，交给上层前先拷贝，
+          // 避免底层复用时数据被后续帧覆盖
+          if (stream.handler.onChunk !== undefined) {
+            stream.handler.onChunk(payload.slice());
+          }
+        }
+        this.scheduleChunkAck(state, requestId, chunk, payload.length);
+        return;
+      }
       chunk.chunks.push(payload);
       this.scheduleChunkAck(state, requestId, chunk, payload.length);
     }
@@ -476,10 +563,159 @@ export class WebRTCClient {
     });
   }
 
+  /**
+   * 流式请求：响应体按分块回调，适合视频/大文件（不整体缓存）。
+   * 返回取消函数；调用后向对端发送 REQ_CANCEL 并清理本地状态。
+   */
+  async sendRequestStream(
+    channel: P2pRtcChannel,
+    method: string,
+    path: string,
+    headers: HeaderMap,
+    bodyBytes: Uint8Array,
+    timeoutMs: number,
+    handler: P2pStreamHandler
+  ): Promise<() => void> {
+    const state = this.channels.get(channel);
+    if (!state || !state.isReady) {
+      throw P2PError.notConnected();
+    }
+
+    const id = P2pRequestId.generate();
+    const safeHeaders = headers.removeProxyHeaders();
+    const stream = new PendingStream(handler);
+    stream.method = method;
+    stream.path = path;
+    state.pendingStreams.set(id, stream);
+
+    const sendCtrl = (payload: P2pControlPayload, type: P2pControlType): boolean => {
+      const ctrl = P2pControlBinary.encodeControl(state.prefix, type, payload);
+      if (!ctrl) {
+        return false;
+      }
+      return WebRTCNativeBridge.sendBinary(state.handle, ctrl.buffer as ArrayBuffer);
+    };
+
+    // 空闲超时：每收到一个分块重新计时，长时间无数据才判定失败
+    const armTimer = (): void => {
+      if (stream.timerId !== -1) {
+        clearTimeout(stream.timerId);
+      }
+      stream.timerId = setTimeout(() => {
+        stream.timerId = -1;
+        if (state.pendingStreams.get(id) !== stream) {
+          return;
+        }
+        state.pendingStreams.delete(id);
+        const chunk = state.pendingChunks.get(id);
+        if (chunk) {
+          this.clearChunkAckTimer(chunk);
+          state.pendingChunks.delete(id);
+        }
+        const cancelPayload = new P2pControlPayload();
+        cancelPayload.id = id;
+        sendCtrl(cancelPayload, P2pControlType.REQ_CANCEL);
+        console.error(`[P2P] stream timeout: ${method} ${path} id=${id}`);
+        try {
+          if (handler.onError !== undefined) {
+            handler.onError(P2PError.wsError('p2p_timeout') as Error);
+          }
+        } catch (e) {
+          console.error(`[P2P] stream onError error: ${JSON.stringify(e)}`);
+        }
+      }, timeoutMs);
+    };
+    stream.touch = armTimer;
+    armTimer();
+
+    if (bodyBytes.length === 0) {
+      const payload = new P2pControlPayload();
+      payload.id = id;
+      payload.method = method;
+      payload.path = path;
+      payload.headers = safeHeaders;
+      sendCtrl(payload, P2pControlType.REQ);
+    } else {
+      const beginPayload = new P2pControlPayload();
+      beginPayload.id = id;
+      beginPayload.method = method;
+      beginPayload.path = path;
+      beginPayload.headers = safeHeaders;
+      beginPayload.length = bodyBytes.length;
+      sendCtrl(beginPayload, P2pControlType.REQ_BEGIN);
+
+      const header = P2pBinaryFrame.buildHeader(P2pBinaryFrame.VERSION_V1, id);
+      for (let offset = 0; offset < bodyBytes.length; offset += BODY_CHUNK_SIZE) {
+        const end = Math.min(offset + BODY_CHUNK_SIZE, bodyBytes.length);
+        const piece = bodyBytes.subarray(offset, end);
+        const packet = new Uint8Array(header.length + piece.length);
+        packet.set(header, 0);
+        packet.set(piece, header.length);
+        WebRTCNativeBridge.sendBinary(state.handle, packet.buffer as ArrayBuffer);
+      }
+
+      const endPayload = new P2pControlPayload();
+      endPayload.id = id;
+      sendCtrl(endPayload, P2pControlType.REQ_END);
+    }
+    console.error(`[P2P] req(stream): ${method} ${path} id=${id}`);
+
+    return (): void => {
+      if (state.pendingStreams.get(id) !== stream) {
+        return;
+      }
+      state.pendingStreams.delete(id);
+      if (stream.timerId !== -1) {
+        clearTimeout(stream.timerId);
+        stream.timerId = -1;
+      }
+      const chunk = state.pendingChunks.get(id);
+      if (chunk) {
+        this.clearChunkAckTimer(chunk);
+        state.pendingChunks.delete(id);
+      }
+      const cancelPayload = new P2pControlPayload();
+      cancelPayload.id = id;
+      sendCtrl(cancelPayload, P2pControlType.REQ_CANCEL);
+      console.error(`[P2P] stream cancel: ${method} ${path} id=${id}`);
+    };
+  }
+
+  /** 流式请求失败：清理状态、通知上层；notifyPeer 时请求对端取消 */
+  private failStream(state: ChannelState, id: string, err: Error, notifyPeer: boolean): void {
+    const stream = state.pendingStreams.get(id);
+    if (!stream) {
+      return;
+    }
+    state.pendingStreams.delete(id);
+    if (stream.timerId !== -1) {
+      clearTimeout(stream.timerId);
+      stream.timerId = -1;
+    }
+    const chunk = state.pendingChunks.get(id);
+    if (chunk) {
+      this.clearChunkAckTimer(chunk);
+      state.pendingChunks.delete(id);
+    }
+    if (notifyPeer) {
+      const cancelPayload = new P2pControlPayload();
+      cancelPayload.id = id;
+      this.sendControl(state, P2pControlType.REQ_CANCEL, cancelPayload);
+    }
+    console.error(`[P2P] stream failed: ${stream.method} ${stream.path} id=${id} err=${err.message}`);
+    try {
+      if (stream.handler.onError !== undefined) {
+        stream.handler.onError(err);
+      }
+    } catch (e) {
+      console.error(`[P2P] stream onError error: ${JSON.stringify(e)}`);
+    }
+  }
+
   get hasPendingRequests(): boolean {
     let found = false;
     this.channels.forEach((state: ChannelState) => {
-      if (state.pending.size > 0 || state.pendingChunks.size > 0) {
+      if (state.pending.size > 0 || state.pendingChunks.size > 0 || state.pendingStreams.size > 0) {
         found = true;
       }
     });
@@ -568,6 +804,20 @@ export class WebRTCClient {
         p.reject(P2PError.wsError('p2p_closed') as Error);
       });
       state.pending.clear();
+      state.pendingStreams.forEach((stream: PendingStream) => {
+        if (stream.timerId !== -1) {
+          clearTimeout(stream.timerId);
+          stream.timerId = -1;
+        }
+        try {
+          if (stream.handler.onError !== undefined) {
+            stream.handler.onError(P2PError.wsError('p2p_closed') as Error);
+          }
+        } catch (e) {
+          console.error(`[P2P] stream onError error: ${JSON.stringify(e)}`);
+        }
+      });
+      state.pendingStreams.clear();
       state.pendingChunks.forEach((chunk: PendingChunk) => {
         this.clearChunkAckTimer(chunk);
       });

@@ -9,7 +9,7 @@ import { ApiEnvelope, IceServerJson, JsonCodec, P2pSessionJson } from '../common
 import { HeaderMap } from '../common/HeaderMap';
 import { AppEventBus, EVENT_CONNECT_CHANNEL_CHANGED } from '../common/AppEventBus';
 import { WebSocketSignaling, WebSocketSignalingDelegate } from './WebSocketSignaling';
-import { TransportStatsResult, WebRTCClient } from './WebRTCClient';
+import { TransportStatsResult, WebRTCClient, P2pStreamHandler } from './WebRTCClient';
 import { WebRTCNativeBridge } from './WebRTCNativeBridge';
 import { P2pSignalingBinary } from './P2pSignalingBinary';
 import { LocalPlaybackProxy } from './LocalPlaybackProxy';
@@ -330,6 +330,25 @@ export class P2PService implements P2pRequestSender {
       throw P2PError.notConnected();
     }
     return this.rtcClient.sendRequest(channel, method, path, headers, bodyBytes, timeoutMs);
+  }
+
+  /**
+   * 流式请求：响应体边收边回调（视频/大文件用，避免整包缓存）。
+   * 返回取消函数，调用后通知对端停止推送。
+   */
+  async sendOnChannelStream(
+    channel: P2pRtcChannel,
+    method: string,
+    path: string,
+    headers: HeaderMap,
+    bodyBytes: Uint8Array,
+    timeoutMs: number,
+    handler: P2pStreamHandler
+  ): Promise<() => void> {
+    if (!this.rtcClient || !this.isConnected) {
+      throw P2PError.notConnected();
+    }
+    return this.rtcClient.sendRequestStream(channel, method, path, headers, bodyBytes, timeoutMs, handler);
   }
 
   disconnect(): void {
