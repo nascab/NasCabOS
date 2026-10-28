@@ -7,11 +7,11 @@
         "material": {
           "certpath": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B47B3FC5DA62AEE4E207CF0308A1307834BA0FC34524D8DD598EF9D03BEE750A1D79D4E5F94FDAE",
+          "keyPassword": "0000001BD9A2423D6421C9C115AEA41FF350BE2B45FC8799FC52362EEE2D2F3184B803B0C68A13096CC1B7",
           "profile": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/Users/zcz/.ohos/config/default_harmony_client_wrVh-UoBcx_V0fIJa7A0w3qSryG2NUfJQFFvbk3sr5Y=.p12",
-          "storePassword": "0000001B4610B36093219A9B7BDDCD08E7F97B59F0E0E14E9742DA83AE7904C26E0EDC3D58CF4A85C76E2E"
+          "storePassword": "0000001BEE162AA97CDC002790B3644FC17A628EE4C353D10087BAA89F8DF28C68EF7E5121A768120772F3"
         }
       },
       {
@@ -19,9 +19,9 @@
         "type": "HarmonyOS",
         "material": {
           "storeFile": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/publish-key.p12",
-          "storePassword": "0000001B184AE3EC81C6943A9820769CA5E5BCB7105EF7B67E2F4D69D6BC7B150E923FA0DF6E4A21BB8271",
+          "storePassword": "0000001BF3E19F39590380561A55E431E9E68C64B95E21803EBF0C940780137A470168FF354804B1DC03FE",
           "keyAlias": "nascabos",
-          "keyPassword": "0000001B89D1D07834BC5576FF88304CC7C9A3BFB80A7281282846721535537373B08870A068F7EB0B233F",
+          "keyPassword": "0000001B270F96BF2F30E1E0C2078257E7ABDDD8B810A5C95193872AF67FF4A8E5AFF4F256BC52EC823490",
           "signAlg": "SHA256withECDSA",
           "profile": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/nascabosRelease.p7b",
           "certpath": "/Users/zcz/Library/CloudStorage/OneDrive-Personal/NasCab/鸿蒙-nascabos资料/nascabos-new.cer"

@@ -7,6 +7,7 @@
     "deviceTypes": [
       "phone",
       "tablet",
+      "2in1",
       "car",
       "tv"
     ],
