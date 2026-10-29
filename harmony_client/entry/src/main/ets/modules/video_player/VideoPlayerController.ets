@@ -130,6 +130,8 @@ export class VideoPlayerController {
   // ===== 内部状态 =====
   private engine: VideoPlayerEngine = new VideoPlayerEngine();
   private apiService = new VideoPlayerApiService();
+  /** 是否已持有本地代理播放引用（对齐 Flutter acquireForVideo/releaseForVideo） */
+  private proxyVideoAcquired: boolean = false;
   private playId: string | undefined = undefined;
   /** 切换前待停止的转码会话：等新地址打开后再停，避免旧 demuxer 大量 404 */
   private stalePlayId: string | undefined = undefined;
@@ -381,7 +383,18 @@ export class VideoPlayerController {
     // P2P 模式下 p2p.local 是虚拟域名，mpv/ffmpeg 无法解析，
     // 起播前确保本地代理已就绪，播放地址会改写到 127.0.0.1:<port>
     if (APIClient.getInstance().isP2pMode) {
-      await LocalPlaybackProxy.getInstance().start();
+      const proxy = LocalPlaybackProxy.getInstance();
+      await proxy.start();
+      // 对齐 Flutter LocalWebAssetServer.acquireForVideo：
+      // 播放期间持有代理，避免 P2P 断开时关闭服务导致端口变化、播放器地址失效
+      if (!this.proxyVideoAcquired) {
+        this.proxyVideoAcquired = true;
+        proxy.acquireForVideo();
+      }
+      // 绑定当前媒体会话并带上文件大小，供 Range 分块/缓存计算（mp4 moov 在尾部时必需）
+      if (!isUrl) {
+        proxy.prepareVideoSession(path, this.sourceFileSizeBytes);
+      }
     }
 
     const videoUrl = this.currentQuality === 'original'
@@ -1887,6 +1900,10 @@ export class VideoPlayerController {
     this.webClearSubtitle();
     this.restoreOrientation();
     this.engine.release();
+    if (this.proxyVideoAcquired) {
+      this.proxyVideoAcquired = false;
+      LocalPlaybackProxy.getInstance().releaseForVideo();
+    }
   }
 }
 
