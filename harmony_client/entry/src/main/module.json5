@@ -57,6 +57,17 @@
           "when": "inuse"
         }
       },
+      // WRITE_IMAGEVIDEO：受限开放权限（下载完成后直接写入图库，免弹保存确认框），
+      // 需 AGC ACL 审批 + 签名 profile 的 acls.allowed-acls 包含该权限；
+      // 未授予时 DownloadService 会自动回退到系统保存确认框
+      {
+        "name": "ohos.permission.WRITE_IMAGEVIDEO",
+        "reason": "$string:permission_write_imagevideo_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
+      },
       // MEDIA_LOCATION：读取媒体文件 EXIF 中的地理位置信息。
       // 未申请时 Media Library Kit 读取图片会做脱敏处理（抹除 GPS 等敏感 EXIF 字段），
       // 导致相册备份上传的照片丢失地理位置；normal 级 user_grant，无需 ACL

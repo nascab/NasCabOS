@@ -33,6 +33,10 @@
       "value": "相册备份需要读取设备上的图片和视频，并保留照片中的拍摄地点等元数据"
     },
     {
+      "name": "permission_write_imagevideo_reason",
+      "value": "下载完成的图片和视频需要直接保存到系统图库"
+    },
+    {
       "name": "permission_media_location_reason",
       "value": "相册备份需要保留照片中的拍摄地点等元数据"
     },

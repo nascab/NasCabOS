@@ -1,6 +1,7 @@
 import { request } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
 import { notificationManager } from '@kit.NotificationKit';
+import { abilityAccessCtrl } from '@kit.AbilityKit';
 import { fileUri, fileShare, picker } from '@kit.CoreFileKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
@@ -833,6 +834,19 @@ export class DownloadService {
     return i > 0 ? name.substring(0, i) : name;
   }
 
+  /** 图库标题：去掉文件系统非法字符，保留中文等常规字符 */
+  private static galleryTitle(name: string): string {
+    return DownloadService.stripExt(name).replace(/[\\/:*?"<>|]/g, '_').trim();
+  }
+
+  /** 图库标题的 ASCII 安全版本（原生标题校验失败时用于重试） */
+  private static galleryAsciiTitle(title: string): string {
+    return title.replace(/[^A-Za-z0-9_-]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+/, '')
+      .replace(/_+$/, '');
+  }
+
   /** 判断媒体类型：1=图片，2=视频，0=非媒体（仅枚举图库支持的常见格式） */
   private static mediaKind(name: string): number {
     const ext: string = DownloadService.extOfName(name);
@@ -853,16 +867,16 @@ export class DownloadService {
   }
 
   /**
-   * 将已下载的图片/视频手动保存到系统图库（相册）。
+   * 将已下载的图片/视频保存到系统图库（相册）。
    *
-   * 鸿蒙中 Download 目录与图库天然隔离，需通过
-   * PhotoAccessHelper.showAssetsCreationDialog 弹出系统保存对话框，用户确认后
-   * 写入图库（无需申请 ACL 受限权限）。
+   * 保存优先级：
+   * 1. 应用已获 ohos.permission.WRITE_IMAGEVIDEO（ACL 受限权限）时，
+   *    通过 MediaAssetChangeRequest.addResource + applyChanges 直接写入图库，无需弹窗；
+   * 2. 无权限或直接写入失败时，回退 PhotoAccessHelper.showAssetsCreationDialog
+   *    弹出系统保存对话框，用户确认后写入（无需 ACL 权限）。
    *
-   * 官方约定（关键）：
-   * 1. 对话框的源文件 URI 必须是「应用沙箱路径」生成的 URI，公共目录路径不支持；
-   * 2. 对话框只负责创建空的媒体资源并返回目标 URI，文件内容需要应用自行
-   *    用 fs.copyFileSync(srcFd, desFd) 写入。
+   * 官方约定（关键）：两种方式的数据源 URI 都必须是「应用沙箱路径」生成的 URI，
+   * 公共目录路径不支持；因此先把源文件复制到沙箱临时目录。
    *
    * @param srcPath     源文件绝对路径（系统 Download 目录内）
    * @param displayName 文件名（含后缀，用于判断媒体类型与写入标题）
@@ -892,9 +906,14 @@ export class DownloadService {
       // 1. 复制到应用沙箱（公共目录文件 → 沙箱临时文件）
       fs.copyFileSync(srcPath, tmpPath);
 
-      // 2. 弹出系统保存确认框（源 URI 必须是沙箱文件 URI）
+      // 2. 优先直接写入图库（有 WRITE_IMAGEVIDEO 权限时不弹窗）
+      if (await this.saveToGalleryDirect(tmpPath, displayName, kind)) {
+        return true;
+      }
+
+      // 3. 无权限时回退系统保存确认框（源 URI 必须是沙箱文件 URI）
       const config: photoAccessHelper.PhotoCreationConfig = {
-        title: DownloadService.stripExt(displayName),
+        title: DownloadService.galleryTitle(displayName),
         fileNameExtension: DownloadService.extOfName(displayName),
         photoType: kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO
       };
@@ -939,6 +958,80 @@ export class DownloadService {
       } catch (_e) {
         // 清理失败忽略
       }
+    }
+  }
+
+  /**
+   * 直接写入系统图库（需 ohos.permission.WRITE_IMAGEVIDEO，ACL 受限权限）。
+   * 通过 MediaAssetChangeRequest.addResource + applyChanges 创建媒体资源并写入内容，
+   * 全程无弹窗。无权限或写入失败时返回 false，由调用方回退系统保存确认框。
+   *
+   * 注意：原生层对媒体标题有字符校验（中文/空格等可能被拒，日志为
+   * "Failed to check displayName"），因此按「原标题 → ASCII 安全标题 → 系统自动命名」
+   * 依次重试。
+   */
+  private async saveToGalleryDirect(tmpPath: string, displayName: string, kind: number): Promise<boolean> {
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return false;
+    }
+    // ACL 只保证可安装，运行时仍需用户授权一次；已授权时系统直接返回不弹窗
+    if (!(await DownloadService.ensureWritePermission())) {
+      return false;
+    }
+    const helper: photoAccessHelper.PhotoAccessHelper = photoAccessHelper.getPhotoAccessHelper(ctx);
+    const ext: string = DownloadService.extOfName(displayName);
+    const titles: string[] = [];
+    const title: string = DownloadService.galleryTitle(displayName);
+    if (title.length > 0) {
+      titles.push(title);
+    }
+    const asciiTitle: string = DownloadService.galleryAsciiTitle(title);
+    if (asciiTitle.length > 0 && asciiTitle !== title) {
+      titles.push(asciiTitle);
+    }
+    titles.push(''); // 空标题：由系统按日期自动命名
+    for (let i = 0; i < titles.length; i++) {
+      try {
+        const options: photoAccessHelper.CreateOptions = titles[i].length > 0 ? { title: titles[i] } : {};
+        const changeRequest: photoAccessHelper.MediaAssetChangeRequest =
+          photoAccessHelper.MediaAssetChangeRequest.createAssetRequest(
+            ctx, kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO,
+            ext, options);
+        changeRequest.addResource(
+          kind === 1 ? photoAccessHelper.ResourceType.IMAGE_RESOURCE
+            : photoAccessHelper.ResourceType.VIDEO_RESOURCE,
+          fileUri.getUriFromPath(tmpPath));
+        await helper.applyChanges(changeRequest);
+        console.info('[Download] 已直接保存到系统图库: ' + displayName);
+        return true;
+      } catch (e) {
+        // 常见为 201 权限未授予或标题校验失败；换下一种标题策略重试
+        console.warn(`[Download] 直接保存图库失败(title=${titles[i]}): ` + `${e}`);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 申请 ohos.permission.WRITE_IMAGEVIDEO 运行时授权。
+   * 该权限为 user_grant：ACL 只保证可安装，首次使用仍需用户确认一次；
+   * 已授权时系统直接返回结果，不弹窗。
+   */
+  private static async ensureWritePermission(): Promise<boolean> {
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return false;
+    }
+    try {
+      const atManager = abilityAccessCtrl.createAtManager();
+      const result = await atManager.requestPermissionsFromUser(ctx,
+        ['ohos.permission.WRITE_IMAGEVIDEO']);
+      const results = result.authResults;
+      return results.length > 0 && results[0] === 0;
+    } catch (e) {
+      console.warn('[Download] 申请图库写入权限失败: ' + `${e}`);
+      return false;
     }
   }
 

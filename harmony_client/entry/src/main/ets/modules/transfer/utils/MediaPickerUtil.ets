@@ -1,4 +1,5 @@
 import { picker } from '@kit.CoreFileKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { UriReader } from './UriReader';
@@ -24,14 +25,16 @@ export class MediaPickerUtil {
     }
   }
 
-  /** 打开相册选择器（仅图片，不含视频），返回选中的 URI 列表 */
+  /** 打开相册选择器（仅图片，不含视频），隐藏“原图”勾选项，返回选中的 URI 列表 */
   static async pickImages(): Promise<string[]> {
     try {
-      const photoPicker = new picker.PhotoViewPicker();
-      const opts = new picker.PhotoSelectOptions();
-      opts.MIMEType = picker.PhotoViewMIMETypes.IMAGE_TYPE;
+      const photoPicker = new photoAccessHelper.PhotoViewPicker();
+      const opts = new photoAccessHelper.PhotoSelectOptions();
+      opts.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE;
       opts.maxSelectNumber = 500;
-      const result: picker.PhotoSelectResult = await photoPicker.select(opts);
+      // 业务直接按 URI 读取原始文件，“原图”勾选项无实际作用，隐藏以避免误导
+      opts.isOriginalSupported = false;
+      const result: photoAccessHelper.PhotoSelectResult = await photoPicker.select(opts);
       return result.photoUris ?? [];
     } catch (_e) {
       // 用户取消选择
