@@ -122,10 +122,8 @@ export struct MusicFloatingBar {
     if (item === undefined) {
       return '';
     }
-    const downloading = this.svc.isDownloading &&
-      this.svc.downloadingFileHash.trim().length > 0 &&
-      this.svc.downloadingFileHash.trim() === item.fileHash.trim();
-    if (downloading) {
+    // 下载只由当前曲目起播触发，isDownloading 即代表当前曲目，避免 fileHash 为空时无法显示
+    if (this.svc.isDownloading) {
       const pct = Math.round(Math.min(Math.max(this.svc.downloadProgress, 0), 1) * 100);
       return `${pct}% ${item.displayTitle}`;
     }

@@ -869,8 +869,10 @@ class PlaybackClientSession {
       }
     };
 
+    // p2pChannel 标记决定走哪条通道（音乐用 download），转发上游前去掉该参数
+    const route = P2pChannelUtil.resolveTarget(target);
     P2PService.getInstance()
-      .sendOnChannelStream(P2pChannelUtil.resolvePath(target), method, target,
+      .sendOnChannelStream(route.channel, method, route.path,
         headers.removeProxyHeaders(), new Uint8Array(0), STREAM_IDLE_TIMEOUT_MS, streamHandler)
       .then((cancel: () => void): void => {
         this.cancelFn = cancel;
@@ -1084,8 +1086,9 @@ export class LocalPlaybackProxy {
       }
     };
 
+    const route = P2pChannelUtil.resolveTarget(target);
     P2PService.getInstance()
-      .sendOnChannelStream(P2pChannelUtil.resolvePath(target), 'GET', target, reqHeaders,
+      .sendOnChannelStream(route.channel, 'GET', route.path, reqHeaders,
         new Uint8Array(0), STREAM_IDLE_TIMEOUT_MS, handler)
       .then((cancel: () => void): void => {
         if (!task.running) {

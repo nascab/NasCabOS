@@ -18,6 +18,7 @@ import { CacheKeys } from '../../../core/storage/CacheKeys';
 import { WindowStore } from '../../../common/WindowStore';
 import { MusicAudioCacheProgress, MusicAudioCacheService, MusicAudioCacheStats, MusicPlaySource } from './MusicAudioCache';
 import { MusicPlayerEngine } from './MusicPlayerEngine';
+import { LocalPlaybackProxy } from '../../../p2p/LocalPlaybackProxy';
 import { MusicListApiService, MusicListQuery } from '../services/MusicApiServices';
 import { LyricSearchItem, MusicApiResult, MusicListItem, MusicListPagedResult } from '../models/MusicModels';
 
@@ -142,6 +143,8 @@ export class MusicPlayService {
   private autoLyricTried: Set<string> = new Set();
   private lastRecoveryMs: number = 0;
   private lastPlaylistAccessToken: string = '';
+  /** 是否持有 P2P 本地代理播放引用（对齐 Flutter LocalWebAssetServer.acquire/release） */
+  private proxyAcquired: boolean = false;
 
   // ===== AVSession / 后台任务 =====
   private session: avSession.AVSession | undefined = undefined;
@@ -778,6 +781,7 @@ export class MusicPlayService {
     this.shuffleHistory = [];
     this.desiredPlaying = false;
     await this.engine.release();
+    this.releaseP2pProxy();
     this.isPlaying = false;
     this.syncedDurationKey = '';
     this.syncPlaybackState('empty');
@@ -804,11 +808,41 @@ export class MusicPlayService {
 
   private async buildPlayUrl(item: MusicListItem): Promise<string> {
     const path = this.resolvePlayablePath(item);
-    return ApiUrls.getRawFileUrl(path, true, 'download');
+    return this.resolvePlaybackUrl(await ApiUrls.getRawFileUrl(path, true, 'download'));
   }
 
   private async buildTranscodeUrl(item: MusicListItem): Promise<string> {
-    return ApiUrls.getMusicTranscodeUrl(this.resolvePlayablePath(item), true, 'download');
+    return this.resolvePlaybackUrl(await ApiUrls.getMusicTranscodeUrl(this.resolvePlayablePath(item), true, 'download'));
+  }
+
+  /**
+   * P2P 模式下 `p2p.local` 是虚拟域名，AVPlayer 与缓存下载器都无法解析，
+   * 必须改写到本机代理 `127.0.0.1:<port>`（对齐 Flutter LocalWebAssetServer）。
+   */
+  private resolvePlaybackUrl(url: string): string {
+    return LocalPlaybackProxy.getInstance().resolveP2pProxyUrl(url);
+  }
+
+  /** 起播前确保本地代理就绪并持有播放引用（对齐 Flutter acquireForVideo） */
+  private async ensureP2pProxy(): Promise<void> {
+    if (!APIClient.getInstance().isP2pMode) {
+      return;
+    }
+    const proxy = LocalPlaybackProxy.getInstance();
+    await proxy.start();
+    if (!this.proxyAcquired) {
+      this.proxyAcquired = true;
+      proxy.acquireForVideo();
+    }
+  }
+
+  /** 释放本地代理播放引用（切歌/清空队列时调用） */
+  private releaseP2pProxy(): void {
+    if (!this.proxyAcquired) {
+      return;
+    }
+    this.proxyAcquired = false;
+    LocalPlaybackProxy.getInstance().releaseForVideo();
   }
 
   private async buildCoverUrl(item: MusicListItem): Promise<string> {
@@ -843,10 +877,18 @@ export class MusicPlayService {
     const safeIndex = Math.min(Math.max(index, 0), this.playlist.length - 1);
     const token = ++this.rebuildToken;
     this.isOpeningTrack = true;
+    this.isDownloading = false;
+    this.downloadingFileHash = '';
+    this.downloadProgress = 0;
     this.suppressCompletedUntilMs = Date.now() + 4000;
     this.syncPlaybackState('opening');
     try {
       await this.engine.release();
+      this.releaseP2pProxy();
+      if (token !== this.rebuildToken) {
+        return;
+      }
+      await this.ensureP2pProxy();
       if (token !== this.rebuildToken) {
         return;
       }
@@ -863,12 +905,18 @@ export class MusicPlayService {
         try {
           const url = transcode ? await this.buildTranscodeUrl(item) : await this.buildPlayUrl(item);
           source = await cache.prepareSource(url, cacheHash, transcode ? 'mp3' : ext, transcode,
-            (p: MusicAudioCacheProgress): void => this.onCacheProgress(token, hash, p));
+            (p: MusicAudioCacheProgress): void => this.onCacheProgress(token, hash, p),
+            transcode ? 0 : item.size);
         } catch (_e) {
           const url = transcode ? await this.buildTranscodeUrl(item) : await this.buildPlayUrl(item);
           source = new MusicPlaySource();
           source.url = url;
           source.fileExt = transcode ? 'mp3' : ext;
+        }
+        // 下载失败/中止时收起进度显示，避免停在某个百分比
+        if (token === this.rebuildToken && this.downloadingFileHash === hash) {
+          this.isDownloading = false;
+          this.downloadingFileHash = '';
         }
         if (token !== this.rebuildToken) {
           return false;

@@ -674,10 +674,6 @@ export struct MusicPlayerPage {
     if (item === undefined || !this.svc.isDownloading) {
       return '';
     }
-    const hash = this.svc.downloadingFileHash.trim();
-    if (hash.length === 0 || hash !== item.fileHash.trim()) {
-      return '';
-    }
     const pct = Math.round(Math.min(Math.max(this.svc.downloadProgress, 0), 1) * 100);
     return `${pct}%`;
   }

@@ -304,6 +304,17 @@ export class P2pBinaryReader {
   }
 }
 
+/** P2P 请求路由：目标通道 + 去掉代理标记后的上游路径 */
+export class P2pChannelRoute {
+  channel: P2pRtcChannel;
+  path: string;
+
+  constructor(channel: P2pRtcChannel, path: string) {
+    this.channel = channel;
+    this.path = path;
+  }
+}
+
 export class P2pChannelUtil {
   static fallbackForPath(path: string): P2pRtcChannel {
     const p = path.trim();
@@ -319,6 +330,88 @@ export class P2pChannelUtil {
     const idx = path.indexOf('?');
     const basePath = idx >= 0 ? path.substring(0, idx) : path;
     return P2pChannelUtil.fallbackForPath(basePath);
+  }
+
+  /** 解析 URL 里的 p2pChannel 标记（对齐 Flutter P2pChannelUtil.parseMark） */
+  static parseMark(raw: string): P2pRtcChannel | undefined {
+    const s = raw.trim().toLowerCase();
+    if (s.length === 0) {
+      return undefined;
+    }
+    if (s === P2pRtcChannel.API) {
+      return P2pRtcChannel.API;
+    }
+    if (s === P2pRtcChannel.FILE) {
+      return P2pRtcChannel.FILE;
+    }
+    if (s === P2pRtcChannel.UPLOAD) {
+      return P2pRtcChannel.UPLOAD;
+    }
+    if (s === P2pRtcChannel.DOWNLOAD) {
+      return P2pRtcChannel.DOWNLOAD;
+    }
+    if (s === P2pRtcChannel.VIDEO) {
+      return P2pRtcChannel.VIDEO;
+    }
+    return undefined;
+  }
+
+  private static queryParam(path: string, key: string): string | undefined {
+    const qi = path.indexOf('?');
+    if (qi < 0) {
+      return undefined;
+    }
+    const query = path.substring(qi + 1);
+    for (const pair of query.split('&')) {
+      const eq = pair.indexOf('=');
+      const k = eq >= 0 ? pair.substring(0, eq) : pair;
+      if (k !== key) {
+        continue;
+      }
+      const raw = eq >= 0 ? pair.substring(eq + 1) : '';
+      try {
+        return decodeURIComponent(raw);
+      } catch (_e) {
+        return raw;
+      }
+    }
+    return undefined;
+  }
+
+  /** 去掉 p2pChannel 参数（转发上游前调用，对齐 Flutter stripP2pChannelFromPath） */
+  static stripP2pChannel(path: string): string {
+    const qi = path.indexOf('?');
+    if (qi < 0) {
+      return path;
+    }
+    const base = path.substring(0, qi);
+    const kept: string[] = [];
+    for (const part of path.substring(qi + 1).split('&')) {
+      const p = part.trim();
+      if (p.length === 0) {
+        continue;
+      }
+      const eq = p.indexOf('=');
+      const k = eq >= 0 ? p.substring(0, eq) : p;
+      if (k === 'p2pChannel') {
+        continue;
+      }
+      kept.push(p);
+    }
+    return kept.length === 0 ? base : `${base}?${kept.join('&')}`;
+  }
+
+  /** 同时解析通道与转发路径（优先 p2pChannel 标记，其次按路径回退） */
+  static resolveTarget(path: string): P2pChannelRoute {
+    let channel = P2pChannelUtil.resolvePath(path);
+    const mark = P2pChannelUtil.queryParam(path, 'p2pChannel');
+    if (mark !== undefined) {
+      const parsed = P2pChannelUtil.parseMark(mark);
+      if (parsed !== undefined) {
+        channel = parsed;
+      }
+    }
+    return new P2pChannelRoute(channel, P2pChannelUtil.stripP2pChannel(path));
   }
 }
 

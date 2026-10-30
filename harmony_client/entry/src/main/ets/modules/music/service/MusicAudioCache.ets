@@ -54,6 +54,10 @@ export class MusicAudioCacheService {
   private index: Map<string, CacheIndexEntry> = new Map();
   private downloadingKey: string = '';
   private downloadAborted: boolean = false;
+  /** 每次下载的令牌，用于识别已过期的流式回调 */
+  private downloadToken: number = 0;
+  private activeClient: http.HttpRequest | undefined = undefined;
+  private activeFinish: (() => void) | undefined = undefined;
   enabled: boolean = true;
   maxItems: number = 300;
 
@@ -176,7 +180,8 @@ export class MusicAudioCacheService {
 
   /** 播放源准备：优先缓存；否则下载（带进度）；失败返回原始 URL。 */
   async prepareSource(playUrl: string, fileHash: string, fileExt: string, isTranscode: boolean,
-    progressCb: ((p: MusicAudioCacheProgress) => void) | undefined): Promise<MusicPlaySource> {
+    progressCb: ((p: MusicAudioCacheProgress) => void) | undefined,
+    totalHint: number = 0): Promise<MusicPlaySource> {
     const source = new MusicPlaySource();
     source.url = playUrl;
     source.fileExt = fileExt;
@@ -190,7 +195,7 @@ export class MusicAudioCacheService {
       source.cached = true;
       return source;
     }
-    const ok = await this.download(playUrl, key, fileExt, progressCb);
+    const ok = await this.download(playUrl, key, fileExt, progressCb, totalHint);
     if (ok && this.hasCached(fileHash, fileExt, isTranscode)) {
       source.filePath = this.cacheFilePath(key, fileExt);
       source.cached = true;
@@ -212,19 +217,87 @@ export class MusicAudioCacheService {
     return ext.length > 0 && ext.length <= 5 ? ext : 'mp3';
   }
 
-  /** 断点续传下载；返回是否成功完成 */
+  /** 断点续传下载；返回是否成功完成（流式写盘并实时回调进度） */
   async download(url: string, key: string, ext: string,
-    progressCb: ((p: MusicAudioCacheProgress) => void) | undefined): Promise<boolean> {
+    progressCb: ((p: MusicAudioCacheProgress) => void) | undefined,
+    totalHint: number = 0): Promise<boolean> {
     if (this.downloadingKey.length > 0) {
       this.cancelActiveDownload();
     }
+    const token = ++this.downloadToken;
     this.downloadingKey = key;
     this.downloadAborted = false;
     const client: http.HttpRequest = http.createHttp();
+    this.activeClient = client;
+    let fileFd: number = -1;
+    let writeFailed = false;
+    let statusKnown = false;
+    let responseCode = 0;
+    let already = 0;
+    let received = 0;
+    // 已下载字节（用于进度展示，未落盘时也能随 dataReceiveProgress 前进）
+    let liveReceived = 0;
+    let total = Math.max(0, totalHint);
+    let lastReportedPct = -1;
+    let pendingChunks: ArrayBuffer[] = [];
+    let pendingBytes = 0;
+    let idleTimer: number = -1;
+    let endResolve: (() => void) | undefined = undefined;
+    const endSignal = new Promise<void>((resolve: () => void): void => {
+      endResolve = resolve;
+    });
+    const isActive = (): boolean => token === this.downloadToken && !this.downloadAborted;
+    const finishEnd = (): void => {
+      if (idleTimer !== -1) {
+        clearTimeout(idleTimer);
+        idleTimer = -1;
+      }
+      const resolve = endResolve;
+      endResolve = undefined;
+      if (resolve !== undefined) {
+        resolve();
+      }
+    };
+    this.activeFinish = finishEnd;
+    const touchIdle = (): void => {
+      if (idleTimer !== -1) {
+        clearTimeout(idleTimer);
+      }
+      // 读超时 60s，留余量后仍无数据判定失败，避免流式回调永久悬挂
+      idleTimer = setTimeout((): void => {
+        idleTimer = -1;
+        writeFailed = true;
+        try {
+          client.destroy();
+        } catch (_e) {
+        }
+        finishEnd();
+      }, 75000);
+    };
+    const reportProgress = (): void => {
+      if (progressCb === undefined || total <= 0) {
+        return;
+      }
+      const progress = Math.min(Math.max(liveReceived / total, 0), 1);
+      const pct = Math.round(progress * 100);
+      if (pct === lastReportedPct && pct < 100) {
+        return;
+      }
+      lastReportedPct = pct;
+      progressCb({ received: liveReceived, total: total, progress: progress });
+    };
+    const writeChunk = (data: ArrayBuffer): void => {
+      if (fileFd < 0) {
+        return;
+      }
+      fs.writeSync(fileFd, data);
+      received += data.byteLength;
+      liveReceived = Math.max(liveReceived, received);
+      reportProgress();
+    };
     try {
       const targetPath = this.cacheFilePath(key, ext);
       const partPath = this.partPath(key, ext);
-      let already = 0;
       try {
         if (fs.accessSync(partPath)) {
           already = fs.statSync(partPath).size;
@@ -235,42 +308,99 @@ export class MusicAudioCacheService {
       const header: Record<string, string> = {
         'accept': '*/*'
       };
-      const token = APIClient.getInstance().accessToken;
-      if (token !== undefined && token.length > 0) {
-        header['Authorization'] = `Bearer ${token}`;
+      const accessToken = APIClient.getInstance().accessToken;
+      if (accessToken !== undefined && accessToken.length > 0) {
+        header['Authorization'] = `Bearer ${accessToken}`;
       }
       if (already > 0) {
         header['Range'] = `bytes=${already}-`;
       }
-      // 大文件必须显式调大 maxLimit（默认 5MB 上限）
-      const resp = await client.request(url, {
+
+      client.on('dataReceiveProgress', (info: http.DataReceiveProgressInfo): void => {
+        if (!isActive()) {
+          return;
+        }
+        if (info.totalSize > 0) {
+          // 续传时 totalSize 可能只是本次响应体大小，取能覆盖已下载字节的总量
+          total = Math.max(total, already + info.totalSize);
+        }
+        // 不依赖写盘时机，收到数据就推进进度，保证悬浮条等 UI 实时刷新
+        liveReceived = Math.max(liveReceived, already + info.receiveSize);
+        reportProgress();
+      });
+      client.on('dataReceive', (data: ArrayBuffer): void => {
+        if (!isActive() || writeFailed) {
+          return;
+        }
+        touchIdle();
+        if (!statusKnown) {
+          pendingChunks.push(data);
+          pendingBytes += data.byteLength;
+          // 即便响应码还未知，也先推进进度，保证 UI 及时刷新
+          liveReceived = Math.max(liveReceived, already + pendingBytes);
+          reportProgress();
+          return;
+        }
+        try {
+          writeChunk(data);
+        } catch (e) {
+          writeFailed = true;
+          hilog.error(0x0000, TAG, 'download write failed: %{public}s', JSON.stringify(e));
+        }
+      });
+      client.on('dataEnd', (): void => {
+        finishEnd();
+      });
+
+      // 先上报一次初始进度（0% 或续传已下载部分），P2P 请求等待期间也能看到下载状态
+      liveReceived = Math.max(liveReceived, already);
+      reportProgress();
+      touchIdle();
+      // 流式请求：响应头返回后逐块回调 dataReceive，边下边写并实时上报进度
+      responseCode = await client.requestInStream(url, {
         method: http.RequestMethod.GET,
         header: header,
-        expectDataType: http.HttpDataType.ARRAY_BUFFER,
         readTimeout: 60000,
-        connectTimeout: 15000,
-        maxLimit: 100 * 1024 * 1024
+        connectTimeout: 15000
       });
-      if (this.downloadAborted) {
+      statusKnown = true;
+      if (!isActive() || writeFailed) {
         return false;
       }
-      const code = resp.responseCode;
-      if (code !== 200 && code !== 206) {
+      if (responseCode !== 200 && responseCode !== 206) {
         return false;
       }
-      const data = resp.result as ArrayBuffer;
-      const append = already > 0 && code === 206;
+      const append = already > 0 && responseCode === 206;
       const openFlag = append
         ? fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE
         : fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC;
       const file = fs.openSync(partPath, openFlag);
+      fileFd = file.fd;
       if (append) {
-        fs.truncateSync(file.fd, already);
-        fs.lseek(file.fd, already, fs.WhenceType.SEEK_SET);
+        fs.truncateSync(fileFd, already);
+        fs.lseek(fileFd, already, fs.WhenceType.SEEK_SET);
+        received = already;
+      } else {
+        received = 0;
       }
-      fs.writeSync(file.fd, data);
-      fs.fsyncSync(file.fd);
-      fs.closeSync(file);
+      liveReceived = Math.max(liveReceived, received);
+      reportProgress();
+      const buffered = pendingChunks;
+      pendingChunks = [];
+      pendingBytes = 0;
+      for (let i = 0; i < buffered.length; i++) {
+        if (!isActive() || writeFailed) {
+          return false;
+        }
+        writeChunk(buffered[i]);
+      }
+      await endSignal;
+      if (!isActive() || writeFailed) {
+        return false;
+      }
+      fs.fsyncSync(fileFd);
+      fs.closeSync(fileFd);
+      fileFd = -1;
       // 完成改名
       try {
         if (fs.accessSync(targetPath)) {
@@ -279,7 +409,7 @@ export class MusicAudioCacheService {
         fs.renameSync(partPath, targetPath);
       } catch (_e) {
       }
-      const totalBytes = already + data.byteLength;
+      const totalBytes = received;
       const entry: CacheIndexEntry = { lastAccessMs: Date.now(), complete: true, size: totalBytes };
       this.index.set(key, entry);
       this.saveIndex();
@@ -292,7 +422,24 @@ export class MusicAudioCacheService {
       hilog.error(0x0000, TAG, 'download failed: %{public}s', JSON.stringify(e));
       return false;
     } finally {
-      client.destroy();
+      if (fileFd >= 0) {
+        try {
+          fs.closeSync(fileFd);
+        } catch (_e) {
+        }
+        fileFd = -1;
+      }
+      finishEnd();
+      if (this.activeClient === client) {
+        this.activeClient = undefined;
+      }
+      if (this.activeFinish === finishEnd) {
+        this.activeFinish = undefined;
+      }
+      try {
+        client.destroy();
+      } catch (_e) {
+      }
       if (this.downloadingKey === key) {
         this.downloadingKey = '';
       }
@@ -301,7 +448,21 @@ export class MusicAudioCacheService {
 
   cancelActiveDownload(): void {
     this.downloadAborted = true;
+    this.downloadToken += 1;
     this.downloadingKey = '';
+    const active = this.activeClient;
+    this.activeClient = undefined;
+    if (active !== undefined) {
+      try {
+        active.destroy();
+      } catch (_e) {
+      }
+    }
+    const finish = this.activeFinish;
+    this.activeFinish = undefined;
+    if (finish !== undefined) {
+      finish();
+    }
   }
 
   /** maxItems 淘汰：按 lastAccessMs 排序删除最久未访问的已完成缓存 */
