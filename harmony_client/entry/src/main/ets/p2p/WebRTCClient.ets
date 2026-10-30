@@ -9,6 +9,7 @@ import {
   P2pControlType,
   P2pRequestId,
   P2pRtcChannel,
+  P2pWebSocket,
   P2PError,
 } from './P2pProtocol';
 import { HeaderMap } from '../common/HeaderMap';
@@ -71,6 +72,8 @@ class ChannelState {
   pending: Map<string, PendingRequest> = new Map();
   pendingChunks: Map<string, PendingChunk> = new Map();
   pendingStreams: Map<string, PendingStream> = new Map();
+  /** WebSocket 隧道（ws:open 建立，服务端通过 ws:message 推送） */
+  wsTunnels: Map<string, P2pWebSocket> = new Map();
 
   constructor(channel: P2pRtcChannel, handle: number) {
     this.channel = channel;
@@ -395,6 +398,58 @@ export class WebRTCClient {
       if (pending) {
         state.pending.delete(id);
         pending.reject(P2PError.wsError('p2p_req_canceled') as Error);
+      }
+      return;
+    }
+    // ===== WebSocket 隧道（对齐 Flutter ws:open:ok / ws:message / ...） =====
+    if (mt === P2pControlType.WS_OPEN_OK) {
+      const id = reader.readString() ?? '';
+      const tunnel = state.wsTunnels.get(id);
+      if (tunnel) {
+        console.error(`[P2P] ${state.prefix} ws open ok id=${id}`);
+        tunnel.handleOpenOk();
+      }
+      return;
+    }
+    if (mt === P2pControlType.WS_OPEN_ERROR) {
+      const id = reader.readString() ?? '';
+      const error = reader.readString() ?? 'open_failed';
+      const tunnel = state.wsTunnels.get(id);
+      state.wsTunnels.delete(id);
+      if (tunnel) {
+        console.error(`[P2P] ${state.prefix} ws open error id=${id} err=${error}`);
+        tunnel.handleOpenError(error);
+      }
+      return;
+    }
+    if (mt === P2pControlType.WS_MESSAGE) {
+      const id = reader.readString() ?? '';
+      const data = reader.readString() ?? '';
+      const tunnel = state.wsTunnels.get(id);
+      if (tunnel) {
+        tunnel.handleMessage(data);
+      }
+      return;
+    }
+    if (mt === P2pControlType.WS_ERROR) {
+      const id = reader.readString() ?? '';
+      const error = reader.readString() ?? 'ws_error';
+      const tunnel = state.wsTunnels.get(id);
+      state.wsTunnels.delete(id);
+      if (tunnel) {
+        tunnel.handleRemoteError(error);
+      }
+      return;
+    }
+    if (mt === P2pControlType.WS_CLOSE) {
+      const id = reader.readString() ?? '';
+      const code = reader.readVarint() ?? 0;
+      const reason = reader.readString() ?? '';
+      const tunnel = state.wsTunnels.get(id);
+      state.wsTunnels.delete(id);
+      if (tunnel) {
+        console.error(`[P2P] ${state.prefix} ws close id=${id} code=${code} reason=${reason}`);
+        tunnel.handleRemoteClose(code, reason);
       }
       return;
     }
@@ -789,6 +844,24 @@ export class WebRTCClient {
     return result;
   }
 
+  /**
+   * 创建一条运行在指定 P2P 通道之上的 WebSocket 隧道。
+   * 仅注册到通道，需调用返回对象的 open() 才会发起 ws:open 握手。
+   */
+  openWebSocket(channel: P2pRtcChannel, path: string, headers: HeaderMap = new HeaderMap()): P2pWebSocket {
+    const state = this.channels.get(channel);
+    if (!state || !state.isReady) {
+      throw P2PError.wsError('p2p_not_connected');
+    }
+    const tunnel = new P2pWebSocket(path, headers,
+      (type: P2pControlType, payload: P2pControlPayload): boolean => this.sendControl(state, type, payload),
+      (id: string): void => {
+        state.wsTunnels.delete(id);
+      });
+    state.wsTunnels.set(tunnel.id, tunnel);
+    return tunnel;
+  }
+
   close(): void {
     this.stopHeartbeat();
     // 先解除 start() 的通道就绪等待：若建连途中被关闭，不再等 60s 超时
@@ -800,6 +873,10 @@ export class WebRTCClient {
     // 先 reject 在途请求/分块，再销毁底层资源：
     // 若先关 PC，native 关闭事件与 reject 的时序交叉可能让等待方悬挂
     this.channels.forEach((state: ChannelState) => {
+      const tunnels: P2pWebSocket[] = [];
+      state.wsTunnels.forEach((tunnel: P2pWebSocket) => tunnels.push(tunnel));
+      state.wsTunnels.clear();
+      tunnels.forEach((tunnel: P2pWebSocket) => tunnel.handleRemoteClose(1001, 'p2p_closed'));
       state.pending.forEach((p: PendingRequest) => {
         p.reject(P2PError.wsError('p2p_closed') as Error);
       });

@@ -18,6 +18,7 @@ import {
   P2pChannelUtil,
   P2pIcePreference,
   P2pRtcChannel,
+  P2pWebSocket,
   P2PError,
   P2pTransportKind,
 } from './P2pProtocol';
@@ -270,6 +271,17 @@ export class P2PService implements P2pRequestSender {
       this.lastError = err.message;
       throw err;
     }
+  }
+
+  /**
+   * 在 P2P 通道上打开一条 WebSocket 隧道（对齐 Flutter P2pRtc.openWebSocketChannel）。
+   * 返回对象尚未握手，调用方需设置 listener 后调用 open()。
+   */
+  openWebSocket(channel: P2pRtcChannel, path: string, headers: HeaderMap = new HeaderMap()): P2pWebSocket {
+    if (!this.isConnected || this.rtcClient === undefined) {
+      throw P2PError.wsError('p2p_not_connected');
+    }
+    return this.rtcClient.openWebSocket(channel, path, headers);
   }
 
   async send(

@@ -5,9 +5,12 @@ import { L10n } from '../../../core/localization/L10n';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { PreferencesStore } from '../../../core/storage/PreferencesStore';
 import { DeviceFingerprint } from '../../../core/device/DeviceFingerprint';
+import { APIClient } from '../../../core/network/APIClient';
+import { P2PService } from '../../../p2p/P2PService';
+import { P2pRtcChannel, P2pWebSocket } from '../../../p2p/P2pProtocol';
 import { TerminalUiConfig } from '../models/TerminalModels';
 import {
-  buildTerminalConnectUrl, buildTerminalFallbackUrl, isServerWin32, TerminalConnectOptions
+  buildTerminalConnectUrl, buildTerminalFallbackUrl, extractWsRequestPath, isServerWin32, TerminalConnectOptions
 } from '../services/TerminalUrlService';
 
 const TAG = '[Terminal]';
@@ -56,6 +59,8 @@ export class TerminalController {
 
   private instanceId: string = 'terminal';
   private ws: webSocket.WebSocket | undefined = undefined;
+  /** P2P 模式下的 WS 隧道（与 ws 二选一） */
+  private p2pWs: P2pWebSocket | undefined = undefined;
   private pingTimer: number = -1;
   private reconnectTimer: number = -1;
   private connectTimeoutTimer: number = -1;
@@ -221,6 +226,12 @@ export class TerminalController {
 
     try {
       this.disposeChannel();
+      if (APIClient.getInstance().isP2pMode) {
+        // P2P 模式：p2p.local 无法直连，必须走 P2P 通道内的 WebSocket 隧道
+        this.openP2pChannel(url);
+        this.startPing();
+        return;
+      }
       const ws = webSocket.createWebSocket();
       ws.on('message', (_err: Object, value: string | ArrayBuffer): void => {
         this.handleMessage(value);
@@ -232,18 +243,7 @@ export class TerminalController {
         this.handleSocketClose();
       });
       this.ws = ws;
-      this.connectTimeoutTimer = setTimeout((): void => {
-        this.connectTimeoutTimer = -1;
-        if (this.connecting && !this.connected) {
-          console.info(`${TAG} connect timeout: no first message in 20s, dispose and retry`);
-          // 超时主动断开，交给自动重连退避接管（对齐 Flutter 超时仅日志的行为，但鸿蒙侧增加自愈）
-          this.disposeChannel();
-          this.connecting = false;
-          this.connected = false;
-          this.statusText = L10n.t('terminal_connection_failed', '终端连接失败');
-          this.scheduleReconnect();
-        }
-      }, CONNECT_TIMEOUT_MS);
+      this.armConnectTimeout();
       ws.connect(url, (err: Object, _value: boolean): void => {
         if (err) {
           console.error(`${TAG} ws connect failed: ${JSON.stringify(err)}`);
@@ -261,6 +261,65 @@ export class TerminalController {
       ToastUtil.show(this.statusText);
       this.scheduleReconnect();
     }
+  }
+
+  /** 连接超时自愈：20s 内未收到服务端首条消息则断开交给自动重连 */
+  private armConnectTimeout(): void {
+    this.cancelConnectTimeout();
+    this.connectTimeoutTimer = setTimeout((): void => {
+      this.connectTimeoutTimer = -1;
+      if (this.connecting && !this.connected) {
+        console.info(`${TAG} connect timeout: no first message in 20s, dispose and retry`);
+        this.disposeChannel();
+        this.connecting = false;
+        this.connected = false;
+        this.statusText = L10n.t('terminal_connection_failed', '终端连接失败');
+        this.scheduleReconnect();
+      }
+    }, CONNECT_TIMEOUT_MS);
+  }
+
+  /**
+   * P2P 模式下通过 DataChannel 上的 WebSocket 隧道连接终端
+   * （对齐 Flutter connectP2pWebSocketChannelLazy：路径取自 p2p.local URL）。
+   */
+  private openP2pChannel(url: string): void {
+    const path = extractWsRequestPath(url);
+    if (path.length === 0) {
+      throw new Error('invalid_p2p_ws_path');
+    }
+    const ws = P2PService.getInstance().openWebSocket(P2pRtcChannel.API, path);
+    this.p2pWs = ws;
+    ws.listener = {
+      onOpen: (): void => {
+        if (this.p2pWs !== ws) {
+          return;
+        }
+        console.info(`${TAG} p2p ws open, waiting for server first message`);
+      },
+      onMessage: (data: string): void => {
+        if (this.p2pWs !== ws) {
+          return;
+        }
+        this.handleMessage(data);
+      },
+      onError: (error: string): void => {
+        if (this.p2pWs !== ws) {
+          return;
+        }
+        console.error(`${TAG} p2p ws error: ${error}`);
+        this.handleSocketError(new Error(error));
+      },
+      onClose: (code: number, reason: string): void => {
+        if (this.p2pWs !== ws) {
+          return;
+        }
+        console.info(`${TAG} p2p ws close: ${code} ${reason}`);
+        this.handleSocketClose();
+      }
+    };
+    this.armConnectTimeout();
+    ws.open();
   }
 
   /** 手动断开（对齐 Flutter disconnect） */
@@ -489,6 +548,7 @@ export class TerminalController {
     this.cancelConnectTimeout();
     const raw = `${JSON.stringify(err)}`;
     if (!this.triedWsSchemeFallback
+      && !APIClient.getInstance().isP2pMode
       && (raw.includes('WRONG_VERSION_NUMBER') || raw.includes('HandshakeException'))) {
       const fallback = buildTerminalFallbackUrl(this.clientDeviceId, this.terminalConnId);
       if (fallback.length > 0) {
@@ -603,9 +663,29 @@ export class TerminalController {
         // 已断开
       }
     }
+    const p2pWs = this.p2pWs;
+    this.p2pWs = undefined;
+    if (p2pWs !== undefined) {
+      try {
+        // 先摘除回调，避免本地关闭触发 handleSocketClose 再排一次重连
+        p2pWs.listener = {};
+        p2pWs.close();
+      } catch (_e) {
+        // 隧道已关闭
+      }
+    }
   }
 
   private sendJson(obj: Record<string, Object>): void {
+    const p2pWs = this.p2pWs;
+    if (p2pWs !== undefined) {
+      try {
+        p2pWs.send(JSON.stringify(obj));
+      } catch (_e) {
+        // 隧道已关闭
+      }
+      return;
+    }
     const ws = this.ws;
     if (ws === undefined) {
       return;

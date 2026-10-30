@@ -83,6 +83,13 @@ export enum P2pControlType {
   RES_END = 0x21,
   FLOW = 0x22,
   ACK = 0x30,
+  WS_OPEN = 0x40,
+  WS_SEND = 0x41,
+  WS_CLOSE = 0x42,
+  WS_OPEN_OK = 0x43,
+  WS_OPEN_ERROR = 0x44,
+  WS_MESSAGE = 0x45,
+  WS_ERROR = 0x46,
 }
 
 const CONTROL_MAGIC: number[] = [0x4e, 0x50, 0x43, 0x01];
@@ -180,6 +187,23 @@ export class P2pControlBinary {
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.path));
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeHeaderMap(payload.headers));
       P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeVarint(payload.length));
+      return new Uint8Array(parts);
+    }
+    if (type === P2pControlType.WS_OPEN) {
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.path));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeHeaderMap(payload.headers));
+      return new Uint8Array(parts);
+    }
+    if (type === P2pControlType.WS_SEND) {
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.data));
+      return new Uint8Array(parts);
+    }
+    if (type === P2pControlType.WS_CLOSE) {
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.id));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeVarint(payload.code));
+      P2pControlBinary.appendBytes(parts, P2pControlBinary.encodeString(payload.reason));
       return new Uint8Array(parts);
     }
     return undefined;
@@ -295,5 +319,152 @@ export class P2pChannelUtil {
     const idx = path.indexOf('?');
     const basePath = idx >= 0 ? path.substring(0, idx) : path;
     return P2pChannelUtil.fallbackForPath(basePath);
+  }
+}
+
+/** P2P 通道内 WebSocket 隧道事件回调（对齐 Flutter _P2pRtcWebSocketChannel） */
+export interface P2pWsListener {
+  onOpen?: () => void;
+  onMessage?: (data: string) => void;
+  onError?: (error: string) => void;
+  onClose?: (code: number, reason: string) => void;
+}
+
+/** 发送一条控制帧到所属 DataChannel，返回是否发送成功 */
+export type P2pWsControlSender = (type: P2pControlType, payload: P2pControlPayload) => boolean;
+
+/**
+ * 运行在 P2P DataChannel 之上的 WebSocket 隧道（对齐 Flutter _P2pRtcWebSocketChannel）：
+ * - open() 发送 ws:open，服务端回应 ws:open:ok 后进入可写状态，未就绪期间的发送先缓存
+ * - send()/close() 分别对应 ws:send / ws:close 控制帧
+ * - 服务端的 ws:message / ws:error / ws:close 由 WebRTCClient 转发到 handleXxx
+ */
+export class P2pWebSocket {
+  private static nextSeq: number = 0;
+
+  readonly id: string;
+  listener: P2pWsListener = {};
+  private path: string;
+  private headers: HeaderMap;
+  private sender: P2pWsControlSender;
+  private disposeHandler: (id: string) => void;
+  private ready: boolean = false;
+  private closed: boolean = false;
+  private pending: string[] = [];
+
+  constructor(path: string, headers: HeaderMap, sender: P2pWsControlSender,
+    disposeHandler: (id: string) => void) {
+    P2pWebSocket.nextSeq += 1;
+    this.id = `${Date.now()}_${Math.floor(Math.random() * 1073741824)}_${P2pWebSocket.nextSeq}`;
+    this.path = path;
+    this.headers = headers;
+    this.sender = sender;
+    this.disposeHandler = disposeHandler;
+  }
+
+  /** 发起隧道握手（ws:open） */
+  open(): void {
+    if (this.closed || this.ready) {
+      return;
+    }
+    const payload = new P2pControlPayload();
+    payload.id = this.id;
+    payload.path = this.path;
+    payload.headers = this.headers;
+    if (!this.sender(P2pControlType.WS_OPEN, payload)) {
+      this.fail('p2p_ws_open_send_failed');
+    }
+  }
+
+  /** 发送文本数据；握手未完成时先缓存，open:ok 后按序补发 */
+  send(data: string): void {
+    if (this.closed) {
+      return;
+    }
+    if (!this.ready) {
+      this.pending.push(data);
+      return;
+    }
+    this.write(data);
+  }
+
+  /** 本地关闭：向服务端通知 ws:close 并结束隧道 */
+  close(): void {
+    if (this.closed) {
+      return;
+    }
+    if (this.ready) {
+      const payload = new P2pControlPayload();
+      payload.id = this.id;
+      this.sender(P2pControlType.WS_CLOSE, payload);
+    }
+    this.finalize(1000, '');
+  }
+
+  // ===== 由 WebRTCClient 驱动的服务端事件 =====
+
+  handleOpenOk(): void {
+    if (this.closed) {
+      return;
+    }
+    if (!this.ready) {
+      this.ready = true;
+      this.listener.onOpen?.();
+    }
+    const queued = this.pending;
+    this.pending = [];
+    for (let i = 0; i < queued.length; i++) {
+      this.write(queued[i]);
+    }
+  }
+
+  handleOpenError(error: string): void {
+    this.fail(error);
+  }
+
+  handleMessage(data: string): void {
+    if (this.closed) {
+      return;
+    }
+    this.listener.onMessage?.(data);
+  }
+
+  handleRemoteError(error: string): void {
+    this.fail(error);
+  }
+
+  handleRemoteClose(code: number, reason: string): void {
+    this.finalize(code, reason);
+  }
+
+  private write(data: string): void {
+    if (this.closed || !this.ready) {
+      return;
+    }
+    const payload = new P2pControlPayload();
+    payload.id = this.id;
+    payload.data = data;
+    if (!this.sender(P2pControlType.WS_SEND, payload)) {
+      this.fail('p2p_ws_send_failed');
+    }
+  }
+
+  private fail(error: string): void {
+    if (this.closed) {
+      return;
+    }
+    this.listener.onError?.(error);
+    this.finalize(1011, error);
+  }
+
+  private finalize(code: number, reason: string): void {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
+    this.ready = false;
+    this.pending = [];
+    this.disposeHandler(this.id);
+    this.listener.onClose?.(code, reason);
   }
 }

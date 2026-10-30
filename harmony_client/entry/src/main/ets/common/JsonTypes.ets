@@ -186,6 +186,12 @@ export class P2pControlPayload {
   length: number = 0;
   delta: number = 0;
   headers: HeaderMap = new HeaderMap();
+  /** WebSocket 隧道：发送/接收的文本数据 */
+  data: string = '';
+  /** WebSocket 隧道：关闭码（ws:close） */
+  code: number = 0;
+  /** WebSocket 隧道：关闭原因（ws:close） */
+  reason: string = '';
 }
 
 export class TransportStats {

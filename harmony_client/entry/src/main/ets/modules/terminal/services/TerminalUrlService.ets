@@ -182,3 +182,25 @@ export function buildTerminalFallbackUrl(clientDeviceId: string, terminalConnId:
   }
   return url;
 }
+
+/**
+ * 从 WS 地址中提取请求路径（含 query），用于 P2P 隧道：
+ * ws://p2p.local:80/api/terminal/connect?aes=xxx → /api/terminal/connect?aes=xxx
+ */
+export function extractWsRequestPath(url: string): string {
+  const schemeIdx = url.indexOf('://');
+  if (schemeIdx < 0) {
+    return url.startsWith('/') ? url : '';
+  }
+  const afterScheme = url.substring(schemeIdx + 3);
+  const slash = afterScheme.indexOf('/');
+  if (slash < 0) {
+    return '';
+  }
+  let path = afterScheme.substring(slash);
+  const hashIdx = path.indexOf('#');
+  if (hashIdx >= 0) {
+    path = path.substring(0, hashIdx);
+  }
+  return path;
+}
