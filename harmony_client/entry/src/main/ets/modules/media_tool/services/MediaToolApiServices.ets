@@ -3,6 +3,10 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { APIClient } from '../../../core/network/APIClient';
 import { AppEventBus } from '../../../common/AppEventBus';
+import { HeaderMap } from '../../../common/HeaderMap';
+import { WindowStore } from '../../../common/WindowStore';
+import { P2pRtcChannel } from '../../../p2p/P2pProtocol';
+import { P2PService } from '../../../p2p/P2PService';
 import { L10n } from '../../../core/localization/L10n';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -105,8 +109,8 @@ export class MediaToolImageCompressResult {
 }
 
 /**
- * 图片压缩转换 API 服务（对齐 Flutter ImageCompressApiService；
- * multipart/form-data 直传，P2P 通道未迁移与 notes 模块策略一致）。
+ * 图片压缩转换 API 服务（对齐 Flutter ImageCompressApiService：
+ * 普通链路走直连 multipart 上传，P2P 链路走 RTC upload/file 通道）。
  */
 export class MediaToolImageCompressApiService {
   private static readonly uploadPath = '/api/mediaTool/imageCompress/upload';
@@ -165,13 +169,33 @@ export class MediaToolImageCompressApiService {
       query.forEach((value: string, key: string): void => {
         parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
       });
-      const url = `${api.baseUrl}${MediaToolImageCompressApiService.uploadPath}?${parts.join('&')}`;
+      const queryString = parts.join('&');
+      const token = (api.accessToken ?? '').trim();
+
+      // P2P 链路：p2p.local 为虚拟域名，直连 HTTP 无法解析，
+      // 必须走 RTC upload 通道（对齐 Flutter sendP2pRequestOnChannel(channel: upload)）
+      if (api.isP2pMode) {
+        const headers = new HeaderMap();
+        headers.set('Content-Type', `multipart/form-data; boundary=${boundary}`);
+        headers.set('Accept', 'application/json');
+        if (token.length > 0) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+        const resp = await P2PService.getInstance().sendOnChannel(
+          P2pRtcChannel.UPLOAD, 'POST',
+          `${MediaToolImageCompressApiService.uploadPath}?${queryString}`,
+          headers, bodyView, 300000);
+        const decoder = new util.TextDecoder();
+        return MediaToolImageCompressApiService.parseUploadResponse(
+          resp.status, decoder.decodeToString(resp.bodyBytes));
+      }
+
+      const url = `${api.baseUrl}${MediaToolImageCompressApiService.uploadPath}?${queryString}`;
 
       const header: Record<string, string> = {
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
         'accept': 'application/json'
       };
-      const token = (api.accessToken ?? '').trim();
       if (token.length > 0) {
         header['Authorization'] = `Bearer ${token}`;
       }
@@ -185,21 +209,8 @@ export class MediaToolImageCompressApiService {
           readTimeout: 300000,
           maxLimit: 100 * 1024 * 1024
         });
-        if (resp.responseCode < 200 || resp.responseCode >= 300) {
-          return MediaToolApiResult.fail<Record<string, Object>>(`HTTP ${resp.responseCode}`);
-        }
-        const json = JSON.parse(resp.result as string) as Record<string, Object>;
-        const success = json['success'] === true || json['success'] === 'true';
-        if (!success) {
-          const msg = json['message'] !== undefined && json['message'] !== null
-            ? `${json['message']}` : '';
-          return MediaToolApiResult.fail<Record<string, Object>>(
-            msg.length > 0 ? msg : L10n.t('server_error', '服务器错误'));
-        }
-        const data = json['data'] !== undefined && json['data'] !== null
-          ? json['data'] as Record<string, Object>
-          : {} as Record<string, Object>;
-        return MediaToolApiResult.ok<Record<string, Object>>(data);
+        return MediaToolImageCompressApiService.parseUploadResponse(
+          resp.responseCode, resp.result as string);
       } finally {
         client.destroy();
       }
@@ -214,27 +225,155 @@ export class MediaToolImageCompressApiService {
     }
   }
 
-  /** 单文件下载 URL（对齐 Flutter _buildDownloadUrl：query 含 accessToken） */
+  /** 解析上传响应（直连与 P2P 通道共用） */
+  private static parseUploadResponse(statusCode: number, bodyText: string): MediaToolApiResult<Record<string, Object>> {
+    if (statusCode < 200 || statusCode >= 300) {
+      return MediaToolApiResult.fail<Record<string, Object>>(`HTTP ${statusCode}`);
+    }
+    const json = JSON.parse(bodyText) as Record<string, Object>;
+    const success = json['success'] === true || json['success'] === 'true';
+    if (!success) {
+      const msg = json['message'] !== undefined && json['message'] !== null
+        ? `${json['message']}` : '';
+      return MediaToolApiResult.fail<Record<string, Object>>(
+        msg.length > 0 ? msg : L10n.t('server_error', '服务器错误'));
+    }
+    const data = json['data'] !== undefined && json['data'] !== null
+      ? json['data'] as Record<string, Object>
+      : {} as Record<string, Object>;
+    return MediaToolApiResult.ok<Record<string, Object>>(data);
+  }
+
+  /** 单文件下载 URL（对齐 Flutter _buildDownloadUrl：query 含 accessToken，直连模式用） */
   static buildFileDownloadUrl(serverPath: string, fileName: string): string {
     const api = APIClient.getInstance();
     const token = (api.accessToken ?? '').trim();
-    let url = `${api.baseUrl}/api/mediaTool/imageCompress/file`
-      + `?path=${encodeURIComponent(serverPath)}&fileName=${encodeURIComponent(fileName)}`;
+    let url = `${api.baseUrl}${MediaToolImageCompressApiService.buildFileDownloadPath(serverPath, fileName)}`;
     if (token.length > 0) {
       url += `&accessToken=${encodeURIComponent(token)}`;
     }
     return url;
   }
 
-  /** 打包下载 URL（对齐 Flutter downloadZip 的 URL 组装） */
+  /** 打包下载 URL（对齐 Flutter downloadZip 的 URL 组装，直连模式用） */
   static buildZipDownloadUrl(minTimeStamp: number, fileName: string): string {
     const api = APIClient.getInstance();
     const token = (api.accessToken ?? '').trim();
-    let url = `${api.baseUrl}/api/mediaTool/imageCompress/zip`
-      + `?minTimeStamp=${minTimeStamp}&fileName=${encodeURIComponent(fileName)}`;
+    let url = `${api.baseUrl}${MediaToolImageCompressApiService.buildZipDownloadPath(minTimeStamp, fileName)}`;
     if (token.length > 0) {
       url += `&accessToken=${encodeURIComponent(token)}`;
     }
     return url;
+  }
+
+  /** 单文件下载路径（P2P 通道请求用，鉴权走 Authorization 头） */
+  static buildFileDownloadPath(serverPath: string, fileName: string): string {
+    return `/api/mediaTool/imageCompress/file`
+      + `?path=${encodeURIComponent(serverPath)}&fileName=${encodeURIComponent(fileName)}`;
+  }
+
+  /** 打包下载路径（P2P 通道请求用） */
+  static buildZipDownloadPath(minTimeStamp: number, fileName: string): string {
+    return `/api/mediaTool/imageCompress/zip`
+      + `?minTimeStamp=${minTimeStamp}&fileName=${encodeURIComponent(fileName)}`;
+  }
+
+  /**
+   * P2P 模式下载到应用沙箱临时文件：
+   * `p2p.local` 无法直连，改走 RTC download 通道流式落盘（对齐 Flutter
+   * sendP2pStreamRequest(channel: download)），避免打包 zip 整体驻留内存。
+   * 成功返回临时文件路径，失败抛错。
+   * onProgress(loaded, total)：total<=0 表示响应未携带总大小。
+   */
+  static async downloadToTempP2p(pathWithQuery: string, fileName: string,
+    onProgress?: (loaded: number, total: number) => void,
+    timeoutMs: number = 600000): Promise<string> {
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      throw new Error('download_context_missing');
+    }
+    const dir = `${ctx.cacheDir}/media_tool_p2p`;
+    if (!fs.accessSync(dir)) {
+      fs.mkdirSync(dir, true);
+    }
+    const dest = `${dir}/${fileName}`;
+    const headers = new HeaderMap();
+    const token = (APIClient.getInstance().accessToken ?? '').trim();
+    if (token.length > 0) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    const file = fs.openSync(dest, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+    let status = 0;
+    let total = 0;
+    let loaded = 0;
+    let errText = '';
+    let failed = false;
+    let failedMessage = '';
+    const decoder = new util.TextDecoder();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        P2PService.getInstance().sendOnChannelStream(
+          P2pRtcChannel.DOWNLOAD, 'GET', pathWithQuery, headers, new Uint8Array(0), timeoutMs,
+          {
+            onBegin: (s: number, h: HeaderMap): void => {
+              status = s;
+              const raw = h.get('content-length') ?? h.get('Content-Length');
+              if (raw !== undefined) {
+                const n = Number.parseInt(raw, 10);
+                total = Number.isFinite(n) && n > 0 ? n : 0;
+              }
+            },
+            onChunk: (data: Uint8Array): void => {
+              if (status >= 200 && status < 300) {
+                fs.writeSync(file.fd, data.buffer as ArrayBuffer);
+                loaded += data.byteLength;
+                if (onProgress !== undefined) {
+                  onProgress(loaded, total);
+                }
+              } else if (errText.length < 4096) {
+                errText += decoder.decodeToString(data);
+              }
+            },
+            onEnd: (): void => {
+              resolve();
+            },
+            onError: (e: Error): void => {
+              reject(e);
+            }
+          }
+        ).catch((e: Error): void => {
+          reject(e);
+        });
+      });
+    } catch (e) {
+      failed = true;
+      failedMessage = (e as Error).message;
+    } finally {
+      try {
+        fs.closeSync(file);
+      } catch (_e) {
+        // 关闭失败忽略
+      }
+    }
+    if (failed) {
+      MediaToolImageCompressApiService.removeTemp(dest);
+      throw new Error(failedMessage);
+    }
+    if (status < 200 || status >= 300) {
+      MediaToolImageCompressApiService.removeTemp(dest);
+      throw new Error(errText.trim().length > 0 ? errText.trim() : `HTTP ${status}`);
+    }
+    return dest;
+  }
+
+  /** 清理临时下载文件（失败/保存完成后的兜底） */
+  static removeTemp(path: string): void {
+    try {
+      if (fs.accessSync(path)) {
+        fs.unlinkSync(path);
+      }
+    } catch (_e) {
+      // 清理失败忽略
+    }
   }
 }

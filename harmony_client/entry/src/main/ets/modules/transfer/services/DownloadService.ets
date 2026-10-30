@@ -948,53 +948,139 @@ export class DownloadService {
   }
 
   /**
-   * 下载 URL 内容并直接保存到系统相册（图片/视频）。
-   * 先落地到应用沙箱临时目录，再复用 saveToGallery 弹出系统保存对话框写入图库。
-   * 网络/IO 失败抛错（调用方可提示）；用户取消返回 false。
+   * 流式下载 URL 内容到应用沙箱临时文件，返回临时文件路径（调用方负责保存/清理）。
+   * onProgress(loaded, total)：total<=0 表示响应未携带总大小。
+   * 网络/IO 失败抛错（调用方可提示）。
    */
-  async saveUrlToGallery(url: string, displayName: string): Promise<boolean> {
+  async downloadUrlToTemp(url: string, displayName: string,
+    onProgress?: (loaded: number, total: number) => void): Promise<string> {
     const ctx = WindowStore.appContext;
     if (!ctx) {
       throw new Error('download_context_missing');
     }
-    const tmpDir: string = `${ctx.cacheDir}/url_gallery`;
+    const tmpDir: string = `${ctx.cacheDir}/url_download`;
+    if (!fs.accessSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, true);
+    }
     const tmpPath: string = `${tmpDir}/${displayName}`;
-    let file: fs.File | undefined = undefined;
     const client: http.HttpRequest = http.createHttp();
+    let file: fs.File | undefined = undefined;
+    let finished = false;
+    let failed = false;
+    let failedMessage = '';
     try {
-      if (!fs.accessSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, true);
-      }
-      const resp: http.HttpResponse = await client.request(url, {
+      file = fs.openSync(tmpPath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      client.on('dataReceive', (chunk: ArrayBuffer): void => {
+        if (file !== undefined && chunk.byteLength > 0) {
+          try {
+            fs.writeSync(file.fd, chunk);
+          } catch (e) {
+            failed = true;
+            failedMessage = (e as Error).message;
+          }
+        }
+      });
+      client.on('dataEnd', (): void => {
+        finished = true;
+      });
+      client.on('dataReceiveProgress', (info: http.DataReceiveProgressInfo): void => {
+        if (!failed && onProgress !== undefined) {
+          onProgress(info.receiveSize, info.totalSize);
+        }
+      });
+      const code: number = await client.requestInStream(url, {
         method: http.RequestMethod.GET,
-        expectDataType: http.HttpDataType.ARRAY_BUFFER,
         connectTimeout: 15000,
         readTimeout: 120000,
         maxLimit: 200 * 1024 * 1024
       });
-      if (resp.responseCode < 200 || resp.responseCode >= 300) {
-        throw new Error(`HTTP ${resp.responseCode}`);
+      if (code < 200 || code >= 300) {
+        throw new Error(`HTTP ${code}`);
       }
-      file = fs.openSync(tmpPath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
-      fs.writeSync(file.fd, resp.result as ArrayBuffer);
-      fs.closeSync(file);
-      file = undefined;
-      return await this.saveToGallery(tmpPath, displayName);
+      // dataEnd 与 requestInStream resolve 的时序不保证，轮询等待收尾
+      for (let i = 0; i < 100 && !finished && !failed; i++) {
+        await DownloadService.sleep(50);
+      }
+      if (failed) {
+        throw new Error(failedMessage);
+      }
+      if (!finished) {
+        throw new Error('download_incomplete');
+      }
+    } catch (e) {
+      failed = true;
+      failedMessage = (e as Error).message;
     } finally {
       if (file !== undefined) {
         try {
+          fs.fsyncSync(file.fd);
           fs.closeSync(file);
         } catch (_e) {
           // 关闭失败忽略
         }
+        file = undefined;
       }
-      client.destroy();
+      try {
+        client.destroy();
+      } catch (_e) {
+        // 销毁失败忽略
+      }
+    }
+    if (failed) {
       try {
         if (fs.accessSync(tmpPath)) {
           fs.unlinkSync(tmpPath);
         }
       } catch (_e) {
         // 清理失败忽略
+      }
+      throw new Error(failedMessage);
+    }
+    return tmpPath;
+  }
+
+  private static sleep(ms: number): Promise<void> {
+    return new Promise<void>((resolve: () => void) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  /**
+   * 把应用沙箱中已下载的文件通过系统保存对话框另存（P2P 打包下载等大文件场景）。
+   * 返回 true=已保存；false=用户取消；失败抛错。
+   */
+  async saveLocalFileAs(srcPath: string, displayName: string): Promise<boolean> {
+    if (!fs.accessSync(srcPath)) {
+      throw new Error('download_file_missing');
+    }
+    const docPicker = new picker.DocumentViewPicker();
+    const opts = new picker.DocumentSaveOptions();
+    opts.newFileNames = [displayName];
+    const uris = await docPicker.save(opts);
+    if (!uris || uris.length === 0) {
+      return false;
+    }
+    let srcFile: fs.File | undefined = undefined;
+    let desFile: fs.File | undefined = undefined;
+    try {
+      srcFile = fs.openSync(srcPath, fs.OpenMode.READ_ONLY);
+      desFile = fs.openSync(uris[0], fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+      fs.copyFileSync(srcFile.fd, desFile.fd);
+      return true;
+    } finally {
+      if (srcFile !== undefined) {
+        try {
+          fs.closeSync(srcFile);
+        } catch (_e) {
+          // 关闭失败忽略
+        }
+      }
+      if (desFile !== undefined) {
+        try {
+          fs.closeSync(desFile);
+        } catch (_e) {
+          // 关闭失败忽略
+        }
       }
     }
   }

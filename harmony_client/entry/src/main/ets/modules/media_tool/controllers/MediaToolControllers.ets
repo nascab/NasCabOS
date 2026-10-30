@@ -4,8 +4,8 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { PickOption, showOptionPickSheet } from '../../../common/components/OptionPickSheet';
 import { L10n } from '../../../core/localization/L10n';
-import { NotesFileUtils } from '../../notes/services/NotesFileUtils';
 import { DownloadService } from '../../transfer/services/DownloadService';
+import { APIClient } from '../../../core/network/APIClient';
 import {
   MediaToolApiResult, MediaToolImageCompressApiService, MediaToolImageCompressResult,
   MediaToolTaskApiService
@@ -269,33 +269,93 @@ export class ImageCompressController {
     this.lastUploadStartTime = 0;
   }
 
-  /** 保存单个压缩结果：直接下载并保存到系统相册（用户确认后写入图库） */
+  /** 下载进度弹窗刷新节流：仅在整数百分比变化时更新 UI */
+  private lastProgressPct: number = -1;
+
+  private reportDownloadProgress(loaded: number, total: number): void {
+    if (total <= 0) {
+      return;
+    }
+    const pct = Math.min(100, Math.round((loaded * 100) / total));
+    if (pct === this.lastProgressPct) {
+      return;
+    }
+    this.lastProgressPct = pct;
+    DialogUtil.updateLoading('', pct);
+  }
+
+  /** 保存单个压缩结果：下载过程中显示进度弹窗，完成后再弹系统图库保存框 */
   async saveFile(item: MediaToolImageCompressResult): Promise<void> {
     const dot = item.fileName.lastIndexOf('.');
     const base = dot > 0 ? item.fileName.substring(0, dot) : item.fileName;
     const suggested = `${base}.${item.outputFormat}`;
-    const url = MediaToolImageCompressApiService.buildFileDownloadUrl(item.outputFullPath, suggested);
+    this.lastProgressPct = -1;
+    await DialogUtil.showProgressLoading(L10n.t('downloading', '下载中...'));
+    let tmp: string | undefined = undefined;
     try {
-      const ok = await DownloadService.getInstance().saveUrlToGallery(url, suggested);
+      if (APIClient.getInstance().isP2pMode) {
+        // P2P：走 RTC download 通道流式落到沙箱
+        tmp = await MediaToolImageCompressApiService.downloadToTempP2p(
+          MediaToolImageCompressApiService.buildFileDownloadPath(item.outputFullPath, suggested), suggested,
+          (loaded: number, total: number): void => {
+            this.reportDownloadProgress(loaded, total);
+          });
+      } else {
+        const url = MediaToolImageCompressApiService.buildFileDownloadUrl(item.outputFullPath, suggested);
+        tmp = await DownloadService.getInstance().downloadUrlToTemp(url, suggested,
+          (loaded: number, total: number): void => {
+            this.reportDownloadProgress(loaded, total);
+          });
+      }
+      // 下载完成后先关进度框，再弹系统保存框，避免遮罩冲突
+      await DialogUtil.dismissLoading();
+      const ok = await DownloadService.getInstance().saveToGallery(tmp, suggested);
       // ok=false 涵盖用户取消，静默不提示；成功提示已保存
       if (ok) {
         ToastUtil.show(L10n.t('save_to_gallery_success', '已保存到图库'));
       }
     } catch (e) {
+      await DialogUtil.dismissLoading();
       ToastUtil.show(e instanceof Error ? e.message : L10n.operationFailed);
+    } finally {
+      if (tmp !== undefined) {
+        MediaToolImageCompressApiService.removeTemp(tmp);
+      }
     }
   }
 
+  /** 打包下载：下载过程中显示进度弹窗，完成后弹系统另存框 */
   async downloadZip(): Promise<void> {
     const ts = this.zipMinTimeStamp();
     if (ts <= 0) {
       return;
     }
-    const url = MediaToolImageCompressApiService.buildZipDownloadUrl(ts, 'all-image.zip');
+    this.lastProgressPct = -1;
+    await DialogUtil.showProgressLoading(L10n.t('downloading', '下载中...'));
+    let tmp: string | undefined = undefined;
     try {
-      await NotesFileUtils.saveUrlAs(url, 'all-image.zip');
+      if (APIClient.getInstance().isP2pMode) {
+        tmp = await MediaToolImageCompressApiService.downloadToTempP2p(
+          MediaToolImageCompressApiService.buildZipDownloadPath(ts, 'all-image.zip'), 'all-image.zip',
+          (loaded: number, total: number): void => {
+            this.reportDownloadProgress(loaded, total);
+          });
+      } else {
+        tmp = await DownloadService.getInstance().downloadUrlToTemp(
+          MediaToolImageCompressApiService.buildZipDownloadUrl(ts, 'all-image.zip'), 'all-image.zip',
+          (loaded: number, total: number): void => {
+            this.reportDownloadProgress(loaded, total);
+          });
+      }
+      await DialogUtil.dismissLoading();
+      await DownloadService.getInstance().saveLocalFileAs(tmp, 'all-image.zip');
     } catch (e) {
+      await DialogUtil.dismissLoading();
       ToastUtil.show(e instanceof Error ? e.message : L10n.operationFailed);
+    } finally {
+      if (tmp !== undefined) {
+        MediaToolImageCompressApiService.removeTemp(tmp);
+      }
     }
   }
 }

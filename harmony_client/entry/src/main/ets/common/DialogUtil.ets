@@ -35,6 +35,8 @@ export class SelectItem {
 @ObservedV2
 export class LoadingDialogParams extends DialogParamsBase {
   @Trace message: string = '';
+  /** >=0 显示确定性进度（0-100）；<0 显示不确定加载动画 */
+  @Trace progress: number = -1;
 }
 
 export class SelectDialogParams extends DialogParamsBase {
@@ -86,15 +88,33 @@ export class InputDialogParams extends DialogParamsBase {
 @Builder
 function LoadingDialogContent(p: LoadingDialogParams) {
   Row({ space: 16 }) {
-    LoadingProgress()
-      .width(36)
-      .height(36)
-      .color(AppTheme.current().primary)
-    Text(p.message)
-      .fontSize(14)
-      .fontColor(AppTheme.current().onSurface)
-      .maxLines(2)
-      .textOverflow({ overflow: TextOverflow.Ellipsis })
+    if (p.progress >= 0) {
+      Progress({ value: p.progress, total: 100, type: ProgressType.Ring })
+        .width(36)
+        .height(36)
+        .color(AppTheme.current().primary)
+      Column({ space: 4 }) {
+        Text(p.message)
+          .fontSize(14)
+          .fontColor(AppTheme.current().onSurface)
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Text(`${Math.round(p.progress)}%`)
+          .fontSize(13)
+          .fontColor(AppTheme.current().subText)
+      }
+      .alignItems(HorizontalAlign.Start)
+    } else {
+      LoadingProgress()
+        .width(36)
+        .height(36)
+        .color(AppTheme.current().primary)
+      Text(p.message)
+        .fontSize(14)
+        .fontColor(AppTheme.current().onSurface)
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
   }
   .padding({ left: 20, right: 20, top: 16, bottom: 16 })
   .backgroundColor(AppTheme.current().surfaceBg)
@@ -548,6 +568,7 @@ export class DialogUtil {
   static async showLoading(message: string = '', barrierDismissible: boolean = false): Promise<void> {
     DialogUtil.loadingRefCount++;
     DialogUtil.loadingParams.message = message.length > 0 ? message : L10n.loading;
+    DialogUtil.loadingParams.progress = -1;
     if (DialogUtil.loadingOpen) {
       return;
     }
@@ -575,6 +596,20 @@ export class DialogUtil {
       DialogUtil.loadingOpen = false;
       DialogUtil.loadingContent = undefined;
     }
+  }
+
+  /** 显示带确定性进度的加载弹窗（progress 0-100） */
+  static async showProgressLoading(message: string = ''): Promise<void> {
+    await DialogUtil.showLoading(message);
+    DialogUtil.loadingParams.progress = 0;
+  }
+
+  /** 更新加载弹窗文案与进度（progress<0 恢复不确定进度） */
+  static updateLoading(message: string = '', progress: number = -1): void {
+    if (message.length > 0) {
+      DialogUtil.loadingParams.message = message;
+    }
+    DialogUtil.loadingParams.progress = progress;
   }
 
   /** 关闭加载弹窗（引用计数；force 强制清零） */
