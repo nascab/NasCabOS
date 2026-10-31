@@ -301,7 +301,7 @@ export class AppImageLoader {
   }
 
   private static async doLoad(url: string, req: InflightRequest): Promise<PixelMap> {
-    // 磁盘读取为本地快速 IO，不占用网络/解码并发槽
+    // 磁盘缓存为异步本地 IO，不占用网络/解码并发槽
     let buffer: ArrayBuffer | undefined = await AppImageLoader.readDisk(url);
     if (!buffer || buffer.byteLength === 0) {
       buffer = await AppImageLoader.downloadWithRetry(url, req);
@@ -309,7 +309,7 @@ export class AppImageLoader {
         // 网络已中断/放弃：不落盘、不解码
         throw new Error('image_cancelled');
       }
-      AppImageLoader.writeDisk(url, buffer);
+      await AppImageLoader.writeDisk(url, buffer);
     }
     if (req.cancelled) {
       throw new Error('image_cancelled');
@@ -521,43 +521,41 @@ export class AppImageLoader {
     return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
   }
 
+  /** 磁盘缓存读取（异步 IO：列表滚动时可见缩略图批量加载，同步读文件会阻塞 UI 帧） */
   private static async readDisk(url: string): Promise<ArrayBuffer | undefined> {
     if (AppImageLoader.cacheDir.length === 0) {
       return undefined;
     }
+    const path = AppImageLoader.diskPath(url);
     try {
-      const path = AppImageLoader.diskPath(url);
-      if (!fs.accessSync(path)) {
-        return undefined;
-      }
-      const stat = fs.statSync(path);
+      const stat = await fs.stat(path);
       if (stat.size <= 0) {
         return undefined;
       }
-      const file = fs.openSync(path, fs.OpenMode.READ_ONLY);
+      const file = await fs.open(path, fs.OpenMode.READ_ONLY);
       try {
         const buf = new ArrayBuffer(stat.size);
-        fs.readSync(file.fd, buf);
+        await fs.read(file.fd, buf);
         return buf;
       } finally {
-        fs.closeSync(file);
+        await fs.close(file);
       }
     } catch (_e) {
       return undefined;
     }
   }
 
-  private static writeDisk(url: string, buffer: ArrayBuffer): void {
+  private static async writeDisk(url: string, buffer: ArrayBuffer): Promise<void> {
     if (AppImageLoader.cacheDir.length === 0 || buffer.byteLength === 0) {
       return;
     }
     try {
-      const path = AppImageLoader.diskPath(url);
-      const file = fs.openSync(path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      const file = await fs.open(AppImageLoader.diskPath(url),
+        fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {
-        fs.writeSync(file.fd, buffer);
+        await fs.write(file.fd, buffer);
       } finally {
-        fs.closeSync(file);
+        await fs.close(file);
       }
     } catch (_e) {
       // 磁盘缓存写失败静默忽略
