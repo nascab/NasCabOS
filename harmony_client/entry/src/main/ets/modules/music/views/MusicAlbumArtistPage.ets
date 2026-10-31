@@ -16,6 +16,7 @@ import {
 import { MusicListItem, MusicListPathItem } from '../models/MusicModels';
 import { MusicSubListPageParam } from '../router/MusicRoutes';
 import { pickMusicPlayListId } from '../components/MusicPlayListSelectSheet';
+import { MusicViewModeStore } from '../service/MusicViewModeStore';
 
 /**
  * 专辑/艺人分组列表页（对齐 Flutter AlbumArtistListPage 移动端）：
@@ -28,6 +29,7 @@ export struct MusicAlbumArtistPage {
   @Param keyType: string = 'album';
 
   ctrl: MusicAlbumArtistController = new MusicAlbumArtistController(this.keyType);
+  private viewStore: MusicViewModeStore = MusicViewModeStore.getInstance();
   @Local private gridWidth: number = 0;
   @Local private refreshing: boolean = false;
 
@@ -38,6 +40,7 @@ export struct MusicAlbumArtistPage {
 
   aboutToAppear(): void {
     this.ctrl = new MusicAlbumArtistController(this.keyType);
+    this.viewStore.ensureLoaded();
     this.ctrl.onInit();
   }
 
@@ -111,6 +114,40 @@ export struct MusicAlbumArtistPage {
           .height('100%')
           .justifyContent(FlexAlign.Center)
         } else {
+          if (this.viewStore.isList) {
+            // 列表视图：每组一个 ListItem，List 仅构建可视行
+            List({ space: 0 }) {
+              ForEach(this.ctrl.items, (item: MusicListItem) => {
+                ListItem() {
+                  MusicAlbumArtistCard({
+                    item: item,
+                    layout: 'list',
+                    onTap: (): void => {
+                      this.openSubList(item.filename);
+                    },
+                    onAddToPlayList: (): void => {
+                      void this.addToPlayList(item);
+                    }
+                  })
+                }
+              }, (item: MusicListItem): string => `${item.showType}_${item.filename}`)
+
+              // 底部加载状态
+              ListItem() {
+                this.GridFooter()
+              }
+            }
+            .width('100%')
+            .height('100%')
+            .padding({ left: 4, right: 28, top: 4, bottom: 20 })
+            .divider({ strokeWidth: 0.5, color: AppTheme.current().divider, startMargin: 16, endMargin: 16 })
+            .scrollBar(BarState.Auto)
+            .edgeEffect(EdgeEffect.Spring)
+            .cachedCount(2)
+            .onReachEnd(() => {
+              void this.ctrl.loadMore(true);
+            })
+          } else {
           // 按“行”分组的懒加载 List（仅构建可视行，对齐 Flutter SliverGrid），
           // footer 为普通 ListItem；勿在同向外层 Scroll 里放 Grid
           List({ space: 4 }) {
@@ -156,6 +193,7 @@ export struct MusicAlbumArtistPage {
           .onReachEnd(() => {
             void this.ctrl.loadMore(true);
           })
+          }
 
           // 字母索引（右侧垂直居中，对齐 CustomLetterFilter）
           this.LetterFilter()
@@ -193,6 +231,13 @@ export struct MusicAlbumArtistPage {
         }
       })
       .layoutWeight(1)
+
+      BorderedIconButton({
+        icon: this.viewStore.isList ? $r('sys.symbol.list_bullet') : $r('sys.symbol.grid'),
+        onTap: (): void => {
+          this.viewStore.toggle();
+        }
+      })
 
       BorderedIconButton({
         icon: $r('sys.symbol.slider_horizontal_2'),
@@ -395,6 +440,8 @@ struct AlbumArtistSourceSheetInner {
 export struct MusicAlbumArtistCard {
   @Param item: MusicListItem = new MusicListItem();
   @Param badgeLabel: string = '';
+  /** 展示形态：grid 网格卡片 / list 列表行 */
+  @Param layout: string = 'grid';
   @Param onTap: () => void = (): void => {
   };
   @Param onAddToPlayList: () => void = (): void => {
@@ -450,6 +497,15 @@ export struct MusicAlbumArtistCard {
   }
 
   build() {
+    if (this.layout === 'list') {
+      this.ListRow()
+    } else {
+      this.GridCard()
+    }
+  }
+
+  @Builder
+  private GridCard() {
     Column() {
       Stack() {
         if (this.url.length > 0) {
@@ -505,6 +561,54 @@ export struct MusicAlbumArtistCard {
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)
+  }
+
+  /** 列表视图行：缩略图 + 名称 + 歌曲数 */
+  @Builder
+  private ListRow() {
+    Row({ space: 10 }) {
+      Stack() {
+        if (this.url.length > 0) {
+          AppImage({ url: this.url, showLoadingSpin: false })
+        } else {
+          Image($rawfile(this.fallbackAsset()))
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Cover)
+        }
+      }
+      .width(54)
+      .height(54)
+      .borderRadius(8)
+      .clip(true)
+
+      Column({ space: 3 }) {
+        Text(this.item.filename)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(AppTheme.current().onSurface)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+          .textAlign(TextAlign.Start)
+        Text(this.subtitle)
+          .fontSize(12)
+          .fontColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.6))
+          .maxLines(1)
+          .width('100%')
+          .textAlign(TextAlign.Start)
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+    }
+    .width('100%')
+    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+    .onClick(() => {
+      this.onTap();
+    })
+    .gesture(LongPressGesture({ repeat: false }).onAction(() => {
+      this.showCardMenu();
+    }))
   }
 
   /** 长按菜单（打开 / 加入歌单，对齐移动端 onLongPress 菜单） */

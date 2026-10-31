@@ -8,6 +8,7 @@ import { MusicListController, MusicListSortBy, MusicListSortOrder } from '../con
 import { MusicListItem, MusicListPathItem } from '../models/MusicModels';
 import { MusicItemCard } from '../components/MusicItemCard';
 import { MusicMultiSelectBar } from '../components/MusicMultiSelectBar';
+import { MusicViewModeStore } from '../service/MusicViewModeStore';
 
 /** 歌曲列表页内嵌参数（对齐 Flutter MusicListPage 构造参数） */
 export class MusicListPageParam {
@@ -43,11 +44,13 @@ export struct MusicListPage {
   };
 
   private ctrl: MusicListController = new MusicListController();
+  private viewStore: MusicViewModeStore = MusicViewModeStore.getInstance();
   @Local private gridWidth: number = 0;
   @Local private refreshing: boolean = false;
 
   aboutToAppear(): void {
     const p = this.param;
+    this.viewStore.ensureLoaded();
     this.ctrl = new MusicListController(p.listType, p.listId, p.seriesIndexId, p.collectionId,
       p.isFavorite, p.initialSortBy, p.initialSortOrder);
     this.ctrl.onMultiSelectChanged = (v: boolean): void => {
@@ -108,6 +111,12 @@ export struct MusicListPage {
           .layoutWeight(1)
 
         BorderedIconButton({
+          icon: this.viewStore.isList ? $r('sys.symbol.list_bullet') : $r('sys.symbol.grid'),
+          onTap: (): void => {
+            this.viewStore.toggle();
+          }
+        })
+        BorderedIconButton({
           icon: $r('sys.symbol.slider_horizontal_2'),
           active: this.ctrl.sortBy !== MusicListSortBy.mtime || this.ctrl.sortOrder !== MusicListSortOrder.desc,
           onTap: (): void => {
@@ -146,6 +155,43 @@ export struct MusicListPage {
         .justifyContent(FlexAlign.Center)
       } else {
         Stack() {
+          if (this.viewStore.isList) {
+            // 列表视图：每首歌曲一个 ListItem，List 仅构建可视行
+            List({ space: 0 }) {
+              ForEach(this.ctrl.items, (item: MusicListItem) => {
+                ListItem() {
+                  MusicItemCard({
+                    controller: this.ctrl,
+                    item: item,
+                    layout: 'list',
+                    selectionMode: this.ctrl.isMultiSelectMode,
+                    selected: this.ctrl.selectedItems.has(item.id),
+                    onToggleSelected: (): void => {
+                      this.ctrl.toggleSelection(item.id);
+                    },
+                    onOpenSeries: (it: MusicListItem): void => {
+                      this.onOpenSeries(it);
+                    }
+                  })
+                }
+              }, (item: MusicListItem) => `${item.id}`)
+
+              // 底部加载状态
+              ListItem() {
+                this.ListFooter()
+              }
+            }
+            .width('100%')
+            .height('100%')
+            .padding({ left: 4, right: 4, top: 4, bottom: 24 })
+            .divider({ strokeWidth: 0.5, color: AppTheme.current().divider, startMargin: 16, endMargin: 16 })
+            .scrollBar(BarState.Auto)
+            .edgeEffect(EdgeEffect.Spring)
+            .cachedCount(2)
+            .onReachEnd(() => {
+              this.ctrl.loadMore();
+            })
+          } else {
           // 按“行”分组的 List：List 只构建/回收可视行（每行 N 张卡片），等价于
           // Flutter CustomScrollView + SliverGrid 的懒构建；footer 为普通 ListItem。
           // 切勿改成 Scroll→Column→Grid：同向外层 Scroll 会令 Grid 主轴高度无界，
@@ -195,6 +241,7 @@ export struct MusicListPage {
           .onReachEnd(() => {
             this.ctrl.loadMore();
           })
+          }
 
           if (this.ctrl.isMultiSelectMode) {
             Column() {

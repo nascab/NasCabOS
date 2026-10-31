@@ -26,6 +26,8 @@ class MusicItemSheetParams extends SheetParamsBase {
 export struct MusicItemCard {
   @Param controller: MusicListController = new MusicListController();
   @Param item: MusicListItem = new MusicListItem();
+  /** 展示形态：grid 网格卡片 / list 列表行 */
+  @Param layout: string = 'grid';
   @Param selectionMode: boolean = false;
   @Param selected: boolean = false;
   @Param onToggleSelected: () => void = (): void => {
@@ -199,6 +201,15 @@ export struct MusicItemCard {
   }
 
   build() {
+    if (this.layout === 'list') {
+      this.ListRow()
+    } else {
+      this.GridCard()
+    }
+  }
+
+  @Builder
+  private GridCard() {
     Column() {
       Stack() {
         // 封面
@@ -324,6 +335,115 @@ export struct MusicItemCard {
       .margin({ top: 6 })
     }
     .width('100%')
+    .onClick(() => {
+      if (this.selectionMode) {
+        this.onToggleSelected();
+      } else {
+        this.openItem();
+      }
+    })
+  }
+
+  /** 列表视图行：缩略图 + 标题/副标题 + 收藏/更多（多选态为勾选框） */
+  @Builder
+  private ListRow() {
+    Row({ space: 10 }) {
+      Stack() {
+        if (this.coverUrl.length > 0) {
+          AppImage({ url: this.coverUrl, showLoadingSpin: false })
+        } else {
+          Image($rawfile(this.fallbackAsset()))
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Cover)
+        }
+
+        if (!this.selectionMode && this.isCurrent && this.svc.isPlaying) {
+          Column() {
+            SymbolGlyph($r('sys.symbol.speaker_wave_2_fill'))
+              .fontSize(16)
+              .fontColor(['#E6FFFFFF'])
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#33000000')
+        }
+      }
+      .width(54)
+      .height(54)
+      .borderRadius(8)
+      .clip(true)
+
+      Column({ space: 3 }) {
+        Text(this.item.displayTitle)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+          .textAlign(TextAlign.Start)
+          .fontColor(this.isCurrent ? AppTheme.current().primary : AppTheme.current().onSurface)
+        Row({ space: 6 }) {
+          if (!this.selectionMode && this.badgeLabel().length > 0) {
+            Text(this.badgeLabel())
+              .fontSize(9)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppTheme.current().subText)
+              .padding({ left: 4, right: 4, top: 1, bottom: 1 })
+              .borderRadius(4)
+              .backgroundColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.08))
+          }
+          if (this.subtitleText().length > 0) {
+            Text(this.subtitleText())
+              .fontSize(12)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+              .textAlign(TextAlign.Start)
+              .fontColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.6))
+          }
+        }
+        .width('100%')
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+
+      if (this.selectionMode) {
+        Circle()
+          .width(22)
+          .height(22)
+          .fill(this.selected ? AppTheme.current().primary : '#00000000')
+          .stroke(AppTheme.current().onSurface)
+          .strokeWidth(2)
+      } else {
+        Column() {
+          SymbolGlyph(this.effectiveFavorite ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
+            .fontSize(18)
+            .fontColor([this.effectiveFavorite ? '#FF3B30' : AppTheme.current().onSurface])
+        }
+        .width(32)
+        .height(32)
+        .justifyContent(FlexAlign.Center)
+        .onClick(() => {
+          this.toggleFavorite();
+        })
+
+        Column() {
+          SymbolGlyph($r('sys.symbol.more'))
+            .fontSize(18)
+            .fontColor([AppTheme.current().onSurface])
+        }
+        .width(32)
+        .height(32)
+        .justifyContent(FlexAlign.Center)
+        .onClick(() => {
+          this.showActionSheet();
+        })
+      }
+    }
+    .width('100%')
+    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
     .onClick(() => {
       if (this.selectionMode) {
         this.onToggleSelected();
