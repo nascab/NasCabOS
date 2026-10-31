@@ -13,8 +13,10 @@ import { VideoAlbumApiService, VideoScrapeApiService, VideoSourceApiService } fr
 import { VideoFavoriteApiService } from '../service/VideoApiServices';
 import {
   VideoItemSyncService, buildVideoHomeMeta, resolveVideoBrowsePath,
-  resolveVideoDeletePath, resolveVideoDownloadPath, videoMediaTypeText
+  resolveVideoDeletePath, resolveVideoDownloadPath, isVideoDownloadDir, videoMediaTypeText
 } from '../utils/VideoItemUtils';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import { VideoDetailPageParam, VideoListPageParam } from '../router/VideoRoutes';
 import { presentAlbumSelectSheet } from './VideoAlbumSelectSheet';
 
@@ -40,9 +42,17 @@ function openFileBrowse(item: VideoHomeItemBean): void {
 }
 
 function downloadItem(item: VideoHomeItemBean): void {
-  // 下载依赖传输/下载模块（未迁移），对齐 files 模块处理方式
-  void resolveVideoDownloadPath(item);
-  ToastUtil.show(L10n.featureComingSoon);
+  const path = resolveVideoDownloadPath(item);
+  if (path.length === 0) {
+    return;
+  }
+  const target: DownloadTarget = { path, isDirHint: isVideoDownloadDir(item) };
+  NavUtil.push(AppRouter.DOWNLOAD_CENTER);
+  void DownloadService.getInstance().enqueue([target]).then((added: number): void => {
+    if (added > 0) {
+      ToastUtil.show(L10n.t('task_added', '任务已添加'));
+    }
+  });
 }
 
 export class VideoItemActions {

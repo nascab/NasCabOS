@@ -207,6 +207,22 @@ export function resolveVideoDownloadPath(item: VideoHomeItemBean): string {
 }
 
 /**
+ * 下载目标是否为文件夹（bdmv/video_ts 为蓝光目录；tv/season 无文件名时视为整季目录；
+ * 其余类型解析结果回落到目录路径时按文件夹下载）
+ */
+export function isVideoDownloadDir(item: VideoHomeItemBean): boolean {
+  const t = item.mediaType.toLowerCase().trim();
+  if (t === 'bdmv' || t === 'video_ts') {
+    return resolveVideoDownloadPath(item).length > 0;
+  }
+  if (t === 'tv' || t === 'season') {
+    return item.filename.trim().length === 0;
+  }
+  const resolved = resolveVideoDownloadPath(item);
+  return resolved.length > 0 && resolved === item.path.trim();
+}
+
+/**
  * 视频条目删除同步服务（对齐 Flutter VideoItemSyncService）：
  * 删除条目后广播事件，各列表页自行刷新。
  */

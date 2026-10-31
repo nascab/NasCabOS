@@ -15,6 +15,8 @@ import { VideoItemPoster } from './VideoItemPoster';
 import { VideoItemActions, VideoSearchMediaHelper } from './VideoItemViews';
 import { VideoDetailPageParam, VideoListPageParam } from '../router/VideoRoutes';
 import { VideoUtils } from '../utils/VideoItemUtils';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import { AppImage } from '../../../common/components/AppImage';
 
 /**
@@ -707,8 +709,20 @@ export struct VideoDetailActionsSection {
     p.browseTarget = VideoDetailActionsSection.resolveBrowsePath(m);
     p.deleteTarget = VideoDetailActionsSection.resolveDeletePath(m);
     p.onDownload = (): void => {
-      // 下载依赖传输模块（未迁移）
-      ToastUtil.show(L10n.featureComingSoon);
+      if (p.downloadTarget.length === 0) {
+        return;
+      }
+      // 蓝光目录/无文件名的整季条目按文件夹下载
+      const mt: string = asStr(m['media_type']).trim().toLowerCase();
+      const isDirHint: boolean = (mt === 'bdmv' || mt === 'video_ts') ||
+        ((mt === 'tv' || mt === 'season') && asStr(m['filename']).trim().length === 0);
+      const target: DownloadTarget = { path: p.downloadTarget, isDirHint };
+      NavUtil.push(AppRouter.DOWNLOAD_CENTER);
+      void DownloadService.getInstance().enqueue([target]).then((added: number): void => {
+        if (added > 0) {
+          ToastUtil.show(L10n.t('task_added', '任务已添加'));
+        }
+      });
     };
     p.onBrowse = (): void => {
       if (p.browseTarget.length === 0) {
