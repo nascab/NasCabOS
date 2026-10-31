@@ -7,6 +7,8 @@ import { openVideoPlayer, toPlayerPlaylist } from '../../video_player/views/Play
 import { GalleryPageParam, galleryItemFromTimelinePhoto } from '../../gallery/models/GalleryModels';
 import { PreferencesStore } from '../../../core/storage/PreferencesStore';
 import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import {
   TimelineDateItem, TimelinePhotoItem, TimelinePathItem, TimelineDateInfo
 } from '../models/PhotoModels';
@@ -1279,12 +1281,43 @@ export class TimelineController {
     return this.faceId > 0 && CurrentUserStore.getInstance().isAdmin;
   }
 
-  /** 批量下载选中项（依赖下载中心，迁移后接入） */
+  /** 批量下载选中项：入队后直接进入下载中心（对齐文件模块的多选下载） */
   async downloadSelected(): Promise<void> {
-    if (this.selectedFileHashes().length === 0) {
+    const photos: TimelinePhotoItem[] = this.getSelectedPhotoItems();
+    if (photos.length === 0) {
       return;
     }
-    ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+    const targets: DownloadTarget[] = [];
+    for (const p of photos) {
+      const remote: string = TimelineController.photoRemotePath(p);
+      if (remote.length === 0) {
+        continue;
+      }
+      const target: DownloadTarget = { path: remote, isDirHint: false };
+      targets.push(target);
+    }
+    if (targets.length === 0) {
+      return;
+    }
+    // 立刻退出多选并进入下载中心（授权引导等弹窗在下载中心页上继续）
+    this.exitMultiSelectMode();
+    NavUtil.push(AppRouter.DOWNLOAD_CENTER);
+    const added: number = await DownloadService.getInstance().enqueue(targets);
+    if (added > 0) {
+      ToastUtil.show(L10n.t('task_added', '任务已添加'));
+    }
+  }
+
+  /** 照片对应的服务端文件完整路径（fullpath 优先，缺失时用 目录 + 文件名 拼接） */
+  private static photoRemotePath(p: TimelinePhotoItem): string {
+    if (p.fullpath.length > 0) {
+      return p.fullpath;
+    }
+    if (p.path.length === 0 || p.filename.length === 0) {
+      return '';
+    }
+    const dir: string = p.path.endsWith('/') ? p.path : `${p.path}/`;
+    return `${dir}${p.filename}`;
   }
 
   /** 添加到相册（依赖相册列表选择页，Phase2 接入） */
