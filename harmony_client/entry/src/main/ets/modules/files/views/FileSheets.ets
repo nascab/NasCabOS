@@ -922,50 +922,93 @@ function FilePropertiesSheetContent(p: FilePropertiesSheetParams) {
   FilePropertiesSheetInner({ p: p })
 }
 
+/** 属性统计实时状态（@ObservedV2 + @Trace：属性级观察，避免依赖组件级脏标记） */
+@ObservedV2
+class FilePropsLiveState {
+  @Trace size: number = 0;
+  @Trace count: number = 0;
+  @Trace folderCount: number = 0;
+  @Trace ctime: string = '';
+  @Trace mtime: string = '';
+  @Trace calculating: boolean = false;
+  @Trace bar: number = 0;
+}
+
 @ComponentV2
 struct FilePropertiesSheetInner {
   @Param p: FilePropertiesSheetParams = new FilePropertiesSheetParams();
-  @Local statsSize: number = 0;
-  @Local statsFileCount: number = 0;
-  @Local statsFolderCount: number = 0;
-  @Local statsCtime: string = '';
-  @Local statsMtime: string = '';
-  @Local isCalculating: boolean = false;
+  private st: FilePropsLiveState = new FilePropsLiveState();
+  private barTimer: number = -1;
   private statsService: FileStatsService = new FileStatsService();
 
   aboutToAppear(): void {
     const isDir = FileModelAccess.type(this.p.item) === 'dir';
     const path = FileModelAccess.path(this.p.item);
     if (isDir && path.length > 0) {
-      this.isCalculating = true;
+      this.st.calculating = true;
+      this.startBarAnimation();
       this.statsService.connect([path],
         (stats: FileStats): void => {
-          this.statsSize = stats.size;
-          this.statsFileCount = stats.count;
-          this.statsFolderCount = stats.folderCount;
-          const c = FileStats.parseToLocalMs(stats.ctime);
-          if (c !== undefined) {
-            this.statsCtime = FileFormat.formatFullTime(c);
-          }
-          const m = FileStats.parseToLocalMs(stats.mtime);
-          if (m !== undefined) {
-            this.statsMtime = FileFormat.formatFullTime(m);
-          }
+          this.applyStats(stats);
         },
         (stats: FileStats): void => {
-          this.statsSize = stats.size;
-          this.statsFileCount = stats.count;
-          this.statsFolderCount = stats.folderCount;
-          this.isCalculating = false;
+          this.applyStats(stats);
+          this.st.calculating = false;
+          this.stopBarAnimation();
         },
         (_message: string): void => {
-          this.isCalculating = false;
+          this.st.calculating = false;
+          this.stopBarAnimation();
         });
     }
   }
 
   aboutToDisappear(): void {
+    this.stopBarAnimation();
     this.statsService.close();
+  }
+
+  /** 应用一次统计快照（progress/complete 共用；服务端下发 UTC ISO 字符串，转本地时间展示） */
+  private applyStats(stats: FileStats): void {
+    this.st.size = stats.size;
+    this.st.count = stats.count;
+    this.st.folderCount = stats.folderCount;
+    const c = FileStats.parseToLocalMs(stats.ctime);
+    if (c !== undefined) {
+      this.st.ctime = FileFormat.formatFullTime(c);
+    }
+    const m = FileStats.parseToLocalMs(stats.mtime);
+    if (m !== undefined) {
+      this.st.mtime = FileFormat.formatFullTime(m);
+    }
+    console.info(`[FileStats] apply size=${this.st.size} count=${this.st.count} ` +
+      `folderCount=${this.st.folderCount} ctime=${this.st.ctime.length} mtime=${this.st.mtime.length}`);
+  }
+
+  /** 线性进度条不定长循环动画（Flutter LinearProgressIndicator 对应物） */
+  private startBarAnimation(): void {
+    if (this.barTimer !== -1) {
+      return;
+    }
+    this.st.bar = 0;
+    this.barTimer = setInterval((): void => {
+      this.st.bar = this.st.bar >= 100 ? 0 : this.st.bar + 5;
+    }, 50);
+  }
+
+  private stopBarAnimation(): void {
+    if (this.barTimer !== -1) {
+      clearInterval(this.barTimer);
+      this.barTimer = -1;
+    }
+    this.st.bar = 0;
+  }
+
+  /** 在属性表达式里调用：读取全部统计状态建立依赖，并输出构建日志便于真机确认是否重建 */
+  private buildMark(): number {
+    console.info(`[FileStats] build size=${this.st.size} count=${this.st.count} ` +
+      `calculating=${this.st.calculating}`);
+    return 1;
   }
 
   private get isDir(): boolean {
@@ -991,7 +1034,7 @@ struct FilePropertiesSheetInner {
 
   private sizeText(): string {
     if (this.isDir) {
-      return FileFormat.formatSize(this.statsSize);
+      return FileFormat.formatSize(this.st.size);
     }
     const size = FileModelAccess.size(this.p.item);
     return size >= 0 ? FileFormat.formatSize(size) : '';
@@ -999,9 +1042,14 @@ struct FilePropertiesSheetInner {
 
   private mtimeText(): string {
     if (this.isDir) {
-      return this.statsMtime;
+      return this.st.mtime;
     }
     return FileFormat.formatMtime(FileModelAccess.mtimeMs(this.p.item));
+  }
+
+  private containsText(): string {
+    return `${L10n.t('file_count_format', '@count 个文件', L10n.paramsOf('count', `${this.st.count}`))}, ` +
+      `${L10n.t('folder_count_format', '@count 个文件夹', L10n.paramsOf('count', `${this.st.folderCount}`))}`;
   }
 
   build() {
@@ -1012,24 +1060,114 @@ struct FilePropertiesSheetInner {
           .fontWeight(FontWeight.Bold)
           .fontColor(AppTheme.current().onSurface)
           .width('100%')
-        this.KvRow(L10n.t('name', '名称'), FileModelAccess.fileName(this.p.item))
-        this.KvRow(L10n.t('path', '路径'), FileModelAccess.path(this.p.item))
-        this.KvRow(L10n.t('type', '类型'), this.typeLabel())
-        this.KvRow(L10n.t('size', '大小'), this.sizeText())
+        // 属性行全部内联：Text 直接读取 this.st.xxx，建立属性级依赖（@Builder 值传递不参与刷新）
+        Row() {
+          Text(L10n.t('name', '名称'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().subText)
+            .width(76)
+          Text(FileModelAccess.fileName(this.p.item))
+            .fontSize(14)
+            .fontColor(AppTheme.current().onSurface)
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Top)
+        .margin({ top: 8 })
+        .width('100%')
+        Row() {
+          Text(L10n.t('path', '路径'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().subText)
+            .width(76)
+          Text(FileModelAccess.path(this.p.item))
+            .fontSize(14)
+            .fontColor(AppTheme.current().onSurface)
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Top)
+        .margin({ top: 8 })
+        .width('100%')
+        Row() {
+          Text(L10n.t('type', '类型'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().subText)
+            .width(76)
+          Text(this.typeLabel())
+            .fontSize(14)
+            .fontColor(AppTheme.current().onSurface)
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Top)
+        .margin({ top: 8 })
+        .width('100%')
+        Row() {
+          Text(L10n.t('size', '大小'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().subText)
+            .width(76)
+          Text(this.isDir ? FileFormat.formatSize(this.st.size)
+            : (FileModelAccess.size(this.p.item) >= 0 ? FileFormat.formatSize(FileModelAccess.size(this.p.item)) : ''))
+            .fontSize(14)
+            .fontColor(AppTheme.current().onSurface)
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Top)
+        .margin({ top: 8 })
+        .width('100%')
         if (this.isDir) {
-          this.KvRow(L10n.t('contains', '包含'),
-            `${L10n.t('file_count_format', '@count 个文件', L10n.paramsOf('count', `${this.statsFileCount}`))}, ` +
-            `${L10n.t('folder_count_format', '@count 个文件夹', L10n.paramsOf('count', `${this.statsFolderCount}`))}`)
+          Row() {
+            Text(L10n.t('contains', '包含'))
+              .fontSize(14)
+              .fontColor(AppTheme.current().subText)
+              .width(76)
+            // 直接读取 st.count / st.folderCount，确保在 build 作用域内注册依赖
+            Text(`${L10n.t('file_count_format', '@count 个文件',
+              L10n.paramsOf('count', `${this.st.count}`))}, ` +
+              `${L10n.t('folder_count_format', '@count 个文件夹',
+                L10n.paramsOf('count', `${this.st.folderCount}`))}`)
+              .fontSize(14)
+              .fontColor(AppTheme.current().onSurface)
+              .layoutWeight(1)
+          }
+          .alignItems(VerticalAlign.Top)
+          .margin({ top: 8 })
+          .width('100%')
         }
-        if (this.statsCtime.length > 0) {
-          this.KvRow(L10n.t('create_time', '创建时间'), this.statsCtime)
+        if (this.st.ctime.length > 0) {
+          Row() {
+            Text(L10n.t('create_time', '创建时间'))
+              .fontSize(14)
+              .fontColor(AppTheme.current().subText)
+              .width(76)
+            Text(this.st.ctime)
+              .fontSize(14)
+              .fontColor(AppTheme.current().onSurface)
+              .layoutWeight(1)
+          }
+          .alignItems(VerticalAlign.Top)
+          .margin({ top: 8 })
+          .width('100%')
         }
-        this.KvRow(L10n.t('modified_at', '修改时间'), this.mtimeText())
-        if (this.isDir && this.isCalculating) {
-          LoadingProgress()
-            .width(20)
-            .height(20)
+        Row() {
+          Text(L10n.t('modified_at', '修改时间'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().subText)
+            .width(76)
+          Text(this.isDir ? this.st.mtime : FileFormat.formatMtime(FileModelAccess.mtimeMs(this.p.item)))
+            .fontSize(14)
+            .fontColor(AppTheme.current().onSurface)
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Top)
+        .margin({ top: 8 })
+        .width('100%')
+        if (this.isDir && this.st.calculating) {
+          // 对齐 Flutter LinearProgressIndicator：不定长线性进度条
+          Progress({ value: this.st.bar, total: 100, type: ProgressType.Linear })
+            .width('100%')
+            .style({ strokeWidth: 3 })
             .color(AppTheme.current().primary)
+            .backgroundColor(AppTheme.current().divider)
             .margin({ top: 12 })
         }
         Button(L10n.t('home_window_close', '关闭'))
@@ -1052,23 +1190,8 @@ struct FilePropertiesSheetInner {
     .width('100%')
     .borderRadius({ topLeft: 16, topRight: 16 })
     .backgroundColor(AppTheme.current().surfaceBg)
-  }
-
-  @Builder
-  KvRow(k: string, v: string) {
-    Row() {
-      Text(k)
-        .fontSize(14)
-        .fontColor(AppTheme.current().subText)
-        .width(76)
-      Text(v)
-        .fontSize(14)
-        .fontColor(AppTheme.current().onSurface)
-        .layoutWeight(1)
-    }
-    .alignItems(VerticalAlign.Top)
-    .margin({ top: 8 })
-    .width('100%')
+    // 统计状态变化时触发重建（同时读取全部统计字段以建立依赖，便于真机日志确认）
+    .opacity(this.buildMark())
   }
 }
 
