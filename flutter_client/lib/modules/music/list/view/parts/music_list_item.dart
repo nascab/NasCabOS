@@ -29,6 +29,9 @@ class MusicItemCard extends StatefulWidget {
   final MusicListItem item;
   final double width;
   final double coverSize;
+
+  /// 展示形态：grid 网格卡片 / list 列表行
+  final String layout;
   final bool selectionMode;
   final bool selected;
   final VoidCallback? onToggleSelected;
@@ -38,6 +41,7 @@ class MusicItemCard extends StatefulWidget {
     required this.item,
     required this.width,
     required this.coverSize,
+    this.layout = 'grid',
     this.selectionMode = false,
     this.selected = false,
     this.onToggleSelected,
@@ -183,8 +187,8 @@ class _MusicItemCardState extends State<MusicItemCard> {
 
   List<ContextMenuEntry> _buildContextMenuEntries(BuildContext context) {
     final item = widget.item;
-    final isSameMachine = DeviceUtils.isDesktopOrWeb &&
-        ApiController.instance.isSameMachine;
+    final isSameMachine =
+        DeviceUtils.isDesktopOrWeb && ApiController.instance.isSameMachine;
 
     String resolvePath() {
       final full = item.fullPath.trim();
@@ -360,6 +364,61 @@ class _MusicItemCardState extends State<MusicItemCard> {
     final subtitle = _buildSubtitleText();
     final entries = _buildContextMenuEntries(context);
     final badgeLabel = _badgeLabel();
+
+    final child = widget.layout == 'list'
+        ? _buildListCard(
+            context,
+            theme,
+            titleStyle,
+            subtitleStyle,
+            subtitle,
+            entries,
+            badgeLabel,
+          )
+        : _buildGridCard(
+            context,
+            theme,
+            titleStyle,
+            subtitleStyle,
+            subtitle,
+            entries,
+            badgeLabel,
+          );
+
+    final tappableChild =
+        widget.selectionMode && widget.onToggleSelected != null
+        ? GestureDetector(onTap: widget.onToggleSelected, child: child)
+        : GestureDetector(onTap: _openItem, child: child);
+
+    if (!DeviceUtils.isDesktop && !DeviceUtils.isWeb) return tappableChild;
+
+    final hoverChild = MouseRegion(
+      cursor: SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (widget.controller.isScrolling.value) return;
+        if (_hovered) return;
+        setState(() => _hovered = true);
+      },
+      onExit: (_) {
+        if (!_hovered) return;
+        setState(() => _hovered = false);
+      },
+      child: tappableChild,
+    );
+
+    if (entries.isEmpty) return hoverChild;
+    return ContextMenuUtil.region(child: hoverChild, entries: entries);
+  }
+
+  Widget _buildGridCard(
+    BuildContext context,
+    ThemeData theme,
+    TextStyle? titleStyle,
+    TextStyle? subtitleStyle,
+    String subtitle,
+    List<ContextMenuEntry> entries,
+    String badgeLabel,
+  ) {
     final showMoreButton = _hovered && entries.isNotEmpty;
     final showFavoriteButton =
         (_hovered || _effectiveFavorite) && !widget.selectionMode;
@@ -635,29 +694,205 @@ class _MusicItemCardState extends State<MusicItemCard> {
       ],
     );
 
-    final tappableChild =
-        widget.selectionMode && widget.onToggleSelected != null
-        ? GestureDetector(onTap: widget.onToggleSelected, child: child)
-        : GestureDetector(onTap: _openItem, child: child);
+    return child;
+  }
 
-    if (!DeviceUtils.isDesktop && !DeviceUtils.isWeb) return tappableChild;
+  /// 列表视图行：缩略图 + 标题/副标题 + 收藏/更多按钮（多选态为勾选框）
+  Widget _buildListCard(
+    BuildContext context,
+    ThemeData theme,
+    TextStyle? titleStyle,
+    TextStyle? subtitleStyle,
+    String subtitle,
+    List<ContextMenuEntry> entries,
+    String badgeLabel,
+  ) {
+    final showMoreButton = entries.isNotEmpty && !widget.selectionMode;
+    final showFavoriteButton =
+        (_hovered || _effectiveFavorite) && !widget.selectionMode;
+    final showSelectBox = widget.selectionMode || widget.selected;
 
-    final hoverChild = MouseRegion(
-      cursor: SystemMouseCursors.basic,
-      onEnter: (_) {
-        if (widget.controller.isScrolling.value) return;
-        if (_hovered) return;
-        setState(() => _hovered = true);
-      },
-      onExit: (_) {
-        if (!_hovered) return;
-        setState(() => _hovered = false);
-      },
-      child: tappableChild,
+    Widget trailingIcon(IconData icon, VoidCallback onTap, {Color? color}) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Icon(
+              icon,
+              size: 18,
+              color: color ?? theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final cover = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildCover(theme),
+            if (!widget.selectionMode)
+              Obx(() {
+                final playCtrl = MusicPlayServiceController.instance;
+                final currentItem = _currentPlayingItem(playCtrl);
+                final currentPath = currentItem == null
+                    ? ''
+                    : _resolvePlayablePath(currentItem);
+                final itemPath = _resolvePlayablePath(widget.item);
+                final isCurrent =
+                    currentPath.isNotEmpty && currentPath == itemPath;
+                final isPlaying = isCurrent && playCtrl.isPlaying.value;
+                if (!isPlaying) return const SizedBox.shrink();
+                return Container(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  child: Center(child: _buildWaveIndicator(20)),
+                );
+              }),
+            if (!showMoreButton && badgeLabel.isNotEmpty)
+              Positioned(
+                left: 3,
+                bottom: 3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    badgeLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
 
-    if (entries.isEmpty) return hoverChild;
-    return ContextMenuUtil.region(child: hoverChild, entries: entries);
+    final title = Obx(() {
+      final playCtrl = MusicPlayServiceController.instance;
+      final currentItem = _currentPlayingItem(playCtrl);
+      final currentPath = currentItem == null
+          ? ''
+          : _resolvePlayablePath(currentItem);
+      final itemPath = _resolvePlayablePath(widget.item);
+      final isCurrent = currentPath.isNotEmpty && currentPath == itemPath;
+      final effectiveTitleStyle = isCurrent
+          ? (titleStyle?.copyWith(color: theme.colorScheme.primary) ??
+                TextStyle(color: theme.colorScheme.primary))
+          : titleStyle;
+      return Text(
+        widget.item.displayTitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: effectiveTitleStyle,
+      );
+    });
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          cover,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                title,
+                if (subtitle.isNotEmpty) const SizedBox(height: 2),
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: subtitleStyle,
+                  ),
+              ],
+            ),
+          ),
+          if (showFavoriteButton)
+            trailingIcon(
+              _effectiveFavorite ? Icons.favorite : Icons.favorite_border,
+              _toggleFavorite,
+              color: _effectiveFavorite ? Colors.red : null,
+            ),
+          if (showMoreButton)
+            Builder(
+              builder: (context) {
+                final key = GlobalKey();
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: () {
+                      if (DeviceUtils.isMobile) {
+                        _showMobileActionSheet(context);
+                        return;
+                      }
+                      final box =
+                          key.currentContext?.findRenderObject() as RenderBox?;
+                      final overlay =
+                          Overlay.of(context).context.findRenderObject()
+                              as RenderBox?;
+                      if (box == null || overlay == null) return;
+                      final pos = box.localToGlobal(
+                        Offset.zero,
+                        ancestor: overlay,
+                      );
+                      ContextMenuUtil.showAtPosition(
+                        context,
+                        entries: entries,
+                        position: pos + const Offset(0, 30),
+                      );
+                    },
+                    child: SizedBox(
+                      key: key,
+                      width: 36,
+                      height: 36,
+                      child: Icon(
+                        Icons.more_horiz,
+                        size: 18,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          if (showSelectBox)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: CustomCheckbox(
+                value: widget.selected,
+                onChanged: (_) => widget.onToggleSelected?.call(),
+                isCircle: true,
+                side: BorderSide(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  width: 2.0,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCover(ThemeData theme) {

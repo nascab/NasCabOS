@@ -13,6 +13,7 @@ import '../../playlist/view/play_list_list_view.dart';
 import '../models/music_list_models.dart';
 import '../service/music_list_api_service.dart';
 import 'music_multi_select_controller.dart';
+import 'music_view_mode_service.dart';
 
 enum MusicListSortBy {
   title,
@@ -81,6 +82,19 @@ class MusicListController extends GetxController
 
   final Rx<MusicListSortBy> sortBy = MusicListSortBy.mtime.obs;
   final Rx<MusicListSortOrder> sortOrder = MusicListSortOrder.desc.obs;
+
+  /// 显示模式：grid / list（全局共享并本地持久化，见 MusicViewModeService）
+  RxString get viewMode => MusicViewModeService.instance.mode;
+
+  void setViewMode(String mode) {
+    MusicViewModeService.instance.setMode(mode);
+  }
+
+  void toggleViewMode() {
+    MusicViewModeService.instance.toggle();
+    // 显式通知 GetBuilder 重建，确保列表内容立即切换形态
+    update();
+  }
 
   int get activeFilterCount => artists.length + albums.length + genres.length;
 
@@ -209,18 +223,16 @@ class MusicListController extends GetxController
     if (!_shouldUseSelectedPathsCache) return false;
     if (selectedPaths.isEmpty) return false;
     if (availablePaths.isEmpty) return false;
-    final availableSet =
-        availablePaths
-            .map((e) => e.path.trim())
-            .where((e) => e.isNotEmpty)
-            .toSet();
+    final availableSet = availablePaths
+        .map((e) => e.path.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
     if (availableSet.isEmpty) return false;
 
-    final currentSet =
-        selectedPaths
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toSet();
+    final currentSet = selectedPaths
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
     final next =
         currentSet.where(availableSet.contains).toSet().toList(growable: false)
           ..sort();
@@ -238,6 +250,7 @@ class MusicListController extends GetxController
   @override
   void onInit() {
     super.onInit();
+    MusicViewModeService.ensure();
     _applyInitialSortFromCache();
     _loadSelectedPathsFromCache();
     if (_shouldUseSelectedPathsCache) {
@@ -307,7 +320,9 @@ class MusicListController extends GetxController
 
     final startContentY = s.dy + _dragStartScrollOffset;
     final currentContentY = current.dy + scrollOffset;
-    final topContent = startContentY < currentContentY ? startContentY : currentContentY;
+    final topContent = startContentY < currentContentY
+        ? startContentY
+        : currentContentY;
     final heightContent = (startContentY - currentContentY).abs();
     selectionRectContent.value = Rect.fromLTWH(
       left,

@@ -10,6 +10,9 @@ class AlbumArtistItemCard extends StatelessWidget {
   final String badgeLabel;
   final double width;
   final double coverSize;
+
+  /// 展示形态：grid 网格卡片 / list 列表行
+  final String layout;
   final VoidCallback onTap;
 
   const AlbumArtistItemCard({
@@ -19,10 +22,13 @@ class AlbumArtistItemCard extends StatelessWidget {
     required this.width,
     required this.coverSize,
     required this.onTap,
+    this.layout = 'grid',
   });
 
   @override
   Widget build(BuildContext context) {
+    if (layout == 'list') return _buildListCard(context);
+
     final theme = Theme.of(context);
     final titleStyle = theme.textTheme.titleSmall;
     final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
@@ -101,6 +107,53 @@ class AlbumArtistItemCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// 列表视图行：缩略图 + 名称 + 歌曲数
+  Widget _buildListCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+    );
+    final subtitle = '${max(0, item.indexCount)}首';
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(width: 52, height: 52, child: _buildCover(theme)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: subtitleStyle,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

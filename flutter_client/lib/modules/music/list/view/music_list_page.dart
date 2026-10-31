@@ -238,6 +238,8 @@ class _MusicListPageState extends State<MusicListPage> {
                 : MusicListTopBar(controller: ctrl),
             Expanded(
               child: Obx(() {
+                // 在 Obx 内读取，确保切换视图模式时重建列表内容
+                final viewMode = ctrl.viewMode.value;
                 if (ctrl.loading.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -285,9 +287,10 @@ class _MusicListPageState extends State<MusicListPage> {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final enableMarquee =
-                              DeviceUtils.isDesktop ||
-                              (DeviceUtils.isWeb &&
-                                  DeviceUtils.isDesktopLayout(context));
+                              (DeviceUtils.isDesktop ||
+                                  (DeviceUtils.isWeb &&
+                                      DeviceUtils.isDesktopLayout(context))) &&
+                              ctrl.viewMode.value != 'list';
                           _gridViewportHeight = constraints.maxHeight;
 
                           final rectKey = [
@@ -312,7 +315,10 @@ class _MusicListPageState extends State<MusicListPage> {
                                   16,
                                   16,
                                 ),
-                                sliver: MusicListGrid(controller: ctrl),
+                                sliver: MusicListGrid(
+                                  controller: ctrl,
+                                  viewMode: viewMode,
+                                ),
                               ),
                               SliverToBoxAdapter(
                                 child: Padding(

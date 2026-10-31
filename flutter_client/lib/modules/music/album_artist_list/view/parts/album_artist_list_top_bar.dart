@@ -33,6 +33,8 @@ class _AppAlbumArtistListTopBarState extends State<AppAlbumArtistListTopBar> {
               child: _AppAlbumArtistListSearchBar(controller: controller),
             ),
             const SizedBox(width: 10),
+            _buildViewModeButton(controller),
+            const SizedBox(width: 10),
             _buildSortButton(context, _sortKey, controller),
             const SizedBox(width: 10),
             _buildSourceButton(context, _sourceKey, controller),
@@ -69,6 +71,8 @@ class _AlbumArtistListTopBarState extends State<AlbumArtistListTopBar> {
             const SizedBox(width: 4),
             _buildSortButton(context, _sortKey, controller),
             const SizedBox(width: 4),
+            _buildViewModeButton(controller),
+            const SizedBox(width: 10),
             Expanded(
               child: Align(
                 alignment: Alignment.centerRight,
@@ -86,6 +90,17 @@ class _AlbumArtistListTopBarState extends State<AlbumArtistListTopBar> {
       ),
     );
   }
+}
+
+Widget _buildViewModeButton(AlbumArtistListController controller) {
+  return Obx(() {
+    final isList = controller.viewMode.value == 'list';
+    return CustomBorderedIconButton(
+      icon: isList ? Icons.view_list : Icons.grid_view,
+      tooltip: 'folder_view'.tr,
+      onTap: controller.toggleViewMode,
+    );
+  });
 }
 
 Widget _buildSortButton(

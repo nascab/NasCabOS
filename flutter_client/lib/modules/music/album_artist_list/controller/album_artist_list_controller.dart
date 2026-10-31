@@ -6,6 +6,7 @@ import '../models/album_artist_list_models.dart';
 import '../service/album_artist_list_api_service.dart';
 import '../../list/models/music_list_models.dart';
 import '../../list/service/music_list_api_service.dart';
+import '../../list/controller/music_view_mode_service.dart';
 import '../../playlist/service/play_list_api_service.dart';
 import '../../playlist/view/play_list_list_view.dart';
 
@@ -39,6 +40,15 @@ class AlbumArtistListController extends GetxController {
   final Rx<AlbumArtistListSortBy> sortBy = AlbumArtistListSortBy.count.obs;
   final Rx<AlbumArtistListSortOrder> sortOrder =
       AlbumArtistListSortOrder.desc.obs;
+
+  /// 显示模式：grid / list（与曲库列表共享，见 MusicViewModeService）
+  RxString get viewMode => MusicViewModeService.instance.mode;
+
+  void toggleViewMode() {
+    MusicViewModeService.instance.toggle();
+    // 显式通知 GetBuilder 重建，确保列表内容立即切换形态
+    update();
+  }
 
   int _page = 1;
   final int _pageSize = 30;
@@ -114,6 +124,7 @@ class AlbumArtistListController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    MusicViewModeService.ensure();
     sortBy.value = initialSortBy;
     sortOrder.value = initialSortOrder;
     refreshList(showLoading: true);

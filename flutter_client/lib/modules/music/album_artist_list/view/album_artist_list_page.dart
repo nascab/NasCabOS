@@ -108,6 +108,8 @@ class _AlbumArtistListPageState extends State<AlbumArtistListPage> {
                 : AlbumArtistListTopBar(controller: ctrl),
             Expanded(
               child: Obx(() {
+                // 在 Obx 内读取，确保切换视图模式时重建列表内容
+                final viewMode = ctrl.viewMode.value;
                 if (ctrl.loading.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -155,6 +157,7 @@ class _AlbumArtistListPageState extends State<AlbumArtistListPage> {
                             padding: const EdgeInsets.fromLTRB(16, 0, 28, 66),
                             sliver: AlbumArtistListGrid(
                               controller: ctrl,
+                              viewMode: viewMode,
                               onOpenSubList: openSubList,
                             ),
                           ),

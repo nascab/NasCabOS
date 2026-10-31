@@ -281,6 +281,7 @@ class CacheKeys {
   static const String imageCompressWithMeta = 'image_compress_with_meta';
   static const String bookListSelectedPaths = 'book_list_selected_paths';
   static const String musicListSelectedPaths = 'music_list_selected_paths';
+  static const String musicViewMode = 'music_view_mode';
 
   /// 图书列表排序（与 [BookListController] 的 scope 拼接，见该控制器内缓存键构造）
   static const String bookListSortByPrefix = 'book_list_sort_by_';

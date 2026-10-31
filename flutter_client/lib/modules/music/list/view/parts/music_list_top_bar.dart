@@ -29,6 +29,8 @@ class _AppMusicListTopBarState extends State<AppMusicListTopBar> {
           children: [
             Expanded(child: _AppMusicListSearchBar(controller: controller)),
             const SizedBox(width: 8),
+            _buildViewModeButton(controller),
+            const SizedBox(width: 8),
             _buildSortButton(context, _sortKey, controller),
             const SizedBox(width: 8),
             _buildSourceButton(context, _sourceKey, controller, useSheet: true),
@@ -64,6 +66,8 @@ class _MusicListTopBarState extends State<MusicListTopBar> {
             _buildSourceButton(context, _sourceKey, controller),
             const SizedBox(width: 4),
             _buildSortButton(context, _sortKey, controller),
+            const SizedBox(width: 4),
+            _buildViewModeButton(controller),
             const SizedBox(width: 10),
             Expanded(
               child: Align(
@@ -82,6 +86,17 @@ class _MusicListTopBarState extends State<MusicListTopBar> {
       ),
     );
   }
+}
+
+Widget _buildViewModeButton(MusicListController controller) {
+  return Obx(() {
+    final isList = controller.viewMode.value == 'list';
+    return CustomBorderedIconButton(
+      icon: isList ? Icons.view_list : Icons.grid_view,
+      tooltip: 'folder_view'.tr,
+      onTap: controller.toggleViewMode,
+    );
+  });
 }
 
 Widget _buildSortButton(

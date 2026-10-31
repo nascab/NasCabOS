@@ -5,10 +5,41 @@ import './music_list_item.dart';
 
 class MusicListGrid extends StatelessWidget {
   final MusicListController controller;
-  const MusicListGrid({super.key, required this.controller});
+
+  /// 由外层 Obx 订阅后传入，用于在网格 / 列表之间切换
+  final String viewMode;
+  const MusicListGrid({
+    super.key,
+    required this.controller,
+    required this.viewMode,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (viewMode == 'list') {
+      // 列表视图：SliverList 按需构建可视行
+      return SliverList(
+        delegate: SliverChildBuilderDelegate((context, idx) {
+          final item = controller.items[idx];
+          return Obx(() {
+            final selectionMode = controller.isMultiSelectMode.value;
+            final selected = controller.selectedItems.contains(item.id);
+            return MusicItemCard(
+              key: ValueKey('music_item_list_${item.id}'),
+              controller: controller,
+              item: item,
+              width: double.infinity,
+              coverSize: 52,
+              layout: 'list',
+              selectionMode: selectionMode,
+              selected: selected,
+              onToggleSelected: () => controller.toggleSelection(item.id),
+            );
+          });
+        }, childCount: controller.items.length),
+      );
+    }
+
     return SliverLayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.crossAxisExtent;
