@@ -1,7 +1,3 @@
-import { http } from '@kit.NetworkKit';
-import { picker } from '@kit.CoreFileKit';
-import fs from '@ohos.file.fs';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { APIClient } from '../../../core/network/APIClient';
 import { L10n } from '../../../core/localization/L10n';
@@ -11,9 +7,10 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { FileApiService } from '../../files/service/FileApiService';
 import { PhotoTimelineApiService } from '../../photo/service/PhotoTimelineApiService';
 import { TimelineDetectedFaceItem } from '../../photo/models/PhotoModels';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import { GalleryItem, GalleryPageParam } from '../models/GalleryModels';
 
-const TAG = 'GalleryController';
 /** 全景图宽高比判定范围（对齐 Flutter _panoramaMin/MaxAspectRatio） */
 const PANORAMA_MIN_RATIO = 1.8;
 const PANORAMA_MAX_RATIO = 2.2;
@@ -56,12 +53,6 @@ function serverJoin(dir: string, name: string): string {
     return d;
   }
   return normalizeServerPath(`${d}/${n}`);
-}
-
-function baseName(v: string): string {
-  const clean = v.split('?')[0];
-  const i = clean.lastIndexOf('/');
-  return i >= 0 && i < clean.length - 1 ? clean.substring(i + 1) : clean;
 }
 
 /** 是否 GIF 条目（对齐 Flutter _hasGifExtension：name/path/url 任一为 .gif） */
@@ -506,81 +497,31 @@ export class GalleryController {
 
   // ================= 下载 =================
 
-  /** 下载当前图片（对齐 Flutter downloadCurrentImage：live/raw 附件一并保存） */
+  /** 下载当前图片：与照片时间轴一致走下载中心（Live Photo/RAW 附件一并入队后跳转下载中心） */
   async downloadCurrentImage(): Promise<void> {
     const item = this.currentItem();
     if (item === undefined) {
       return;
     }
-    const path = item.path.trim();
-    if (path.length === 0 || item.url.length === 0) {
+    const path = normalizeServerPath(item.path);
+    if (path.length === 0 || isUrl(path)) {
+      ToastUtil.show(L10n.t('download_failed', '下载失败'));
       return;
     }
-    const wanted: string[] = [path];
-    if (item.photoId > 0 && path.length > 0 && !isUrl(path)) {
+    const targets: DownloadTarget[] = [{ path: path, isDirHint: false }];
+    if (item.photoId > 0) {
       const dir = serverDirname(path);
       if (item.liveFilename.trim().length > 0) {
-        wanted.push(serverJoin(dir, item.liveFilename.trim()));
+        targets.push({ path: serverJoin(dir, item.liveFilename.trim()), isDirHint: false });
       }
       if (item.rawFilename.trim().length > 0) {
-        wanted.push(serverJoin(dir, item.rawFilename.trim()));
+        targets.push({ path: serverJoin(dir, item.rawFilename.trim()), isDirHint: false });
       }
     }
-
-    try {
-      const docPicker = new picker.DocumentViewPicker();
-      const opts = new picker.DocumentSaveOptions();
-      opts.newFileNames = wanted.map((w: string): string => baseName(w));
-      const uris = await docPicker.save(opts);
-      if (uris === undefined || uris.length === 0) {
-        return;
-      }
-      DialogUtil.showLoading(L10n.t('downloading', '下载中...'));
-      try {
-        for (let i = 0; i < uris.length && i < wanted.length; i++) {
-          const url = await ApiUrls.getRawFileUrl(wanted[i]);
-          const buf = await GalleryController.downloadBuffer(url);
-          const file = fs.openSync(uris[i], fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
-          try {
-            fs.writeSync(file.fd, buf);
-          } finally {
-            fs.closeSync(file);
-          }
-        }
-        ToastUtil.show(L10n.t('download_success', '下载成功'));
-      } finally {
-        await DialogUtil.dismissLoading();
-      }
-    } catch (e) {
-      hilog.error(0x0000, TAG, 'download failed: %{public}s', JSON.stringify(e));
-      await DialogUtil.dismissLoading();
-      ToastUtil.show(L10n.t('download_failed', '下载失败'));
-    }
-  }
-
-  private static async downloadBuffer(url: string): Promise<ArrayBuffer> {
-    const token = (APIClient.getInstance().state.accessToken ?? '').trim();
-    const headers: Record<string, string> = {};
-    if (token.length > 0) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    const req = http.createHttp();
-    try {
-      const resp = await req.request(url, {
-        method: http.RequestMethod.GET,
-        header: headers,
-        expectDataType: http.HttpDataType.ARRAY_BUFFER,
-        connectTimeout: 15000,
-        readTimeout: 300000,
-        usingProtocol: http.HttpProtocol.HTTP1_1,
-        remoteValidation: 'skip',
-      });
-      if (resp.responseCode < 200 || resp.responseCode >= 300) {
-        throw new Error(`download_http_${resp.responseCode}`);
-      }
-      return resp.result as ArrayBuffer;
-    } finally {
-      req.destroy();
+    // 图片浏览器内直接入队，不跳转下载中心
+    const added: number = await DownloadService.getInstance().enqueue(targets);
+    if (added > 0) {
+      ToastUtil.show(L10n.t('task_added', '任务已添加'));
     }
   }
 
