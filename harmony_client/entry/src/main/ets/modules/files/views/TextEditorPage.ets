@@ -1,5 +1,6 @@
 import { webview } from '@kit.ArkWeb';
 import { util } from '@kit.ArkTS';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { PageScaffold } from '../../../common/PageScaffold';
@@ -8,29 +9,8 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { TextEditorPageParam } from '../router/FileRoutes';
 import { EditorApiService, EditorOpenResult } from '../service/EditorApiService';
 
-/** 编辑器本地拦截域：主框架 URL 指向该域，onInterceptRequest 映射到 rawfile/editor */
-const EDITOR_ORIGIN = 'http://nascab.editor';
-const RAW_BASE = 'editor/';
-/** 移动端单文件编辑上限（对齐 Flutter 移动端 80KB 限制） */
+/** 编辑器单文件编辑上限（对齐 Flutter 移动端 80KB 限制） */
 const MAX_EDITOR_BYTES = 80 * 1024;
-
-function mimeOf(name: string): string {
-  const lower = name.toLowerCase();
-  if (lower.endsWith('.html') || lower.endsWith('.htm')) {
-    return 'text/html';
-  }
-  if (lower.endsWith('.js') || lower.endsWith('.mjs')) {
-    return 'application/javascript';
-  }
-  if (lower.endsWith('.css')) {
-    return 'text/css';
-  }
-  return 'application/octet-stream';
-}
-
-function isTextMime(mime: string): boolean {
-  return mime === 'text/html' || mime === 'text/css' || mime === 'application/javascript';
-}
 
 /** 文件扩展名（小写，不含点） */
 function extOf(path: string): string {
@@ -148,59 +128,43 @@ export struct TextEditorPage {
     }
   }
 
-  /** 本地资源拦截：http://nascab.editor/editor/<rest> → rawfile/editor/<rest> */
-  private interceptRequest(event: OnInterceptRequestEvent): WebResourceResponse | null {
-    const url = event.request.getRequestUrl();
-    if (!url.startsWith(EDITOR_ORIGIN)) {
-      return null;
+  /** UTF-8 文本转 base64（空文本返回空串，规避运行时 encodeInto 对空值返回 undefined） */
+  private encodeBase64(text: string): string {
+    if (text.length === 0) {
+      return '';
     }
-    let path = url.substring(EDITOR_ORIGIN.length);
-    const q = path.indexOf('?');
-    if (q >= 0) {
-      path = path.substring(0, q);
+    const bytes = new util.TextEncoder().encodeInto(text);
+    if (bytes === undefined) {
+      return '';
     }
-    let rest = '';
-    if (path === '/editor' || path === '/editor/') {
-      rest = 'editor.html';
-    } else if (path.startsWith('/editor/')) {
-      rest = path.substring('/editor/'.length);
-    } else {
-      return null;
-    }
-    if (rest.length === 0 || rest.includes('..')) {
-      return null;
-    }
-    const mime = mimeOf(rest);
-    const resp = new WebResourceResponse();
-    resp.setResponseData($rawfile(RAW_BASE + rest));
-    resp.setResponseMimeType(mime);
-    if (isTextMime(mime)) {
-      resp.setResponseEncoding('utf-8');
-    }
-    resp.setResponseCode(200);
-    resp.setReasonMessage('OK');
-    resp.setResponseIsReady(true);
-    const headers: Header[] = [];
-    headers.push({ headerKey: 'Cache-Control', headerValue: 'no-store' });
-    resp.setResponseHeader(headers);
-    return resp;
+    return new util.Base64Helper().encodeToStringSync(bytes);
   }
 
-  /** 页面加载完成后注入文本（仅一次） */
+  /** 页面加载完成后注入文本（注入成功才算完成，失败允许下次 onPageEnd 重试） */
   private injectContent(): void {
     if (this.injected) {
       return;
     }
-    this.injected = true;
     try {
-      const b64 = new util.Base64Helper().encodeToStringSync(new util.TextEncoder().encodeInto(this.initialText));
+      // 空内容时 encodeInto 返回 undefined，Base64Helper 也无法编码空数组，直接给空串
+      const b64 = this.encodeBase64(this.initialText ?? '');
       const lang = languageOf(this.param.path);
       const dark = AppTheme.isDark() ? 'true' : 'false';
       const readOnly = this.canWrite ? 'false' : 'true';
       const script = `window.editorApi.setContent('${b64}',{language:'${lang}',`
         + `fontSize:${this.fontSize},dark:${dark},readOnly:${readOnly}})`;
-      void this.webController.runJavaScript(script);
-    } catch (_e) {
+      this.webController.runJavaScript(script)
+        .then((): void => {
+          this.injected = true;
+        })
+        .catch((e: Object): void => {
+          hilog.error(0x0000, 'TextEditorPage', 'inject failed: %{public}s', `${e}`);
+          this.errorText = L10n.operationFailed;
+          ToastUtil.show(L10n.operationFailed);
+        });
+    } catch (e) {
+      hilog.error(0x0000, 'TextEditorPage', 'inject throw: %{public}s', `${e}`);
+      this.errorText = L10n.operationFailed;
       ToastUtil.show(L10n.operationFailed);
     }
   }
@@ -208,8 +172,27 @@ export struct TextEditorPage {
   /** 从 Web 侧取回当前编辑内容（失败返回空串） */
   private async currentText(): Promise<string> {
     try {
-      const v = await this.webController.runJavaScript('window.editorApi.getText()');
-      return v === undefined || v === null ? '' : `${v}`;
+      // 用 base64 传输：runJavaScript 会把字符串结果再包一层引号并转义，
+      // 直接取 getText() 会导致保存后多出引号/转义符（如引号、"\/"）。
+      const raw = await this.webController.runJavaScript('window.editorApi.getTextB64()');
+      return this.decodeBase64JsResult(`${raw}`);
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  /** 还原 JS 返回的 base64（兼容 runJavaScript 额外包裹的引号） */
+  private decodeBase64JsResult(raw: string): string {
+    let b64 = raw.trim();
+    if (b64.startsWith('"') && b64.endsWith('"') && b64.length >= 2) {
+      b64 = b64.substring(1, b64.length - 1);
+    }
+    if (b64.length === 0 || b64 === 'undefined' || b64 === 'null') {
+      return '';
+    }
+    try {
+      const bytes = new util.Base64Helper().decodeSync(b64);
+      return new util.TextDecoder('utf-8').decodeToString(bytes);
     } catch (_e) {
       return '';
     }
@@ -304,14 +287,12 @@ export struct TextEditorPage {
   PageBody() {
     Stack() {
       if (this.ready) {
-        Web({ src: `${EDITOR_ORIGIN}/editor/editor.html`, controller: this.webController })
+        // 直接加载 HAP 内 rawfile（单文件自包含，无需本地域拦截，避免伪域走真实 DNS 失败）
+        Web({ src: $rawfile('editor/editor.html'), controller: this.webController })
           .width('100%')
           .height('100%')
           .javaScriptAccess(true)
           .domStorageAccess(true)
-          .onInterceptRequest((event: OnInterceptRequestEvent): WebResourceResponse | null => {
-            return this.interceptRequest(event);
-          })
           .onPageEnd((_e: OnPageEndEvent): void => {
             this.injectContent();
           })

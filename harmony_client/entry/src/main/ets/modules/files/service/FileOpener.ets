@@ -1,5 +1,6 @@
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { util } from '@kit.ArkTS';
+import fs from '@ohos.file.fs';
 import { AppRouter } from '../../../router/AppRouter';
 import { NavUtil } from '../../../common/NavUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
@@ -260,6 +261,17 @@ export class FileOpener {
       const localPath = BookLocalCacheService.getInstance().cachedFilePathOf(fileHash);
       if (localPath === undefined) {
         ToastUtil.show(L10n.networkFailure);
+        return;
+      }
+      // 空 txt（如刚新建的 0 字节文件）阅读器无法分页，直接进编辑器
+      let localSize = 0;
+      try {
+        localSize = fs.statSync(localPath).size;
+      } catch (_e) {
+        localSize = 0;
+      }
+      if (localSize === 0) {
+        FileOpener.openTextEditor(item);
         return;
       }
       const param = new BookTxtReaderParam();

@@ -1,9 +1,14 @@
 import { http } from '@kit.NetworkKit';
+import { util } from '@kit.ArkTS';
 import fs from '@ohos.file.fs';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { WindowStore } from '../../../common/WindowStore';
+import { HeaderMap } from '../../../common/HeaderMap';
 import { APIClient } from '../../../core/network/APIClient';
 import { ApiUrls } from '../../../core/network/ApiUrls';
+import { NetworkConfig } from '../../../core/network/NetworkConfig';
+import { P2PService } from '../../../p2p/P2PService';
+import { P2pRtcChannel } from '../../../p2p/P2pProtocol';
 
 const TAG = 'BookLocalCache';
 
@@ -142,7 +147,10 @@ export class BookLocalCacheService {
         return false;
       }
     }
-    const url = await ApiUrls.getRawFileUrl(filePath);
+    // P2P 模式下 p2p.local 为虚拟域名，HTTP 栈无法解析（CURLcode 6 / Failed to resolve host），
+    // 必须改走 RTC download 通道（对齐 Flutter BookLocalCacheService 的 p2p 分支）
+    const p2p = APIClient.getInstance().isP2pMode;
+    const url = await ApiUrls.getRawFileUrl(filePath, true, p2p ? 'download' : 'file', undefined, true);
     if (url.length === 0) {
       return false;
     }
@@ -155,7 +163,9 @@ export class BookLocalCacheService {
       if (!fs.accessSync(hashDir)) {
         fs.mkdirSync(hashDir, true);
       }
-      const ok = await BookLocalCacheService.downloadToFile(url, tmpPath, fileHash, this);
+      const ok = p2p
+        ? await BookLocalCacheService.downloadP2pToFile(url, tmpPath, fileHash, this)
+        : await BookLocalCacheService.downloadToFile(url, tmpPath, fileHash, this);
       if (!ok) {
         return false;
       }
@@ -246,8 +256,8 @@ export class BookLocalCacheService {
       if (!finished) {
         return false;
       }
-      const st = fs.statSync(targetPath);
-      return st.size > 0;
+      // 空文件（如新建的 0 字节 txt）也是合法内容：只要请求正常结束即视为缓存成功
+      return true;
     } catch (e) {
       hilog.error(0x0000, TAG, 'download failed: %{public}s', JSON.stringify(e));
       return false;
@@ -266,6 +276,97 @@ export class BookLocalCacheService {
         }
       }
     }
+  }
+
+  /**
+   * P2P 模式下载落盘：p2p.local 是虚拟域名（系统 HTTP 栈无法解析），
+   * 改走 RTC download 通道流式写文件（对齐 Flutter BookLocalCacheService p2p 分支）。
+   * url 为 getRawFileUrl 结果，去掉 p2p.local 前缀后作为通道请求路径。
+   */
+  private static async downloadP2pToFile(url: string, targetPath: string,
+    fileHash: string, svc: BookLocalCacheService): Promise<boolean> {
+    const p2pPath = url.startsWith(NetworkConfig.P2P_BASE_URL)
+      ? url.substring(NetworkConfig.P2P_BASE_URL.length) : url;
+    let file: fs.File | undefined = undefined;
+    let finished = false;
+    let status = 0;
+    let total = 0;
+    let loaded = 0;
+    let errText = '';
+    let failed = false;
+    let failedMessage = '';
+    const decoder: util.TextDecoder = new util.TextDecoder();
+    const headers: HeaderMap = new HeaderMap();
+    const token = (APIClient.getInstance().accessToken ?? '').trim();
+    if (token.length > 0) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    try {
+      file = fs.openSync(targetPath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      await new Promise<void>((resolve, reject) => {
+        P2PService.getInstance().sendOnChannelStream(
+          P2pRtcChannel.DOWNLOAD, 'GET', p2pPath, headers, new Uint8Array(0), 600000,
+          {
+            onBegin: (s: number, h: HeaderMap): void => {
+              status = s;
+              const raw: string | undefined = h.get('content-length') ?? h.get('Content-Length');
+              if (raw !== undefined) {
+                const n: number = Number.parseInt(raw, 10);
+                total = Number.isFinite(n) && n > 0 ? n : 0;
+              }
+            },
+            onChunk: (data: Uint8Array): void => {
+              if (status >= 200 && status < 300) {
+                if (file !== undefined) {
+                  fs.writeSync(file.fd, data.buffer as ArrayBuffer);
+                }
+                loaded += data.byteLength;
+                const prog = new Map<string, number>(svc.downloadProgress);
+                prog.set(fileHash, total > 0 ? Math.min(1, loaded / total) : 0);
+                svc.downloadProgress = prog;
+              } else if (errText.length < 4096) {
+                errText += decoder.decodeToString(data);
+              }
+            },
+            onEnd: (): void => {
+              finished = true;
+              resolve();
+            },
+            onError: (e: Error): void => {
+              reject(e);
+            }
+          }
+        ).catch((e: Error): void => {
+          reject(e);
+        });
+      });
+    } catch (e) {
+      failed = true;
+      failedMessage = (e as Error).message;
+    } finally {
+      if (file !== undefined) {
+        try {
+          fs.fsyncSync(file.fd);
+          fs.closeSync(file);
+        } catch (_e) {
+        }
+        file = undefined;
+      }
+    }
+    if (failed) {
+      hilog.error(0x0000, TAG, 'p2p download failed: %{public}s', failedMessage);
+    }
+    if (failed || status < 200 || status >= 300 || !finished) {
+      try {
+        if (fs.accessSync(targetPath)) {
+          fs.unlinkSync(targetPath);
+        }
+      } catch (_e) {
+      }
+      return false;
+    }
+    // 空文件（0 字节）同样视为成功，交由阅读器/编辑器呈现空内容
+    return true;
   }
 
   private static sleep(ms: number): Promise<void> {

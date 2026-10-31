@@ -406,6 +406,16 @@
     getText: function () {
       return ta.value;
     },
+    /**
+     * 以 base64 返回当前文本：ArkWeb runJavaScript 会把字符串结果再包一层引号/转义，
+     * 纯 base64 结果无引号无转义，宿主侧可稳定还原任意内容。
+     */
+    getTextB64: function () {
+      var bytes = new TextEncoder().encode(ta.value);
+      var bin = '';
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    },
     setTheme: function (dark, fontSize) {
       themeDark = dark === true;
       themeFont = Number(fontSize) || themeFont;
