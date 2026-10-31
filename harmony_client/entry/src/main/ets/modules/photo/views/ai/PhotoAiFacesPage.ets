@@ -2,6 +2,7 @@ import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../../core/network/ApiUrls';
 import { DialogUtil, DialogResult } from '../../../../common/DialogUtil';
+import { ToastUtil } from '../../../../common/ToastUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../../common/SheetUtil';
 import { AppImage } from '../../../../common/components/AppImage';
 import { EmptyState } from '../../../../common/components/EmptyState';
@@ -331,25 +332,26 @@ struct FaceGridItem {
         })
         .clip(true)
 
-        // 选中遮罩
+        // 选中遮罩（纯视觉，不拦截点击，保证再次点击可取消选中）
         if (this.ctrl.isSelected(this.face.faceId)) {
           Column()
             .width(this.avatarSize)
             .height(this.avatarSize)
             .borderRadius(this.avatarSize / 2)
             .backgroundColor(AppTheme.withAlpha(AppTheme.current().primary, 0.14))
+            .hitTestBehavior(HitTestMode.None)
         }
 
         // 多选勾选（多选模式下显示，长按进入）
+        // 仅作视觉指示：不参与命中测试，点击统一由卡片 onClick 处理，
+        // 否则勾选框与卡片的点击会同时触发，导致选中状态被切换两次（永远选不中）
         if (this.ctrl.selectionMode) {
           CircleCheckbox({
             value: this.ctrl.isSelected(this.face.faceId),
-            uncheckedBorderColor: '#FFFFFF',
-            onChanged: (_c: boolean): void => {
-              this.ctrl.toggleSelected(this.face.faceId);
-            }
+            uncheckedBorderColor: '#FFFFFF'
           })
             .position({ x: 0, y: 0 })
+            .hitTestBehavior(HitTestMode.None)
         }
 
         // 管理员卡片操作入口（对齐 Flutter showMobileMenu PopupMenuButton）
@@ -622,17 +624,6 @@ export struct PhotoAiFacesPage {
     }
   }
 
-  private confirmMergeSelected(): void {
-    DialogUtil.showConfirmDialog(
-      L10n.t('need_confirm', '需要确认'),
-      L10n.t('face_merge_confirm', '人物合并后无法拆分,是否确认合并?'),
-      (): void => {
-        void this.ctrl.mergeSelected();
-      },
-      L10n.t('ok', '确定'),
-      L10n.t('cancel', '取消'));
-  }
-
   // ===== UI =====
 
   build() {
@@ -721,7 +712,7 @@ export struct PhotoAiFacesPage {
 
       // 多选底部操作栏（对齐 Flutter AiFacesMultiSelectBottomBar）
       if (this.ctrl.selectionMode) {
-        this.MultiSelectBar()
+        FaceMultiSelectBar({ ctrl: this.ctrl })
       }
     }
     .width('100%')
@@ -833,9 +824,37 @@ export struct PhotoAiFacesPage {
     .justifyContent(FlexAlign.Center)
   }
 
-  /** 多选底部操作栏（对齐 Flutter AiFacesMultiSelectBottomBar：显示/隐藏/合并/下载/取消） */
-  @Builder
-  MultiSelectBar() {
+}
+
+// ===== 多选底部操作栏（对齐 Flutter AiFacesMultiSelectBottomBar） =====
+// 独立组件：@Builder 方法参数按值传递，在 V2 下不保证随 @Trace 变化刷新，
+// 会导致「合并人脸」按选中数量置灰后永远保持不可点，故拆成独立组件并改为运行时校验。
+
+@ComponentV2
+struct FaceMultiSelectBar {
+  @Param ctrl: PhotoAiFacesController = new PhotoAiFacesController();
+
+  private isHideList(): boolean {
+    return this.ctrl.statusFilter === 'hide' || this.ctrl.statusFilter === 'hidden';
+  }
+
+  /** 合并：按钮始终可点，点击时再校验选中数量，避免因状态刷新滞后而永久不可点 */
+  private confirmMerge(): void {
+    if (this.ctrl.selectedFaceIds.length < 2) {
+      ToastUtil.show(L10n.t('face_merge_need_two', '请至少选择两个人物'));
+      return;
+    }
+    DialogUtil.showConfirmDialog(
+      L10n.t('need_confirm', '需要确认'),
+      L10n.t('face_merge_confirm', '人物合并后无法拆分,是否确认合并?'),
+      (): void => {
+        void this.ctrl.mergeSelected();
+      },
+      L10n.t('ok', '确定'),
+      L10n.t('cancel', '取消'));
+  }
+
+  build() {
     Row() {
       Text(L10n.t('face_selected_count', '已选择 @count 个',
         L10n.paramsOf('count', `${this.ctrl.selectedFaceIds.length}`)))
@@ -846,28 +865,29 @@ export struct PhotoAiFacesPage {
         .layoutWeight(1)
 
       if (CurrentUserStore.getInstance().isAdmin) {
+        // 「全部」列表下显示/隐藏两个入口；其余列表按当前列表状态给一个切换入口
         if (this.ctrl.statusFilter === 'all') {
-          // 全部过滤下同时提供显示/隐藏（对齐 Flutter isAll 分支）
-          this.BarTextEnabled(L10n.t('face_action_show', '显示'), true, (): void => {
+          this.BarText(L10n.t('face_action_show', '显示'), (): void => {
             void this.ctrl.batchSetHidden(false);
           })
-          this.BarTextEnabled(L10n.t('face_action_hide', '隐藏'), true, (): void => {
+          this.BarText(L10n.t('face_action_hide', '隐藏'), (): void => {
             void this.ctrl.batchSetHidden(true);
           })
         } else {
-          this.BarTextEnabled(this.batchHideLabel(), true, (): void => {
-            void this.ctrl.batchSetHidden(this.batchHideTarget());
-          })
+          this.BarText(this.isHideList() ? L10n.t('face_action_show', '显示') : L10n.t('face_action_hide', '隐藏'),
+            (): void => {
+              void this.ctrl.batchSetHidden(!this.isHideList());
+            })
         }
-        this.BarTextEnabled(L10n.t('face_action_merge', '合并人脸'),
-          this.ctrl.selectedFaceIds.length >= 2, (): void => {
-          this.confirmMergeSelected();
+        this.BarText(L10n.t('face_action_merge', '合并人脸'), (): void => {
+          this.confirmMerge();
         })
       }
-      this.BarTextEnabled(L10n.t('download', '下载'), true, (): void => {
+
+      this.BarText(L10n.t('download', '下载'), (): void => {
         void this.ctrl.downloadSelected();
       })
-      this.BarTextEnabled(L10n.t('cancel', '取消'), true, (): void => {
+      this.BarText(L10n.t('cancel', '取消'), (): void => {
         this.ctrl.exitSelectionMode();
       })
     }
@@ -878,34 +898,14 @@ export struct PhotoAiFacesPage {
     .backgroundColor(AppTheme.current().surfaceBg)
   }
 
-  /** 批量隐藏按钮文案（对齐 Flutter isAll 双按钮 / 单按钮切换逻辑） */
-  private batchHideLabel(): string {
-    if (this.ctrl.statusFilter === 'all') {
-      return L10n.t('face_action_hide', '隐藏');
-    }
-    const isHideList = this.ctrl.statusFilter === 'hide' || this.ctrl.statusFilter === 'hidden';
-    return isHideList ? L10n.t('face_action_show', '显示') : L10n.t('face_action_hide', '隐藏');
-  }
-
-  /** 批量隐藏目标状态 */
-  private batchHideTarget(): boolean {
-    if (this.ctrl.statusFilter === 'all') {
-      return true;
-    }
-    return !(this.ctrl.statusFilter === 'hide' || this.ctrl.statusFilter === 'hidden');
-  }
-
-  /** 文字按钮（带启用态，对齐 Flutter onPressed == null 置灰） */
   @Builder
-  BarTextEnabled(label: string, enabled: boolean, onTap: () => void) {
+  BarText(label: string, onTap: () => void) {
     Text(label)
       .fontSize(14)
-      .fontColor(enabled ? AppTheme.current().primary : AppTheme.withAlpha(AppTheme.current().primary, 0.4))
+      .fontColor(AppTheme.current().primary)
       .padding({ left: 8, right: 8, top: 8, bottom: 8 })
       .onClick(() => {
-        if (enabled) {
-          onTap();
-        }
+        onTap();
       })
   }
 }

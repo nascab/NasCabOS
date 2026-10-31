@@ -6,7 +6,6 @@ import { AppRouter } from '../../../../router/AppRouter';
 import { CurrentUserStore } from '../../../../core/user/CurrentUserStore';
 import { AppImage } from '../../../../common/components/AppImage';
 import { GlassCard } from '../../../../common/components/GlassCard';
-import { EmptyState } from '../../../../common/components/EmptyState';
 import { AiFaceItem, AiSceneItem } from '../../models/PhotoAiModels';
 import { PhotoAiOverviewController } from '../../controllers/PhotoAiOverviewController';
 import { PhotoTimelinePageParam } from '../timeline/PhotoTimelinePage';
@@ -163,6 +162,8 @@ export struct PhotoAiHomeView {
       }
       .padding({ top: 2, bottom: 2, left: 2, right: 2 })
       .alignItems(VerticalAlign.Center)
+      .justifyContent(FlexAlign.Center)
+      .constraintSize({ minWidth: '100%' })
     }
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
@@ -226,6 +227,8 @@ export struct PhotoAiHomeView {
       }
       .padding({ top: 2, bottom: 2, left: 2, right: 2 })
       .alignItems(VerticalAlign.Top)
+      .justifyContent(FlexAlign.Center)
+      .constraintSize({ minWidth: '100%' })
     }
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
@@ -421,14 +424,15 @@ struct AiPreviewSection {
       } else if (this.hasData) {
         this.content()
       } else {
-        // 空数据（对齐 Flutter SizedBox(120) + CustomNoData）
+        // 空数据：仅文案占位
         Column() {
-          EmptyState({ message: L10n.t('no_data', '暂无数据'), iconSize: 100 })
+          Text(L10n.t('no_data', '暂无数据'))
+            .fontSize(14)
+            .fontColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.45))
         }
         .width('100%')
         .height(120)
-        .borderRadius(12)
-        .clip(true)
+        .justifyContent(FlexAlign.Center)
       }
     }
     .width('100%')

@@ -457,6 +457,7 @@
   "face_filter_hidden": "Hidden",
   "face_filter_visible": "Visible",
   "face_merge_confirm": "Merging people cannot be undone. Confirm merge?",
+  "face_merge_need_two": "Select at least two people",
   "face_move_confirm": "Move content from @from to @to?",
   "face_move_target_empty": "No other face is available as a target",
   "face_move_to_other_face": "Move To Other Face",

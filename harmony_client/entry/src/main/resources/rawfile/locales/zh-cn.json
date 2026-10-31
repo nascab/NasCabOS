@@ -457,6 +457,7 @@
   "face_filter_hidden": "隐藏的",
   "face_filter_visible": "可见的",
   "face_merge_confirm": "人物合并后无法拆分,是否确认合并?",
+  "face_merge_need_two": "请至少选择两个人物",
   "face_move_confirm": "确认将内容从 @from 移动到 @to 吗？",
   "face_move_target_empty": "暂无可移动的目标人脸",
   "face_move_to_other_face": "移动到其他人脸",
