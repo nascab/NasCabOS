@@ -115,7 +115,7 @@ export struct MusicListPage {
           }
         })
         BorderedIconButton({
-          icon: $r('sys.symbol.grid'),
+          icon: $r('sys.symbol.folder'),
           active: this.ctrl.selectedPaths.length > 0,
           onTap: (): void => {
             this.showSourceSheet();
