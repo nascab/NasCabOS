@@ -56,103 +56,67 @@ class TimelineRowsDataSource implements IDataSource {
     if (ctrl.isLoadingDown || !ctrl.hasMoreDown) {
       next.push(TimelineEntry.footer());
     }
-    // key 序列与行对象引用完全相同则短路（如程序化补页开始时 isLoadingUp 置位但不插哨兵的
-    // 那次刷新）：rebuildRows 总会生成全新 row 对象，因此任何真实数据变化都不会被误跳过
-    if (next.length === this.entries.length) {
-      let same = true;
-      for (let i = 0; i < next.length; i++) {
-        if (next[i].key !== this.entries[i].key) {
-          same = false;
-          break;
-        }
-        // 数据行还要求 row 引用一致（哨兵/footer 每次新建，只比 key）
-        if (next[i].kind === 1 && next[i].row !== this.entries[i].row) {
-          same = false;
-          break;
-        }
-      }
-      if (same) {
-        return;
-      }
-    }
-    // 程序化定位的“向上补页”是纯头部插入：用增量通知替代全量刷新，
-    // 配合 List.maintainVisibleContentPosition 让目标日自动保持在原位（可见项下标
-    // 自动前移），无需 scrollTo——远距 scrollTo 会触发上千行按需布局，阻塞主线程近 1 秒。
-    if (ctrl.programmaticScroll && this.applyPrependIfMatched(next)) {
-      return;
-    }
-    // 全量替换：全程只使用 onDatasetChange（ArkUI 约束：同一 listener 一旦用过
-    // onDatasetChange，就不能再混用 onDataReloaded 等其他通知接口，否则运行时崩溃 401）
+    // 差量更新：只对“最长公共前缀/后缀”之间的差异区间下发 DELETE + ADD。
+    // 不能做全量替换（先删除全部再插入全部）：那样会连带删除 List 的
+    // maintainVisibleContentPosition 锚点项，删除照片后列表会沿用旧像素偏移，
+    // 落在完全不同的日期上（表现为“自动跳转到一个中间位置的日期”）。
+    // 删除照片只影响所在日期的行，其余行的 key 与内容都不变，因此差异区间很小，
+    // 可见区域的锚点行保持不变，画面无需滚动。全程只使用 onDatasetChange
+    // （ArkUI 约束：同一 listener 一旦用过 onDatasetChange，就不能再混用
+    // onDataReloaded 等其他通知接口，否则运行时崩溃 401）。
     const oldLen = this.entries.length;
-    this.entries = next;
-    const ops: DataOperation[] = [];
-    if (oldLen > 0) {
-      ops.push({ type: DataOperationType.DELETE, index: 0, count: oldLen });
+    const nextLen = next.length;
+    let prefix = 0;
+    while (prefix < oldLen && prefix < nextLen
+      && this.sameEntry(this.entries[prefix], next[prefix])) {
+      prefix++;
     }
-    ops.push({ type: DataOperationType.ADD, index: 0, count: next.length });
-    this.notifyDatasetChange(ops);
-  }
-
-  /**
-   * 检测 next 相对当前 entries 是否为“头部插入若干行 + 至多删除 1 个重合 header”，
-   * 命中则发增量删除/插入通知并返回 true；形态不符返回 false 由调用方全量刷新。
-   */
-  private applyPrependIfMatched(next: TimelineEntry[]): boolean {
-    const old = this.entries;
-    if (old.length === 0 || next.length <= old.length) {
-      return false;
+    let suffix = 0;
+    while (suffix < oldLen - prefix && suffix < nextLen - prefix
+      && this.sameEntry(this.entries[oldLen - 1 - suffix], next[nextLen - 1 - suffix])) {
+      suffix++;
     }
-    // 尾部哨兵序列必须一致（程序化期间无顶部哨兵）
-    const oldSentinelCount = old.length - this.lastDataIndex(old) - 1;
-    const nextSentinelCount = next.length - this.lastDataIndex(next) - 1;
-    if (oldSentinelCount !== nextSentinelCount || oldSentinelCount > 1) {
-      return false;
-    }
-    for (let k = 1; k <= oldSentinelCount; k++) {
-      if (old[old.length - k].key !== next[next.length - k].key) {
-        return false;
-      }
-    }
-    const oldDataLen = old.length - oldSentinelCount;
-    const nextDataLen = next.length - nextSentinelCount;
-    // 最长公共后缀
-    let common = 0;
-    while (common < oldDataLen && common < nextDataLen
-      && old[oldDataLen - 1 - common].key === next[nextDataLen - 1 - common].key) {
-      common++;
-    }
-    if (common === 0) {
-      return false;
-    }
-    const removed = oldDataLen - common;
-    const inserted = nextDataLen - common;
-    if (inserted <= 0 || removed > 1) {
-      return false;
-    }
-    // 删除的只允许是边界重合的 header（mergeIncomingPhotos 的唯一删除形态）
-    if (removed === 1 && !old[0].key.startsWith('h_')) {
-      return false;
+    const removed = oldLen - prefix - suffix;
+    const added = nextLen - prefix - suffix;
+    if (removed === 0 && added === 0) {
+      return;
     }
     this.entries = next;
     const ops: DataOperation[] = [];
     if (removed > 0) {
-      ops.push({ type: DataOperationType.DELETE, index: 0, count: removed });
+      ops.push({ type: DataOperationType.DELETE, index: prefix, count: removed });
     }
     // 单次批量插入区间，避免逐条 onDataAdd 触发上百次增量布局（实测可阻塞主线程近 0.9s）
-    ops.push({ type: DataOperationType.ADD, index: 0, count: inserted });
-    // TODO(diag) 跳转整天丢失排查，定位后删除
-    console.info(`[TimelineJump] prependIncremental inserted=${inserted} removed=${removed}`);
+    if (added > 0) {
+      ops.push({ type: DataOperationType.ADD, index: prefix, count: added });
+    }
     this.notifyDatasetChange(ops);
-    return true;
   }
 
-  private lastDataIndex(list: TimelineEntry[]): number {
-    for (let i = list.length - 1; i >= 0; i--) {
-      if (list[i].kind === 1) {
-        return i;
+  /** 条目渲染语义是否完全相同：key 相同，照片行还要求照片序列一致（行内移位需重建） */
+  private sameEntry(a: TimelineEntry, b: TimelineEntry): boolean {
+    if (a.kind !== b.kind || a.key !== b.key) {
+      return false;
+    }
+    if (a.kind !== 1) {
+      return true;
+    }
+    return this.sameRow(a.row, b.row);
+  }
+
+  private sameRow(a: TimelineRowItem, b: TimelineRowItem): boolean {
+    if (a.isHeader || b.isHeader) {
+      return a.isHeader === b.isHeader && a.date === b.date;
+    }
+    if (a.photos.length !== b.photos.length) {
+      return false;
+    }
+    for (let i = 0; i < a.photos.length; i++) {
+      if (a.photos[i].id !== b.photos[i].id) {
+        return false;
       }
     }
-    return -1;
+    return true;
   }
 
   /** 统一通知出口：全工程只允许使用 onDatasetChange，不可混用其他 DataChangeListener 接口 */
