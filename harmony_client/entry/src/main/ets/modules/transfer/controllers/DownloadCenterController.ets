@@ -1,4 +1,6 @@
 import { ComponentContent, promptAction } from '@kit.ArkUI';
+import { OpenLinkOptions } from '@kit.AbilityKit';
+import { fileUri } from '@kit.CoreFileKit';
 import fs from '@ohos.file.fs';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { L10n } from '../../../core/localization/L10n';
@@ -176,6 +178,47 @@ export class DownloadCenterController {
     if (ok) {
       ToastUtil.show(L10n.t('save_to_gallery_success', '已保存到图库'));
     }
+  }
+
+  /**
+   * 打开系统文件管理器并定位到文件所在目录（官方 openLink 方式）。
+   * 目录参数不被支持时退回打开文件管理器首页。
+   */
+  async openEntry(entry: DownloadedFileEntry): Promise<void> {
+    if (entry.fileMissing) {
+      ToastUtil.show(L10n.t('file_not_found', '文件不存在'));
+      return;
+    }
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return;
+    }
+    const dirPath: string = DownloadCenterController.dirName(entry.path);
+    try {
+      const options: OpenLinkOptions = {
+        parameters: { 'fileUri': DownloadCenterController.fileUriOf(dirPath) }
+      };
+      await ctx.openLink('filemanager://openDirectory', options);
+    } catch (e) {
+      console.warn('[DownloadCenter] 打开文件管理器（指定目录）失败: ' + `${e}`);
+      try {
+        await ctx.openLink('filemanager://openDirectory', { parameters: { 'fileUri': '' } });
+      } catch (e2) {
+        console.warn('[DownloadCenter] 打开文件管理器失败: ' + `${e2}`);
+        ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      }
+    }
+  }
+
+  /** 本地绝对路径 → 文件 URI（沙箱路径走 file 协议，公共目录走 docs 协议） */
+  private static fileUriOf(path: string): string {
+    return path.startsWith('/data/storage/') ? fileUri.getUriFromPath(path) : `file://docs${path}`;
+  }
+
+  /** 取路径所在目录（无分隔符时原样返回） */
+  private static dirName(path: string): string {
+    const i: number = path.lastIndexOf('/');
+    return i > 0 ? path.substring(0, i) : path;
   }
 
   /** 顶部「清理」：有活跃任务时拦截，否则弹窗确认清空（对齐 Flutter promptClearAllHistory） */

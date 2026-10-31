@@ -193,6 +193,12 @@ struct DownloadedFileCard {
     p.entry = this.entry;
     p.showGallery = !this.entry.fileMissing && !this.inGallery() &&
       DownloadService.isSavableMedia(this.entry.name);
+    // 「去查看」仅对非图片/视频的普通文件展示（媒体已进相册或可保存到图库）
+    p.showOpen = !this.entry.fileMissing && !this.inGallery() &&
+      !DownloadService.isSavableMedia(this.entry.name);
+    p.onOpen = (): void => {
+      void this.ctrl.openEntry(this.entry);
+    };
     p.onSaveGallery = (): void => {
       void this.ctrl.saveEntryToGallery(this.entry);
     };
@@ -252,7 +258,11 @@ class DownloadedItemSheetParams extends SheetParamsBase {
   entry: DownloadedFileEntry = new DownloadedFileEntry();
   /** 是否展示「保存到图库」（仅图片/视频且文件存在） */
   showGallery: boolean = false;
+  /** 是否展示「去查看」（文件存在且非图片/视频） */
+  showOpen: boolean = false;
   onSaveGallery: () => void = (): void => {
+  };
+  onOpen: () => void = (): void => {
   };
   onDelete: () => void = (): void => {
   };
@@ -273,6 +283,16 @@ function DownloadedItemSheetContent(p: DownloadedItemSheetParams) {
       .width('100%')
       .padding({ left: 20, right: 20, top: 4, bottom: 10 })
 
+    if (p.showOpen) {
+      SheetListItem({
+        icon: $r('sys.symbol.eye'),
+        title: L10n.t('file_global_search_disabled_go_view', '去查看'),
+        onSelect: (): void => {
+          p.close();
+          p.onOpen();
+        }
+      })
+    }
     if (p.showGallery) {
       SheetListItem({
         icon: $r('sys.symbol.rectangle_stack'),
