@@ -1,11 +1,15 @@
 import { request } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
+import { util } from '@kit.ArkTS';
 import { notificationManager } from '@kit.NotificationKit';
 import { abilityAccessCtrl } from '@kit.AbilityKit';
 import { Environment, fileUri, fileShare, picker } from '@kit.CoreFileKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
 import { WindowStore } from '../../../common/WindowStore';
+import { HeaderMap } from '../../../common/HeaderMap';
+import { P2PService } from '../../../p2p/P2PService';
+import { P2pRtcChannel } from '../../../p2p/P2pProtocol';
 import { APIClient } from '../../../core/network/APIClient';
 import { FileApiService } from '../../files/service/FileApiService';
 import { FileItem, FileModelAccess } from '../../files/models/FileModels';
@@ -66,6 +70,8 @@ export class DownloadService {
   private systemDirUri: string = '';
   /** 公共 Download 目录权限是否已授予（2in1/平板，本次运行内缓存避免重复弹窗） */
   private publicDirGranted: boolean = false;
+  /** P2P 通道流式下载的取消函数（任务 id → cancel） */
+  private p2pCancels: Map<string, () => void> = new Map<string, () => void>();
   /** 公共 Download 目录权限是否已询问过（避免用户拒绝后每次下载重复弹窗） */
   private publicDirChecked: boolean = false;
   /** 任务 id 自增序列（保证同毫秒创建的任务 id 唯一） */
@@ -526,6 +532,12 @@ export class DownloadService {
       return;
     }
 
+    // P2P 模式：p2p.local 是虚拟域名，系统下载器无法解析，改走 RTC download 通道流式落盘
+    if (APIClient.getInstance().isP2pMode) {
+      void this.startP2pItem(item, tmpPath);
+      return;
+    }
+
     // background:true → 系统托管：自带下载通知、后台继续、重启后仍可查询
     const config: request.DownloadConfig = {
       url: this.buildDownloadUrl(item.remotePath),
@@ -547,6 +559,102 @@ export class DownloadService {
     item.sysTask = sysTask;
     item.status = TransferStatus.UPLOADING;
     this.bindSysEvents(item, sysTask);
+  }
+
+  /**
+   * P2P 模式下载：通过 RTC download 通道流式写入暂存文件（虚拟域名 p2p.local 无法被系统下载器解析），
+   * 完成后复用 onSysComplete 的相册/下载目录发布流程；暂停/删除时取消通道流。
+   */
+  private async startP2pItem(item: DownloadTaskItem, tmpPath: string): Promise<void> {
+    item.status = TransferStatus.UPLOADING;
+    let file: fs.File | undefined = undefined;
+    let status: number = 0;
+    let total: number = 0;
+    let loaded: number = 0;
+    let errText: string = '';
+    let failed: boolean = false;
+    let failedMessage: string = '';
+    const decoder: util.TextDecoder = new util.TextDecoder();
+    const headers: HeaderMap = new HeaderMap();
+    const token: string = (APIClient.getInstance().accessToken ?? '').trim();
+    if (token.length > 0) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    try {
+      file = fs.openSync(tmpPath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      await new Promise<void>((resolve, reject) => {
+        P2PService.getInstance().sendOnChannelStream(
+          P2pRtcChannel.DOWNLOAD, 'GET',
+          this.buildP2pDownloadPath(item.remotePath),
+          headers, new Uint8Array(0), 600000,
+          {
+            onBegin: (s: number, h: HeaderMap): void => {
+              status = s;
+              const raw: string | undefined = h.get('content-length') ?? h.get('Content-Length');
+              if (raw !== undefined) {
+                const n: number = Number.parseInt(raw, 10);
+                total = Number.isFinite(n) && n > 0 ? n : 0;
+                if (total > 0) {
+                  item.totalSize = total;
+                }
+              }
+            },
+            onChunk: (data: Uint8Array): void => {
+              if (status >= 200 && status < 300) {
+                if (file !== undefined) {
+                  fs.writeSync(file.fd, data.buffer as ArrayBuffer);
+                }
+                loaded += data.byteLength;
+                item.processedSize = loaded;
+              } else if (errText.length < 4096) {
+                errText += decoder.decodeToString(data);
+              }
+            },
+            onEnd: (): void => {
+              resolve();
+            },
+            onError: (e: Error): void => {
+              reject(e);
+            }
+          }
+        ).then((cancel: () => void): void => {
+          this.p2pCancels.set(item.id, cancel);
+        }).catch((e: Error): void => {
+          reject(e);
+        });
+      });
+    } catch (e) {
+      failed = true;
+      failedMessage = (e as Error).message;
+    } finally {
+      if (file !== undefined) {
+        try {
+          fs.closeSync(file);
+        } catch (_e) {
+          // 关闭失败忽略
+        }
+      }
+      this.p2pCancels.delete(item.id);
+    }
+
+    // 用户暂停：保留暂停态，丢弃半成品（恢复时重新开始）
+    if (DownloadService.isPaused(item)) {
+      DownloadService.deleteFileQuietly(tmpPath);
+      return;
+    }
+    if (failed || status < 200 || status >= 300) {
+      DownloadService.deleteFileQuietly(tmpPath);
+      const detail: string = failed ? failedMessage :
+        (errText.length > 0 ? errText : L10n.t('server_error', '服务器错误'));
+      this.markError(item, `${detail} (${status})`);
+      return;
+    }
+    await this.onSysComplete(item);
+  }
+
+  /** 任务当前是否处于暂停态（独立方法避免闭包内赋值导致的类型收窄误报） */
+  private static isPaused(item: DownloadTaskItem): boolean {
+    return item.status === TransferStatus.PAUSED;
   }
 
   /** 绑定系统任务的进度/完成/暂停/失败/删除事件 */
@@ -703,6 +811,22 @@ export class DownloadService {
       if (item.status === TransferStatus.PENDING) {
         this.removeFromWaiting(item);
         item.status = TransferStatus.PAUSED;
+        return;
+      }
+      if (item.status === TransferStatus.UPLOADING) {
+        // P2P 流式下载：取消通道流并置暂停（半成品由下载协程收尾时清理，恢复时重新开始）
+        const cancel: (() => void) | undefined = this.p2pCancels.get(item.id);
+        this.p2pCancels.delete(item.id);
+        if (cancel !== undefined) {
+          try {
+            cancel();
+          } catch (_e) {
+            // 取消失败忽略
+          }
+        }
+        item.status = TransferStatus.PAUSED;
+        this.running.delete(item.id);
+        this.schedulePump();
       }
       return;
     }
@@ -747,6 +871,17 @@ export class DownloadService {
     }
     this.removeFromWaiting(item);
     this.running.delete(item.id);
+
+    // P2P 流式下载任务：先取消通道请求（临时文件在下方 else 分支清理）
+    const p2pCancel: (() => void) | undefined = this.p2pCancels.get(item.id);
+    if (p2pCancel !== undefined) {
+      this.p2pCancels.delete(item.id);
+      try {
+        p2pCancel();
+      } catch (_e) {
+        // 取消失败忽略
+      }
+    }
 
     const sysTask = item.sysTask;
     item.sysTask = undefined;
@@ -808,6 +943,16 @@ export class DownloadService {
     const base: string = client.baseUrl;
     const token: string = client.accessToken ?? '';
     return `${base}/api/file/download?path=${encodeURIComponent(remotePath)}&accessToken=${token}`;
+  }
+
+  /** P2P 通道下载请求路径（对齐 Flutter getDownloadUrl 的 p2p 分支：附带 accessToken + p2pChannel=download） */
+  private buildP2pDownloadPath(remotePath: string): string {
+    const token: string = (APIClient.getInstance().accessToken ?? '').trim();
+    let path: string = `/api/file/download?path=${encodeURIComponent(remotePath)}`;
+    if (token.length > 0) {
+      path += `&accessToken=${encodeURIComponent(token)}`;
+    }
+    return path + '&p2pChannel=download';
   }
 
   /** 系统下载失败码 → 可读文案 */
