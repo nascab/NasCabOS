@@ -74,7 +74,9 @@ export struct UploadCenterPage {
     if (this.currentTab === 1 && this.ctrl.hasCompleted()) {
       BorderedIconButton({
         icon: $r('sys.symbol.trash'),
-        iconColor: this.palette().onSurface,
+        // 标题栏为深色 appBar：图标/描边跟随前景色，避免浅色模式下深色图标贴在深蓝底上
+        strokeColor: AppTheme.withAlpha(this.palette().appBarFg, 0.35),
+        iconColor: this.palette().appBarFg,
         onTap: (): void => {
           this.ctrl.clearCompleted();
         }
