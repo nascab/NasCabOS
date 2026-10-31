@@ -1,5 +1,6 @@
 import { L10n } from '../../../core/localization/L10n';
 import { PhotoSmartAlbumItem } from '../models/PhotoAlbumModels';
+import { PhotoSmartAlbumHolidays } from './PhotoSmartAlbumHoliday';
 
 /**
  * 智能相册筛选条件描述文本（对齐 Flutter PhotoSmartAlbumController.buildAlbumTooltipText）
@@ -16,6 +17,15 @@ export class SmartAlbumTooltip {
 
     if (type === 'smart_date') {
       const mode = SmartAlbumTooltip.strOr(filter['mode'], '');
+      if (mode === 'holiday') {
+        const holiday = SmartAlbumTooltip.strOr(filter['holiday'], '');
+        if (!PhotoSmartAlbumHolidays.isValidKey(holiday)) {
+          return '';
+        }
+        const p = new Map<string, string>();
+        p.set('holiday', PhotoSmartAlbumHolidays.nameOf(holiday));
+        return L10n.t('smart_album_tooltip_holiday', '节假日：@holiday', p);
+      }
       if (mode === 'anniversary') {
         const repeat = SmartAlbumTooltip.strOr(filter['repeat'], 'year');
         const hasDay = filter['day'] !== undefined && filter['day'] !== null;

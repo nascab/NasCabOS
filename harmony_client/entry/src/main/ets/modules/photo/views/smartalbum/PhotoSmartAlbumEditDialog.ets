@@ -2,6 +2,7 @@ import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
 import { PickOption, showOptionPickSheet } from '../../../../common/components/OptionPickSheet';
 import { PhotoSmartAlbumItem } from '../../models/PhotoAlbumModels';
+import { PhotoSmartAlbumHolidays } from '../../utils/PhotoSmartAlbumHoliday';
 import { showPhotoDatePickerSheet } from './PhotoDatePickerSheet';
 
 /**
@@ -124,10 +125,19 @@ function parseConditionItems(fc: Record<string, Object>): SmartConditionItem[] {
 /** 解析日期模式（对齐 Flutter _parseDateMode，默认 fixed） */
 function parseDateMode(fc: Record<string, Object>): string {
   const m = smartStr(fc['mode']);
-  if (m === 'anniversary' || m === 'fixed' || m === 'range') {
+  if (m === 'anniversary' || m === 'fixed' || m === 'range' || m === 'holiday') {
     return m;
   }
   return 'fixed';
+}
+
+/** 解析节假日 key（对齐 Flutter _parseHolidayKey，非法回退首个节假日） */
+function parseHolidayKey(fc: Record<string, Object>): string {
+  const v = smartStr(fc['holiday']);
+  if (PhotoSmartAlbumHolidays.isValidKey(v)) {
+    return v;
+  }
+  return PhotoSmartAlbumHolidays.defaultKey;
 }
 
 /** 解析固定日期操作符（对齐 Flutter _parseFixedOperator，默认 on） */
@@ -188,8 +198,10 @@ export struct PhotoSmartAlbumEditDialog {
   @Local name: string = '';
   /** smart_date | condition */
   @Local type: string = 'smart_date';
-  /** fixed | range | anniversary */
+  /** fixed | range | anniversary | holiday */
   @Local dateMode: string = 'anniversary';
+  /** 节假日 key（dateMode=holiday 时生效） */
+  @Local holidayKey: string = PhotoSmartAlbumHolidays.defaultKey;
   /** on | before | after */
   @Local fixedOperator: string = 'on';
   /** 'yyyy-MM-dd'，空串表示未选择 */
@@ -214,6 +226,7 @@ export struct PhotoSmartAlbumEditDialog {
       this.conditionLogic = parseConditionLogic(fc);
       this.conditionItems = parseConditionItems(fc);
       this.dateMode = parseDateMode(fc);
+      this.holidayKey = parseHolidayKey(fc);
       this.fixedOperator = parseFixedOperator(fc);
       this.fixedDate = parseDateStr(fc['date']);
       this.rangeStart = parseDateStr(fc['start']);
@@ -226,6 +239,7 @@ export struct PhotoSmartAlbumEditDialog {
       const now = new Date();
       this.type = 'smart_date';
       this.dateMode = 'anniversary';
+      this.holidayKey = PhotoSmartAlbumHolidays.defaultKey;
       this.fixedOperator = 'on';
       this.fixedDate = formatDateYmd(now.getFullYear(), now.getMonth() + 1, now.getDate());
       this.anniversaryRepeat = 'year';
@@ -238,6 +252,16 @@ export struct PhotoSmartAlbumEditDialog {
 
   private buildFilterContent(): Record<string, Object> | undefined {
     if (this.type === 'smart_date') {
+      if (this.dateMode === 'holiday') {
+        if (!PhotoSmartAlbumHolidays.isValidKey(this.holidayKey)) {
+          return undefined;
+        }
+        const m: Record<string, Object> = {
+          'mode': 'holiday',
+          'holiday': this.holidayKey
+        };
+        return m;
+      }
       if (this.dateMode === 'fixed') {
         if (this.fixedDate.length === 0) {
           return undefined;
@@ -363,9 +387,26 @@ export struct PhotoSmartAlbumEditDialog {
       new PickOption('range', L10n.t('smart_album_date_mode_range', '日期范围')),
       new PickOption('anniversary', L10n.t('smart_album_date_mode_anniversary', '纪念日'))
     ];
+    // 节假日模式需要新版本服务端支持；编辑已存在的节假日相册时始终展示
+    if (PhotoSmartAlbumHolidays.isSupported() || this.dateMode === 'holiday') {
+      opts.push(new PickOption('holiday', L10n.t('smart_album_date_mode_holiday', '节假日')));
+    }
     showOptionPickSheet(L10n.t('smart_album_date_mode', '模式'), opts, this.dateMode, (k: string): void => {
       this.dateMode = k;
     });
+  }
+
+  /** 节假日选择（对齐 Flutter SmartAlbumHolidayField：选中后自动用节日名称替换相册名称） */
+  private pickHoliday(): void {
+    const opts: PickOption[] = [];
+    for (const h of PhotoSmartAlbumHolidays.items) {
+      opts.push(new PickOption(h.key, h.name));
+    }
+    showOptionPickSheet(L10n.t('smart_album_holiday_label', '节假日'), opts, this.holidayKey,
+      (k: string): void => {
+        this.holidayKey = k;
+        this.name = PhotoSmartAlbumHolidays.nameOf(k);
+      });
   }
 
   private pickFixedOperator(): void {
@@ -602,6 +643,24 @@ export struct PhotoSmartAlbumEditDialog {
       : L10n.t('condition_album', '条件相册');
   }
 
+  private dateModeValue(): string {
+    if (this.dateMode === 'fixed') {
+      return L10n.t('smart_album_date_mode_fixed', '指定日期');
+    }
+    if (this.dateMode === 'range') {
+      return L10n.t('smart_album_date_mode_range', '日期范围');
+    }
+    if (this.dateMode === 'holiday') {
+      return L10n.t('smart_album_date_mode_holiday', '节假日');
+    }
+    return L10n.t('smart_album_date_mode_anniversary', '纪念日');
+  }
+
+  private holidayDescription(): string {
+    const desc = PhotoSmartAlbumHolidays.descriptionOf(this.holidayKey);
+    return desc === undefined ? '' : desc;
+  }
+
   private fixedOperatorValue(): string {
     if (this.fixedOperator === 'before') {
       return L10n.t('smart_album_date_op_before_inclusive', '早于（含）');
@@ -706,12 +765,23 @@ export struct PhotoSmartAlbumEditDialog {
   @Builder
   SmartDateEditor() {
     Column() {
-      this.SelectRow(L10n.t('smart_album_date_mode', '模式'),
-        this.dateMode === 'fixed' ? L10n.t('smart_album_date_mode_fixed', '指定日期')
-          : (this.dateMode === 'range' ? L10n.t('smart_album_date_mode_range', '日期范围')
-            : L10n.t('smart_album_date_mode_anniversary', '纪念日')), (): void => {
-          this.pickDateMode();
-        })
+      this.SelectRow(L10n.t('smart_album_date_mode', '模式'), this.dateModeValue(), (): void => {
+        this.pickDateMode();
+      })
+
+      if (this.dateMode === 'holiday') {
+        this.SelectRow(L10n.t('smart_album_holiday_label', '节假日'),
+          PhotoSmartAlbumHolidays.nameOf(this.holidayKey), (): void => {
+            this.pickHoliday();
+          })
+        if (this.holidayDescription().length > 0) {
+          Text(this.holidayDescription())
+            .fontSize(11)
+            .fontColor(AppTheme.current().hint)
+            .width('100%')
+            .margin({ top: 6 })
+        }
+      }
 
       if (this.dateMode === 'fixed') {
         this.SelectRow(L10n.t('smart_album_date_condition', '条件'), this.fixedOperatorValue(),

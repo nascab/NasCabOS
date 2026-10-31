@@ -13,6 +13,7 @@ import {
   TimelineDateItem, TimelinePhotoItem, TimelinePathItem, TimelineDateInfo
 } from '../models/PhotoModels';
 import { TimelineFilter, PhotoTimelineApiService } from '../service/PhotoTimelineApiService';
+import { PhotoAlbumApiService } from '../service/PhotoAlbumApiService';
 
 /** 每次分页请求的照片数量下限（对齐 Flutter minGetCount） */
 const MIN_GET_COUNT = 300;
@@ -1320,19 +1321,43 @@ export class TimelineController {
     return `${dir}${p.filename}`;
   }
 
-  /** 添加到相册（依赖相册列表选择页，Phase2 接入） */
-  async addToAlbumSelected(): Promise<void> {
-    if (this.selectedFileHashes().length === 0) {
+  /** 将选中照片加入指定相册（对齐 Flutter addToAlbumSelected：成功后提示并退出多选） */
+  async addSelectedToAlbum(albumId: number): Promise<void> {
+    const hashes = this.selectedFileHashes();
+    if (albumId <= 0 || hashes.length === 0) {
       return;
     }
-    ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+    try {
+      const res = await new PhotoAlbumApiService().addAlbumIndexes(albumId, hashes);
+      if (res.success) {
+        ToastUtil.show(L10n.t('operation_success', '操作成功'));
+        this.exitMultiSelectMode();
+      } else {
+        ToastUtil.show(res.message ?? L10n.t('operation_failed', '操作失败'));
+      }
+    } catch (_e) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+    }
   }
 
-  /** 从当前相册移除（依赖相册 API，Phase2 接入） */
+  /** 从当前相册移除选中照片（对齐 Flutter removeFromAlbumSelected：成功后清理本地数据并退出多选） */
   async removeFromAlbumSelected(): Promise<void> {
-    if (this.albumId <= 0 || this.selectedFileHashes().length === 0) {
+    const currentAlbumId = this.albumId;
+    const hashes = this.selectedFileHashes();
+    if (currentAlbumId <= 0 || hashes.length === 0) {
       return;
     }
-    ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+    try {
+      const res = await new PhotoAlbumApiService().removeAlbumIndexes(currentAlbumId, hashes);
+      if (res.success) {
+        this.removeIdsAndCleanUp(new Set<number>(this.selectedIds));
+        this.exitMultiSelectMode();
+        ToastUtil.show(L10n.t('operation_success', '操作成功'));
+      } else {
+        ToastUtil.show(res.message ?? L10n.t('operation_failed', '操作失败'));
+      }
+    } catch (_e) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+    }
   }
 }

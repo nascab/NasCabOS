@@ -1,9 +1,13 @@
 import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
 import { ToastUtil } from '../../../../common/ToastUtil';
+import { NavUtil } from '../../../../common/NavUtil';
+import { AppRouter } from '../../../../router/AppRouter';
 import { SheetListItem, SheetParamsBase, SheetUtil } from '../../../../common/SheetUtil';
 import { TimelineController } from '../../controllers/TimelineController';
 import { TimelinePhotoItem } from '../../models/PhotoModels';
+import { PhotoAlbumItem } from '../../models/PhotoAlbumModels';
+import { PhotoAlbumListPageParam } from '../album/PhotoAlbumListPage';
 
 /**
  * 时间线多选底部操作栏（对齐 Flutter AppPhotoTimelineMultiSelectBottomBar 移动端）：
@@ -129,7 +133,25 @@ export struct PhotoMultiSelectBar {
     p.ctrl = ctrl;
     p.isFaceAlbum = isFaceAlbum;
     p.singlePhoto = selected.length === 1 ? selected[0] : undefined;
+    p.onAddToAlbum = (): void => {
+      this.openAddToAlbum();
+    };
     SheetUtil.present(p, wrapBuilder(MoreSheetContent));
+  }
+
+  /** 打开相册选择页（选择模式），选定后把选中照片加入该相册（对齐 Flutter addToAlbumSelected） */
+  private openAddToAlbum(): void {
+    if (this.disabled()) {
+      return;
+    }
+    const ctrl = this.ctrl;
+    const param = new PhotoAlbumListPageParam();
+    param.type = 'all';
+    param.selectionMode = true;
+    param.onSelected = (album: PhotoAlbumItem): void => {
+      void ctrl.addSelectedToAlbum(album.id);
+    };
+    NavUtil.push(AppRouter.PHOTO_ALBUM_LIST, param);
   }
 }
 
@@ -137,6 +159,8 @@ class MoreSheetParams extends SheetParamsBase {
   ctrl: TimelineController = new TimelineController();
   isFaceAlbum: boolean = false;
   singlePhoto: TimelinePhotoItem | undefined = undefined;
+  onAddToAlbum: () => void = (): void => {
+  };
 }
 
 @Builder
@@ -169,7 +193,7 @@ function MoreSheetContent(p: MoreSheetParams) {
       title: L10n.t('add_to_album', '添加到相册'),
       onSelect: (): void => {
         p.close();
-        void p.ctrl.addToAlbumSelected();
+        p.onAddToAlbum();
       }
     })
     if (p.ctrl.albumId > 0) {

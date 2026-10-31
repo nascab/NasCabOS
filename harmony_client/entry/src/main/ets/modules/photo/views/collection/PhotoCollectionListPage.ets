@@ -221,12 +221,17 @@ export struct PhotoCollectionListPage {
     Row({ space: 8 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.magnifyingglass'),
+        // 标题栏为深色 appBar：图标/描边跟随前景色，避免浅色模式下深色图标贴在深蓝底上
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openSearch();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.plus'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.showCreateDialog = true;
         }

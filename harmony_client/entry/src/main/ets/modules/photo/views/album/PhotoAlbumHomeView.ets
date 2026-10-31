@@ -2,6 +2,7 @@ import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../../core/network/ApiUrls';
 import { AppImage } from '../../../../common/components/AppImage';
+import { CircleCheckbox } from '../../../../common/components/CircleCheckbox';
 import { DialogUtil } from '../../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../../common/SheetUtil';
 import { AppEventBus, EVENT_PHOTO_ALBUM_OVERVIEW_CHANGED } from '../../../../common/AppEventBus';
@@ -147,10 +148,13 @@ export struct PhotoAlbumCardView {
       Column() {
         Row({ space: 6 }) {
           if (this.showSelection) {
-            this.CornerButton(this.selected ? $r('sys.symbol.checkmark_square_fill') : $r('sys.symbol.square'),
-              (): void => {
+            CircleCheckbox({
+              value: this.selected,
+              uncheckedBorderColor: '#FFFFFF',
+              onChanged: (_c: boolean): void => {
                 this.onSelectTap();
-              }, this.selected ? AppTheme.current().primary : '#FFFFFF')
+              }
+            })
           }
           if (this.showInfo) {
             this.CornerButton($r('sys.symbol.info_circle'), (): void => {

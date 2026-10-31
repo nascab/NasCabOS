@@ -33,7 +33,7 @@ export struct BorderedIconButton {
     .backgroundColor(this.effectiveBg())
     .border({
       width: 1,
-      color: this.isEnabled ? this.effectiveBorderColor() : AppTheme.current().hint
+      color: this.isEnabled ? this.effectiveBorderColor() : this.effectiveDisabledBorderColor()
     })
     .opacity(this.isEnabled ? 1 : 0.45)
     .onClick(() => {
@@ -48,6 +48,14 @@ export struct BorderedIconButton {
       return this.strokeColor;
     }
     return this.active ? AppTheme.current().primary : AppTheme.current().divider;
+  }
+
+  /** 禁用态描边：指定了描边色时沿用（配合整体 45% 透明度即可），否则退回 hint */
+  private effectiveDisabledBorderColor(): string {
+    if (this.strokeColor.length > 0) {
+      return this.strokeColor;
+    }
+    return AppTheme.current().hint;
   }
 
   private effectiveIconColor(): string {

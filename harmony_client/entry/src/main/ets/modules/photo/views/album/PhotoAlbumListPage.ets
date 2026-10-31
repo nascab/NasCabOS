@@ -413,20 +413,35 @@ export struct PhotoAlbumListPage {
     Row({ space: 8 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.magnifyingglass'),
+        // 标题栏为深色 appBar：图标/描边跟随前景色，避免浅色模式下深色图标贴在深蓝底上
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openSearch();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.slider_horizontal_2'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openFilterSortSheet();
         }
       })
       if (this.param.selectionMode) {
         BorderedIconButton({
+          icon: $r('sys.symbol.plus'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
+          onTap: (): void => {
+            this.showCreateDialog = true;
+          }
+        })
+        BorderedIconButton({
           icon: $r('sys.symbol.checkmark'),
           isEnabled: this.selectedAlbumId > 0,
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.confirmSelection();
           }
@@ -434,6 +449,8 @@ export struct PhotoAlbumListPage {
       } else {
         BorderedIconButton({
           icon: $r('sys.symbol.plus'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.showCreateDialog = true;
           }
@@ -456,28 +473,9 @@ export struct PhotoAlbumListPage {
         .height('100%')
         .justifyContent(FlexAlign.Center)
       } else if (this.ctrl.items.length === 0) {
-        // 空态：选择模式给出创建按钮，否则空状态占位
+        // 空态：统一显示无数据占位（选择模式下不再提供创建入口）
         Column() {
-          if (this.param.selectionMode) {
-            Button() {
-              Row({ space: 8 }) {
-                SymbolGlyph($r('sys.symbol.plus'))
-                  .fontSize(18)
-                  .fontColor([AppTheme.current().buttonText])
-                Text(L10n.t('create', '创建'))
-                  .fontSize(15)
-                  .fontColor(AppTheme.current().buttonText)
-              }
-            }
-            .height(44)
-            .borderRadius(12)
-            .backgroundColor(AppTheme.current().buttonBg)
-            .onClick(() => {
-              this.showCreateDialog = true;
-            })
-          } else {
-            EmptyState({ message: L10n.t('no_data', '暂无数据') })
-          }
+          EmptyState({ message: L10n.t('no_data', '暂无数据') })
         }
         .width('100%')
         .height('100%')
@@ -521,7 +519,10 @@ export struct PhotoAlbumListPage {
           })
             .aspectRatio(this.gridColumnCount() === 1 ? 2.3 : 1.25)
         }
-      }, (album: PhotoAlbumItem) => `album_${album.id}_${album.name}_${album.isPublic}`)
+      // 键中带上选中态：ForEach 不会因 selectedAlbumId 变化重跑 itemBuilder，
+      // 只有键变化才会重建该卡片，从而刷新左上角勾选状态
+      }, (album: PhotoAlbumItem) =>
+        `album_${album.id}_${album.name}_${album.isPublic}_${this.param.selectionMode ? 's' : 'n'}_${this.selectedAlbumId === album.id ? '1' : '0'}`)
       // 页脚：加载中 / 没有更多 / 加载更多
       GridItem() {
         this.Footer()
