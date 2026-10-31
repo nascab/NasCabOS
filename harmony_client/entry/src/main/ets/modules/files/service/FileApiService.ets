@@ -1,7 +1,7 @@
 import { APIClient } from '../../../core/network/APIClient';
 import { APIResponse } from '../../../core/network/APIResponse';
 import { JsonCodec } from '../../../common/JsonTypes';
-import { FileItem, FileListData, FileSearchData } from '../models/FileModels';
+import { ArchiveListData, FileItem, FileListData, FileSearchData } from '../models/FileModels';
 
 /**
  * 文件模块 API 服务（对齐 Flutter file_api_service.dart，仅保留移动端文件浏览器使用到的端点）
@@ -76,6 +76,22 @@ export class FileApiService {
     const body: Record<string, Object> = { 'base': base, 'name': name, 'type': type };
     return this.api().apiPost<Object>('/api/file/create', body, undefined, undefined, undefined,
       (d: Object, _c: number) => JsonCodec.parse<FileItem>(d) as Object);
+  }
+
+  /** 列出压缩包条目（对齐 Flutter archive preview：file_hash / file_path 二选一） */
+  async listArchiveEntries(filePath: string, fileHash: string): Promise<APIResponse<ArchiveListData>> {
+    const body: Record<string, Object> = { 'only_img': false };
+    const hash = fileHash.trim();
+    if (hash.length > 0) {
+      body['file_hash'] = hash;
+    }
+    const p = filePath.trim();
+    if (p.length > 0) {
+      body['file_path'] = p;
+    }
+    return this.api().apiPost<ArchiveListData>('/api/book/archive/list', body,
+      undefined, undefined, undefined,
+      (d: Object, _c: number) => JsonCodec.parse<ArchiveListData>(d));
   }
 
   /** 检查目录是否支持写入（新建文件夹/文件） */

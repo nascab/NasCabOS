@@ -1,11 +1,15 @@
 import { L10n } from '../../../../core/localization/L10n';
 import { AppTheme } from '../../../../core/theme/AppTheme';
+import { ApiUrls } from '../../../../core/network/ApiUrls';
 import { ToastUtil } from '../../../../common/ToastUtil';
+import { DialogUtil } from '../../../../common/DialogUtil';
 import { NavUtil } from '../../../../common/NavUtil';
 import { AppRouter } from '../../../../router/AppRouter';
-import { SheetListItem, SheetParamsBase, SheetUtil } from '../../../../common/SheetUtil';
+import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../../common/SheetUtil';
+import { AppImage } from '../../../../common/components/AppImage';
 import { TimelineController } from '../../controllers/TimelineController';
-import { TimelinePhotoItem } from '../../models/PhotoModels';
+import { TimelinePhotoItem, TimelineDetectedFaceItem } from '../../models/PhotoModels';
+import { AiFaceItem } from '../../models/PhotoAiModels';
 import { PhotoAlbumItem } from '../../models/PhotoAlbumModels';
 import { PhotoAlbumListPageParam } from '../album/PhotoAlbumListPage';
 
@@ -49,7 +53,7 @@ export struct PhotoMultiSelectBar {
             !this.disabled(),
             false,
             (): void => {
-              ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+              this.openMoveToFace();
             })
           this.BarAction(
             $r('sys.symbol.minus_circle'),
@@ -57,7 +61,7 @@ export struct PhotoMultiSelectBar {
             !this.disabled(),
             false,
             (): void => {
-              ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+              void this.ctrl.removeSelectedFromFaceAlbum();
             })
         }
         this.BarAction(
@@ -136,7 +140,74 @@ export struct PhotoMultiSelectBar {
     p.onAddToAlbum = (): void => {
       this.openAddToAlbum();
     };
+    p.onShowPhotoFaces = (photo: TimelinePhotoItem): void => {
+      this.showPhotoDetectedFaces(photo);
+    };
     SheetUtil.present(p, wrapBuilder(MoreSheetContent));
+  }
+
+  /**
+   * 选择目标人脸并把选中照片移动过去
+   * （对齐 Flutter moveSelectedToOtherFace + _pickTargetFaceForMove，移动本身不再二次确认）。
+   */
+  private openMoveToFace(): void {
+    if (this.disabled()) {
+      return;
+    }
+    const ctrl = this.ctrl;
+    void ctrl.loadFaceMoveTargets().then((faces: AiFaceItem[]): void => {
+      if (faces.length === 0) {
+        void DialogUtil.showInfoDialog(L10n.t('tip', '提示'),
+          L10n.t('face_move_target_empty', '没有其他可移动的人脸'));
+        return;
+      }
+      const rows: FaceRowData[] = [];
+      for (const face of faces) {
+        const row = new FaceRowData();
+        row.faceId = face.faceId;
+        row.faceCount = face.faceCount;
+        row.coverFileHash = face.coverFileHash;
+        row.name = face.name;
+        row.isHide = face.isHide;
+        rows.push(row);
+      }
+      const p = new FaceListSheetParams();
+      p.title = L10n.t('face_move_to_other_face', '移动到其他人脸');
+      p.rows = rows;
+      p.pickable = true;
+      p.onPick = (row: FaceRowData): void => {
+        p.close();
+        void ctrl.moveSelectedToOtherFace(row.faceId);
+      };
+      SheetUtil.present(p, wrapBuilder(FaceListSheetContent));
+    });
+  }
+
+  /** 查看单张照片中检测到的人脸（对齐 Flutter showPhotoDetectedFaces） */
+  private showPhotoDetectedFaces(photo: TimelinePhotoItem): void {
+    const fileHash = photo.fileHash.trim();
+    if (fileHash.length === 0) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      return;
+    }
+    const ctrl = this.ctrl;
+    void ctrl.loadPhotoDetectedFaces(photo).then((faces: TimelineDetectedFaceItem[]): void => {
+      const rows: FaceRowData[] = [];
+      for (const face of faces) {
+        const row = new FaceRowData();
+        row.faceId = face.faceId;
+        row.faceCount = face.faceCount;
+        row.coverFileHash = fileHash;
+        row.name = face.name;
+        row.isHide = face.isHide;
+        rows.push(row);
+      }
+      const p = new FaceListSheetParams();
+      p.title = L10n.t('face_show_photo_faces', '查看照片人脸');
+      p.rows = rows;
+      p.pickable = false;
+      SheetUtil.present(p, wrapBuilder(FaceListSheetContent));
+    });
   }
 
   /** 打开相册选择页（选择模式），选定后把选中照片加入该相册（对齐 Flutter addToAlbumSelected） */
@@ -161,6 +232,8 @@ class MoreSheetParams extends SheetParamsBase {
   singlePhoto: TimelinePhotoItem | undefined = undefined;
   onAddToAlbum: () => void = (): void => {
   };
+  onShowPhotoFaces: (photo: TimelinePhotoItem) => void = (_p: TimelinePhotoItem): void => {
+  };
 }
 
 @Builder
@@ -184,7 +257,10 @@ function MoreSheetContent(p: MoreSheetParams) {
         title: L10n.t('face_show_photo_faces', '查看照片人脸'),
         onSelect: (): void => {
           p.close();
-          ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+          const photo = p.singlePhoto;
+          if (photo !== undefined) {
+            p.onShowPhotoFaces(photo);
+          }
         }
       })
     }
@@ -229,4 +305,203 @@ function MoreSheetContent(p: MoreSheetParams) {
   .borderRadius({ topLeft: 16, topRight: 16 })
   .backgroundColor(AppTheme.current().surfaceBg)
   .padding({ bottom: 20 })
+}
+
+// ===== 人脸列表弹层（移动目标选择 / 查看照片人脸） =====
+
+/** 人脸行数据（移动目标来自 AiFaceItem，查看照片人脸来自 TimelineDetectedFaceItem + 照片 fileHash） */
+class FaceRowData {
+  faceId: number = 0;
+  faceCount: number = 0;
+  coverFileHash: string = '';
+  name: string = '';
+  isHide: boolean = false;
+}
+
+class FaceListSheetParams extends SheetParamsBase {
+  title: string = '';
+  rows: FaceRowData[] = [];
+  /** 是否可选择（true=移动目标选择；false=只读查看） */
+  pickable: boolean = false;
+  onPick: (row: FaceRowData) => void = (_r: FaceRowData): void => {
+  };
+}
+
+@ComponentV2
+struct FaceListRowItem {
+  @Param row: FaceRowData = new FaceRowData();
+  @Param avatarSize: number = 36;
+  @Param onTap: (row: FaceRowData) => void = (_r: FaceRowData): void => {
+  };
+  @Local avatarUrl: string = '';
+
+  aboutToAppear(): void {
+    void this.resolveUrl();
+  }
+
+  /** item 复用时重新解析头像地址 */
+  @Monitor('row', 'row.faceId')
+  onRowChange(): void {
+    this.avatarUrl = '';
+    void this.resolveUrl();
+  }
+
+  private async resolveUrl(): Promise<void> {
+    const faceId = this.row.faceId;
+    if (faceId <= 0) {
+      return;
+    }
+    try {
+      const url = await ApiUrls.getFaceImageUrl(faceId, 120, 85, this.row.coverFileHash);
+      if (this.row.faceId === faceId) {
+        this.avatarUrl = url;
+      }
+    } catch (_e) {
+      this.avatarUrl = '';
+    }
+  }
+
+  private displayName(): string {
+    const name = this.row.name.trim();
+    return name.length > 0 ? name : `(${L10n.t('face_unnamed', '未命名')})`;
+  }
+
+  private subtitle(): string {
+    const base = L10n.t('total_count', '共 @count 张', L10n.paramsOf('count', `${this.row.faceCount}`));
+    return this.row.isHide ? `${base} · ${L10n.t('face_action_hide', '已隐藏')}` : base;
+  }
+
+  build() {
+    Row({ space: 12 }) {
+      Stack() {
+        if (this.avatarUrl.length > 0) {
+          AppImage({ url: this.avatarUrl, imageRadius: this.avatarSize / 2 })
+        } else {
+          Image($rawfile('icons/no_data.png'))
+            .width(this.avatarSize)
+            .height(this.avatarSize)
+            .objectFit(ImageFit.Cover)
+            .borderRadius(this.avatarSize / 2)
+            .draggable(false)
+        }
+      }
+      .width(this.avatarSize)
+      .height(this.avatarSize)
+      .borderRadius(this.avatarSize / 2)
+      .border({ width: 1, color: AppTheme.withAlpha(AppTheme.current().onSurface, 0.08) })
+      .clip(true)
+
+      Column({ space: 4 }) {
+        Text(this.displayName())
+          .fontSize(15)
+          .fontColor(AppTheme.current().onSurface)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+        Text(this.subtitle())
+          .fontSize(12)
+          .fontColor(AppTheme.current().hint)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+    .onClick(() => {
+      this.onTap(this.row);
+    })
+  }
+}
+
+@ComponentV2
+struct FaceListSheetBody {
+  @Param p: FaceListSheetParams = new FaceListSheetParams();
+  @Local keyword: string = '';
+
+  private filteredRows(): FaceRowData[] {
+    const kw = this.keyword.trim().toLowerCase();
+    if (kw.length === 0) {
+      return this.p.rows;
+    }
+    const out: FaceRowData[] = [];
+    for (const row of this.p.rows) {
+      const name = row.name.trim().length > 0 ? row.name.trim() : L10n.t('face_unnamed', '未命名');
+      if (name.toLowerCase().includes(kw) || `${row.faceId}`.includes(kw)) {
+        out.push(row);
+      }
+    }
+    return out;
+  }
+
+  build() {
+    Column() {
+      SheetHandle()
+      if (this.p.title.length > 0) {
+        Text(this.p.title)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(AppTheme.current().onSurface)
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 4 })
+      }
+      if (this.p.pickable) {
+        TextInput({ text: this.keyword, placeholder: L10n.t('search', '搜索') })
+          .fontSize(14)
+          .fontColor(AppTheme.current().onSurface)
+          .placeholderColor(AppTheme.current().hint)
+          .backgroundColor(AppTheme.current().inputFill)
+          .borderRadius(8)
+          .border({ width: 1, color: AppTheme.current().inputBorder })
+          .height(40)
+          .width('100%')
+          .margin({ left: 16, right: 16, top: 4, bottom: 8 })
+          .onChange((v: string): void => {
+            this.keyword = v;
+          })
+      }
+      if (this.filteredRows().length === 0) {
+        Column() {
+          Text(this.p.pickable
+            ? L10n.t('no_data', '暂无数据')
+            : L10n.t('face_photo_faces_empty', '照片中未检测到人脸'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().hint)
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+      } else {
+        List() {
+          ForEach(this.filteredRows(), (row: FaceRowData) => {
+            ListItem() {
+              FaceListRowItem({
+                row: row,
+                onTap: (r: FaceRowData): void => {
+                  if (this.p.pickable) {
+                    this.p.onPick(r);
+                  }
+                }
+              })
+            }
+          }, (row: FaceRowData) => `${row.faceId}_${row.faceCount}`)
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .divider({ strokeWidth: 0.5, color: AppTheme.current().divider })
+      }
+      Blank().height(16)
+    }
+    .width('100%')
+    .height(this.p.pickable ? 460 : 340)
+    .borderRadius({ topLeft: 16, topRight: 16 })
+    .backgroundColor(AppTheme.current().surfaceBg)
+  }
+}
+
+@Builder
+function FaceListSheetContent(p: FaceListSheetParams) {
+  FaceListSheetBody({ p: p })
 }

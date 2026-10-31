@@ -451,18 +451,24 @@ export struct VideoCollectionListPage {
     Row({ space: 8 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.magnifyingglass'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openSearch();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.slider_horizontal_2'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.showSortSheet();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.plus'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.showCreateDialog();
         }

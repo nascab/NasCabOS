@@ -116,6 +116,14 @@ export class FileSuffixes {
     '.pdf', '.txt', '.md', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
     '.csv', '.epub', '.mobi', '.azw3'
   ];
+  /** 可用文本编辑器打开的源码/文本后缀（对齐 Flutter _isTextItem） */
+  static readonly TEXT_EDIT: string[] = [
+    '.txt', '.md', '.markdown', '.vue', '.properties', '.js', '.jsx', '.ts', '.tsx',
+    '.py', '.dart', '.java', '.c', '.cc', '.cpp', '.h', '.hpp', '.go', '.rs', '.php',
+    '.rb', '.lua', '.sql', '.toml', '.env', '.gradle', '.kt', '.swift', '.scss', '.less',
+    '.svelte', '.gitignore', '.json', '.yaml', '.yml', '.xml', '.html', '.css', '.sh',
+    '.log', '.ini', '.conf'
+  ];
 
   static isVideo(it: FileItem): boolean {
     return FileSuffixes.VIDEO.includes(FileModelAccess.ext(it).toLowerCase());
@@ -136,6 +144,37 @@ export class FileSuffixes {
   static isDocument(it: FileItem): boolean {
     return FileSuffixes.DOCUMENT.includes(FileModelAccess.ext(it).toLowerCase());
   }
+
+  /** 带点小写后缀（ext 缺省时回退文件名） */
+  static extWithDot(it: FileItem): string {
+    const e = FileModelAccess.ext(it).trim().toLowerCase();
+    if (e.length > 0) {
+      return e.startsWith('.') ? e : `.${e}`;
+    }
+    const n = FileModelAccess.fileName(it);
+    const dot = n.lastIndexOf('.');
+    return dot >= 0 && dot < n.length - 1 ? n.substring(dot).toLowerCase() : '';
+  }
+
+  /** 是否可用文本编辑器打开（对齐 Flutter _isTextItem） */
+  static isTextEditable(it: FileItem): boolean {
+    if (FileModelAccess.isDir(it)) {
+      return false;
+    }
+    return FileSuffixes.TEXT_EDIT.includes(FileSuffixes.extWithDot(it));
+  }
+}
+
+/** POST /api/book/archive/list 响应 data */
+export class ArchiveListData {
+  items?: Object[];
+  size?: number;
+}
+
+/** 压缩包条目（path 为包内相对路径，size 为解压后大小） */
+export class ArchiveEntryData {
+  path: string = '';
+  size: number = 0;
 }
 
 /** 文件名以 `.` 开头视为隐藏（与 Flutter file_item_dot_hidden.dart 一致） */

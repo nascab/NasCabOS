@@ -241,18 +241,24 @@ export struct PhotoAiScenesPage {
     Row({ space: 6 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.funnel'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openFilterSheet();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.magnifyingglass'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openSearch();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.arrow_counterclockwise'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           void this.ctrl.refreshScenes();
         }

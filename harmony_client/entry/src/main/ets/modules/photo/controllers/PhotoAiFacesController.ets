@@ -8,6 +8,8 @@ import { AiFaceItem } from '../models/PhotoAiModels';
 import { PhotoAiFacesApiService } from '../service/PhotoAiFacesApiService';
 import { PhotoAiSettingsApiService } from '../service/PhotoAiSettingsApiService';
 import { PhotoTimelinePageParam } from '../views/timeline/PhotoTimelinePage';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 
 /** 每页数量（对齐 Flutter AiFacesController.pageSize = 60） */
 const FACES_PAGE_SIZE = 60;
@@ -202,9 +204,32 @@ export class PhotoAiFacesController {
 
   // ================= 批量动作 =================
 
-  /** 批量下载（对齐 Flutter downloadSelectedFaces：依赖下载中心，迁移后接入） */
-  downloadSelected(): void {
-    ToastUtil.show(L10n.t('feature_coming_soon', '功能开发中'));
+  /** 批量下载（对齐 Flutter downloadSelectedFaces：查询各人脸照片路径后入队并进入下载中心） */
+  async downloadSelected(): Promise<void> {
+    const ids = this.selectedFaceIds.slice();
+    if (ids.length === 0) {
+      return;
+    }
+    const results = await Promise.all(ids.map((id: number): Promise<string[]> => {
+      return this.api.faceDownloadPaths(id);
+    }));
+    const targets: DownloadTarget[] = [];
+    for (const paths of results) {
+      for (const p of paths) {
+        const target: DownloadTarget = { path: p, isDirHint: false };
+        targets.push(target);
+      }
+    }
+    if (targets.length === 0) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      return;
+    }
+    this.exitSelectionMode();
+    NavUtil.push(AppRouter.DOWNLOAD_CENTER);
+    const added: number = await DownloadService.getInstance().enqueue(targets);
+    if (added > 0) {
+      ToastUtil.show(L10n.t('task_added', '任务已添加'));
+    }
   }
 
   /** 单个人脸重命名（对齐 Flutter renameFace：成功后原位更新条目） */

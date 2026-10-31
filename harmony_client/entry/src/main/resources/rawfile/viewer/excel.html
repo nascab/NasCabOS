@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Excel</title>
+    <link rel="stylesheet" href="js-preview-lib/excel.css" />
+    <script src="js-preview-lib/excel.umd.js"></script>
+  </head>
+  <body>
+    <div id="excel" style="width: 100vw; height: 100vh"></div>
+
+    <script>
+      const myExcelPreviewer = jsPreviewExcel.init(document.getElementById('excel'));
+
+      function normalizeP2pUrl(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return s;
+        try {
+          const u = new URL(s, window.location.href);
+          if (u.hostname !== 'p2p.local') return s;
+          return `/__p2p__${u.pathname}${u.search}${u.hash}`;
+        } catch (_) {
+          return s;
+        }
+      }
+
+      function getGetParameter(paramName) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(paramName);
+      }
+
+      const fileUrl = normalizeP2pUrl(getGetParameter('fileUrl'));
+
+      async function prepareExcelPreviewUrl(url) {
+        const u = String(url || '').trim();
+        if (!u) return u;
+        if (!u.includes('/__p2p__/')) return u;
+        try {
+          const res = await fetch(u);
+          if (!res || !res.ok) return u;
+          const blob = await res.blob();
+          const fixedTypeBlob =
+            blob && blob.type
+              ? blob
+              : new Blob([blob], {
+                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                });
+          return URL.createObjectURL(fixedTypeBlob);
+        } catch (_) {
+          return u;
+        }
+      }
+
+      prepareExcelPreviewUrl(fileUrl).then(previewUrl => {
+        myExcelPreviewer
+          .preview(previewUrl)
+          .then(() => {
+            console.log('预览完成');
+            if (String(previewUrl).startsWith('blob:')) {
+              try {
+                URL.revokeObjectURL(previewUrl);
+              } catch (_) {}
+            }
+          })
+          .catch(e => {
+            console.log('预览失败', e);
+            if (String(previewUrl).startsWith('blob:')) {
+              try {
+                URL.revokeObjectURL(previewUrl);
+              } catch (_) {}
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

@@ -12,6 +12,9 @@ import { HomePage } from './HomePage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { LegalPage, LegalPageParam } from './LegalPage';
 import { FileBrowserPage, FileBrowserParam } from '../files/views/FileBrowserPage';
+import { TextEditorPage } from '../files/views/TextEditorPage';
+import { OfficeViewerPage } from '../files/views/OfficeViewerPage';
+import { TextEditorPageParam, OfficeViewerPageParam } from '../files/router/FileRoutes';
 import { FolderViewPage } from '../folder_view/views/FolderViewPage';
 import { FolderViewPageParam } from '../folder_view/router/FolderViewRoutes';
 import { UploadCenterPage, UploadCenterParam } from '../transfer/views/UploadCenterPage';
@@ -443,6 +446,20 @@ struct Index {
     } else if (name === AppRouter.NOTES_EDITOR) {
       NotesEditorPageBuilder(
         param instanceof NotesEditorPageParam ? param : new NotesEditorPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.TEXT_EDITOR) {
+      TextEditorPageBuilder(
+        param instanceof TextEditorPageParam ? param : new TextEditorPageParam(),
+        (): void => {
+          this.pageStack.pop();
+        }
+      )
+    } else if (name === AppRouter.FILE_OFFICE_VIEWER) {
+      OfficeViewerPageBuilder(
+        param instanceof OfficeViewerPageParam ? param : new OfficeViewerPageParam(),
         (): void => {
           this.pageStack.pop();
         }
@@ -896,6 +913,16 @@ function NotesMainPageBuilder(param: NotesMainPageParam, popPage: () => void) {
 @Builder
 function NotesEditorPageBuilder(param: NotesEditorPageParam, popPage: () => void) {
   NotesEditorPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function TextEditorPageBuilder(param: TextEditorPageParam, popPage: () => void) {
+  TextEditorPage({ param: param, popPage: popPage })
+}
+
+@Builder
+function OfficeViewerPageBuilder(param: OfficeViewerPageParam, popPage: () => void) {
+  OfficeViewerPage({ param: param, popPage: popPage })
 }
 
 @Builder

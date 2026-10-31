@@ -284,6 +284,8 @@ export struct PhotoAiSimilarPage {
     Row({ space: 6 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.list_bullet'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openPageSizeSheet();
         }
@@ -291,6 +293,8 @@ export struct PhotoAiSimilarPage {
       if (CurrentUserStore.getInstance().isAdmin) {
         BorderedIconButton({
           icon: $r('sys.symbol.minus_circle'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.confirmReset();
           }
@@ -298,6 +302,8 @@ export struct PhotoAiSimilarPage {
       }
       BorderedIconButton({
         icon: $r('sys.symbol.arrow_counterclockwise'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           void this.ctrl.refreshGroups(false);
         }

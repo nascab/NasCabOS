@@ -5,7 +5,10 @@ import { NavUtil } from '../../../common/NavUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { L10n } from '../../../core/localization/L10n';
-import { FileItem, FileModelAccess, FileSuffixes } from '../models/FileModels';
+import { ArchiveEntryData, FileItem, FileModelAccess, FileSuffixes } from '../models/FileModels';
+import { FileApiService } from './FileApiService';
+import { TextEditorPageParam, OfficeViewerPageParam } from '../router/FileRoutes';
+import { showArchivePreviewSheet } from '../views/ArchivePreviewSheet';
 import { GalleryItem, GalleryPageParam } from '../../gallery/models/GalleryModels';
 import { PlayerPlaylistItem } from '../../video_player/models/PlayerModels';
 import { openVideoPlayer } from '../../video_player/views/PlayerNavigator';
@@ -17,12 +20,17 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const TAG = 'FileOpener';
 /** Web 阅读器支持的电子书后缀（pdf 走 foliate 内置 pdf.js） */
 const WEB_READER_EXTS: string[] = ['.pdf', '.epub', '.mobi', '.azw3'];
+/** 压缩包预览支持的格式（与服务端 archive loader 一致） */
+const ARCHIVE_EXTS: string[] = ['.zip', '.cbz', '.rar', '.cbr', '.tar'];
+/** 移动端文本编辑器单文件上限（对齐 Flutter 80KB） */
+const MAX_EDITOR_BYTES: number = 80 * 1024;
 
 /**
  * 文件打开分发器（对齐 Flutter file_controller parts/open.dart handleItemTap）：
  * 图片/raw → gallery 图片浏览器；视频 → video_player 播放页；
- * txt → book TXT 阅读器（先本地缓存）；pdf/epub/mobi/azw3 → book Web 阅读器（scoped token）；
- * 其余类型（文本编辑器/Office/压缩包预览等鸿蒙端未迁移）提示敬请期待。
+ * txt → book TXT 阅读器（先本地缓存）；md/代码文本 → 文本编辑器；
+ * pdf/epub/mobi/azw3 → book Web 阅读器；docx/xlsx → Office 预览；zip/rar/tar → 压缩包预览；
+ * 其余类型提示敬请期待。
  */
 export class FileOpener {
   /** 点击文件条目时按类型分发；allItems 为当前展示列表（图片/视频用于构建同屏滑动/连播列表） */
@@ -41,12 +49,129 @@ export class FileOpener {
       void FileOpener.openTxtReader(item);
       return;
     }
+    if (FileSuffixes.isTextEditable(item)) {
+      FileOpener.openTextEditor(item);
+      return;
+    }
     if (WEB_READER_EXTS.includes(ext)) {
       void FileOpener.openWebReader(item);
       return;
     }
-    // md/代码文本（文本编辑器）、docx/xlsx（Office 预览）、zip/rar（压缩包预览）等暂未迁移
+    const officeType = FileOpener.officeTypeOf(item, ext);
+    if (officeType.length > 0) {
+      void FileOpener.openOffice(item, officeType);
+      return;
+    }
+    if (ARCHIVE_EXTS.includes(ext)) {
+      void FileOpener.openArchive(item);
+      return;
+    }
     ToastUtil.show(L10n.featureComingSoon);
+  }
+
+  // ==================== 文本/代码 → 文本编辑器 ====================
+
+  /** 文本/代码文件 → 文本编辑器（超过移动端上限时提示，对齐 Flutter） */
+  private static openTextEditor(item: FileItem): void {
+    const filePath = FileModelAccess.path(item).trim();
+    if (filePath.length === 0) {
+      ToastUtil.show(L10n.operationFailed);
+      return;
+    }
+    if (FileModelAccess.size(item) > MAX_EDITOR_BYTES) {
+      ToastUtil.show(L10n.t('editor_file_too_large', '文件体积过大，无法使用文本编辑器打开'));
+      return;
+    }
+    const param = new TextEditorPageParam();
+    param.title = FileOpener.titleOf(item, filePath);
+    param.path = filePath;
+    NavUtil.push(AppRouter.TEXT_EDITOR, param);
+  }
+
+  // ==================== docx/xlsx → Office 预览 ====================
+
+  /** Office 类型（type 或后缀为 docx/xlsx），其余返回空串（对齐 Flutter _officeTypeForItem） */
+  private static officeTypeOf(item: FileItem, ext: string): string {
+    const t = FileModelAccess.type(item).trim().toLowerCase();
+    if (t === 'docx' || t === 'xlsx') {
+      return t;
+    }
+    const pureExt = ext.startsWith('.') ? ext.substring(1) : ext;
+    return pureExt === 'docx' || pureExt === 'xlsx' ? pureExt : '';
+  }
+
+  /** 先缓存到本地，再打开 Office 预览页（fileUrl 由页面拦截器 fd 直供） */
+  private static async openOffice(item: FileItem, officeType: string): Promise<void> {
+    const filePath = FileModelAccess.path(item).trim();
+    if (filePath.length === 0) {
+      ToastUtil.show(L10n.operationFailed);
+      return;
+    }
+    const title = FileOpener.titleOf(item, filePath);
+    const filename = FileOpener.basename(filePath);
+    try {
+      const fileHash = await FileOpener.resolveCacheHash(item, filePath);
+      DialogUtil.showLoading(L10n.t('loading'));
+      const ok = await BookLocalCacheService.getInstance()
+        .ensureCached(fileHash, filename.length > 0 ? filename : title, filePath);
+      DialogUtil.dismissLoading(true);
+      if (!ok) {
+        ToastUtil.show(L10n.networkFailure);
+        return;
+      }
+      const localPath = BookLocalCacheService.getInstance().cachedFilePathOf(fileHash);
+      if (localPath === undefined) {
+        ToastUtil.show(L10n.networkFailure);
+        return;
+      }
+      const param = new OfficeViewerPageParam();
+      param.title = title;
+      param.officeType = officeType;
+      param.localPath = localPath;
+      NavUtil.push(AppRouter.FILE_OFFICE_VIEWER, param);
+    } catch (e) {
+      hilog.error(0x0000, TAG, 'openOffice failed: %{public}s', JSON.stringify(e));
+      DialogUtil.dismissLoading(true);
+      ToastUtil.show(L10n.networkFailure);
+    }
+  }
+
+  // ==================== zip/rar/tar → 压缩包预览 ====================
+
+  /** 读取压缩包条目并弹出内容预览（对齐 Flutter _ArchivePreviewDialog） */
+  private static async openArchive(item: FileItem): Promise<void> {
+    const filePath = FileModelAccess.path(item).trim();
+    if (filePath.length === 0) {
+      ToastUtil.show(L10n.operationFailed);
+      return;
+    }
+    const title = FileOpener.titleOf(item, filePath);
+    const fileHash = (item.fileHash ?? '').trim();
+    try {
+      DialogUtil.showLoading(L10n.t('loading'));
+      const res = await FileApiService.getInstance().listArchiveEntries(filePath, fileHash);
+      DialogUtil.dismissLoading(true);
+      if (!res.success || res.data === undefined) {
+        ToastUtil.show(L10n.t('archive_load_failed', '加载压缩包内容失败'));
+        return;
+      }
+      const rawItems = res.data.items ?? [];
+      const entries: ArchiveEntryData[] = rawItems.map((o: Object): ArchiveEntryData => {
+        const m = o as Record<string, Object>;
+        const e = new ArchiveEntryData();
+        const p = m['path'];
+        e.path = p === undefined || p === null ? '' : `${p}`;
+        const s = m['size'];
+        const n = typeof s === 'number' ? s : Number(s === undefined || s === null ? 0 : `${s}`);
+        e.size = Number.isFinite(n) ? n : 0;
+        return e;
+      }).filter((e: ArchiveEntryData): boolean => e.path.trim().length > 0);
+      showArchivePreviewSheet(title, res.data.size ?? 0, entries);
+    } catch (e) {
+      hilog.error(0x0000, TAG, 'openArchive failed: %{public}s', JSON.stringify(e));
+      DialogUtil.dismissLoading(true);
+      ToastUtil.show(L10n.t('archive_load_failed', '加载压缩包内容失败'));
+    }
   }
 
   // ==================== 图片 → gallery ====================

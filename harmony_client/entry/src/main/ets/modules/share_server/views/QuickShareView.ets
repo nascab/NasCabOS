@@ -9,6 +9,9 @@ import { pickServerFileViaSheet } from '../../files/views/FolderPickerSheet';
 import { QuickShareItem } from '../models/ShareServerModels';
 import { QuickShareController } from '../controllers/QuickShareController';
 import { QrCodeView } from './parts/QrCodeView';
+import { NavUtil } from '../../../common/NavUtil';
+import { AppRouter } from '../../../router/AppRouter';
+import { ServiceMainPageParam, ServicePageKeys } from '../../service/router/ServiceRoutes';
 
 /**
  * 快速分享面板（对齐 Flutter QuickShareConfigView 移动端形态）：
@@ -124,10 +127,11 @@ export struct QuickShareView {
     }
   }
 
-  /** 远程访问引导（对齐 Flutter _goToRemoteAccess；service 模块未迁移，暂以提示弹窗呈现） */
+  /** 远程访问引导（对齐 Flutter _goToRemoteAccess：跳转服务模块「远程访问」页签） */
   private goRemoteGuide(): void {
-    DialogUtil.showInfoDialog(L10n.tip,
-      L10n.t('quick_share_remote_link_guide', '去开启远程访问，获得远程访问分享地址'));
+    const param = new ServiceMainPageParam();
+    param.initialPageKey = ServicePageKeys.REMOTE_ACCESS;
+    NavUtil.push(AppRouter.SERVICE_MAIN, param);
   }
 
   private confirmDelete(item: QuickShareItem): void {

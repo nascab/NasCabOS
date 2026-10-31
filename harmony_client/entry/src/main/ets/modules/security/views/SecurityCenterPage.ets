@@ -88,12 +88,16 @@ export struct SecurityCenterPage {
       Row({ space: 10 }) {
         BorderedIconButton({
           icon: $r('sys.symbol.arrow_clockwise'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             void this.ctrl.loadBlacklist(true);
           }
         })
         BorderedIconButton({
           icon: $r('sys.symbol.trash'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             void this.ctrl.clearBlacklist();
           }
@@ -103,6 +107,8 @@ export struct SecurityCenterPage {
     if (this.ctrl.currentPageKey === SecurityPageKeys.DEVICES) {
       BorderedIconButton({
         icon: $r('sys.symbol.arrow_clockwise'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           void this.ctrl.loadDevices(true);
         }

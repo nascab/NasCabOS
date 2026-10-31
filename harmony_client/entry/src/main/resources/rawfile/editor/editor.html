@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Editor</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff;
+    color: #24292e;
+  }
+  #wrap {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+  #hl, #ta {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: 0;
+    padding: 12px;
+    box-sizing: border-box;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Roboto Mono", monospace;
+    font-size: 14px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    font-variant-ligatures: none;
+    tab-size: 4;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  #hl {
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  #ta {
+    z-index: 1;
+    resize: none;
+    outline: none;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: currentColor;
+    scrollbar-width: none;
+  }
+  #ta::-webkit-scrollbar { display: none; }
+  #hl::-webkit-scrollbar { display: none; }
+  .comment { color: var(--c-comment, #6a737d); }
+  .str     { color: var(--c-str, #032f62); }
+  .num     { color: var(--c-num, #005cc5); }
+  .kw      { color: var(--c-kw, #d73a49); }
+  .tag     { color: var(--c-tag, #22863a); }
+  .attr    { color: var(--c-attr, #6f42c1); }
+  .key     { color: var(--c-key, #005cc5); }
+  .h       { color: var(--c-h, #005cc5); font-weight: 600; }
+  .code    { color: var(--c-code, #6f42c1); }
+  .link    { color: var(--c-link, #0366d6); text-decoration: underline; }
+  .strong  { font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hl"></div>
+  <textarea id="ta" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  var ta = document.getElementById('ta');
+  var hl = document.getElementById('hl');
+  var lang = 'plain';
+  var readOnly = false;
+
+  // ===== 转义 =====
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ===== 语言规则 =====
+  var KW_JS = ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do',
+    'switch', 'case', 'default', 'break', 'continue', 'new', 'class', 'extends', 'super', 'this',
+    'try', 'catch', 'finally', 'throw', 'typeof', 'instanceof', 'in', 'of', 'async', 'await',
+    'yield', 'import', 'export', 'from', 'delete', 'void', 'static', 'get', 'set',
+    'interface', 'type', 'enum', 'namespace', 'declare', 'implements', 'public', 'private',
+    'protected', 'readonly', 'abstract', 'true', 'false', 'null', 'undefined', 'NaN'];
+  var KW_PY = ['def', 'class', 'return', 'if', 'elif', 'else', 'for', 'while', 'break', 'continue',
+    'pass', 'import', 'from', 'as', 'with', 'try', 'except', 'finally', 'raise', 'lambda', 'yield',
+    'global', 'nonlocal', 'assert', 'del', 'in', 'is', 'not', 'and', 'or', 'async', 'await',
+    'None', 'True', 'False'];
+  var KW_C = ['int', 'long', 'short', 'char', 'float', 'double', 'void', 'unsigned', 'signed',
+    'struct', 'union', 'enum', 'typedef', 'static', 'const', 'extern', 'inline', 'return', 'if',
+    'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'goto',
+    'sizeof', 'class', 'public', 'private', 'protected', 'virtual', 'override', 'template',
+    'typename', 'namespace', 'using', 'new', 'delete', 'try', 'catch', 'throw', 'nullptr',
+    'true', 'false', 'auto', 'package', 'import', 'final', 'abstract', 'synchronized', 'throws',
+    'boolean', 'byte', 'extends', 'implements', 'interface', 'this', 'super', 'nil',
+    'func', 'var', 'type', 'map', 'chan', 'range', 'go', 'defer', 'select', 'make', 'append',
+    'len', 'cap', 'fn', 'mut', 'impl', 'trait', 'use', 'mod', 'pub', 'crate', 'self', 'Self',
+    'match', 'loop', 'move', 'ref', 'where', 'dyn', 'unsafe', 'Some', 'Ok', 'Err',
+    'fun', 'val', 'data', 'object', 'companion', 'when', 'is', 'out', 'override', 'open',
+    'internal', 'suspend', 'lateinit'];
+  var KW_SH = ['if', 'then', 'else', 'elif', 'fi', 'for', 'do', 'done', 'while', 'case', 'esac',
+    'function', 'return', 'export', 'local', 'echo', 'cd', 'exit', 'set', 'unset', 'read',
+    'shift', 'source', 'alias'];
+
+  function kwPattern(list) {
+    return '\\b(?:' + list.join('|') + ')\\b';
+  }
+
+  // 每条规则：[正则源码, 样式类]
+  function rulesFor(name) {
+    var r = [];
+    if (name === 'js') {
+      r.push(['\\/\\/[^\\n]*', 'comment']);
+      r.push(['\\/\\*[\\s\\S]*?\\*\\/', 'comment']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(["'(?:\\\\.|[^'\\\\\\n])*'", 'str']);
+      r.push(['`(?:\\\\.|[^`\\\\])*`', 'str']);
+      r.push(['\\b0[xX][0-9a-fA-F]+\\b|\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b', 'num']);
+      r.push([kwPattern(KW_JS), 'kw']);
+    } else if (name === 'python') {
+      r.push(['"""' + '[\\s\\S]*?' + '"""', 'str']);
+      r.push(["'''" + '[\\s\\S]*?' + "'''", 'str']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(["'(?:\\\\.|[^'\\\\\\n])*'", 'str']);
+      r.push(['#[^\\n]*', 'comment']);
+      r.push(['@[A-Za-z_][\\w.]*', 'attr']);
+      r.push(['\\b\\d+(?:\\.\\d+)?\\b', 'num']);
+      r.push([kwPattern(KW_PY), 'kw']);
+    } else if (name === 'c') {
+      r.push(['\\/\\/[^\\n]*', 'comment']);
+      r.push(['\\/\\*[\\s\\S]*?\\*\\/', 'comment']);
+      r.push(['#[^\\n]*', 'comment']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(["'(?:\\\\.|[^'\\\\\\n])*'", 'str']);
+      r.push(['\\b0[xX][0-9a-fA-F]+\\b|\\b\\d+(?:\\.\\d+)?\\b', 'num']);
+      r.push([kwPattern(KW_C), 'kw']);
+    } else if (name === 'shell') {
+      r.push(['#[^\\n]*', 'comment']);
+      r.push(['"[^"\\n]*"', 'str']);
+      r.push(["'[^'\\n]*'", 'str']);
+      r.push(['\\$\\{[^}]*\\}|\\$[A-Za-z_][\\w]*', 'attr']);
+      r.push(['\\b\\d+\\b', 'num']);
+      r.push([kwPattern(KW_SH), 'kw']);
+    } else if (name === 'json') {
+      r.push(['"(?:\\\\.|[^"\\\\])*"\\s*:', 'key']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(['\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b', 'num']);
+      r.push(['\\b(?:true|false|null)\\b', 'kw']);
+    } else if (name === 'yaml') {
+      r.push(['^[ \\t]*[A-Za-z0-9_.-]+:', 'key']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(["'(?:\\\\.|[^'\\\\\\n])*'", 'str']);
+      r.push(['#[^\\n]*', 'comment']);
+      r.push(['\\b\\d+(?:\\.\\d+)?\\b', 'num']);
+      r.push(['\\b(?:true|false|null|yes|no|on|off)\\b', 'kw']);
+    } else if (name === 'xml') {
+      r.push(['<!--[\\s\\S]*?-->', 'comment']);
+      r.push(['<\\/?[A-Za-z][\\w:.-]*', 'tag']);
+      r.push(['\\/?>', 'tag']);
+      r.push(['[A-Za-z_:][\\w:.-]*(?=\\s*=)', 'attr']);
+      r.push(['"(?:\\\\.|[^"\\\\\\n])*"', 'str']);
+      r.push(["'(?:\\\\.|[^'\\\\\\n])*'", 'str']);
+      r.push(['&[#\\w]+;', 'num']);
+    } else if (name === 'css') {
+      r.push(['\\/\\*[\\s\\S]*?\\*\\/', 'comment']);
+      r.push(['"[^"\\n]*"', 'str']);
+      r.push(["'[^'\\n]*'", 'str']);
+      r.push(['@[A-Za-z-]+', 'kw']);
+      r.push(['#[0-9a-fA-F]{3,8}\\b', 'num']);
+      r.push(['\\b\\d+(?:\\.\\d+)?(?:px|em|rem|%|vh|vw)?\\b', 'num']);
+      r.push(['[A-Za-z-]+(?=\\s*:)', 'key']);
+    }
+    return r;
+  }
+
+  var regexCache = {};
+
+  function compiled(name) {
+    if (regexCache[name]) return regexCache[name];
+    var rules = rulesFor(name);
+    if (rules.length === 0) return null;
+    var src = rules.map(function (it) { return '(' + it[0] + ')'; }).join('|');
+    var out = { re: new RegExp(src, 'g'), rules: rules };
+    regexCache[name] = out;
+    return out;
+  }
+
+  function tokenize(text, name) {
+    var c = compiled(name);
+    if (!c) return esc(text);
+    var out = '';
+    var last = 0;
+    var m;
+    c.re.lastIndex = 0;
+    while ((m = c.re.exec(text)) !== null) {
+      if (m[0].length === 0) {
+        c.re.lastIndex++;
+        continue;
+      }
+      out += esc(text.slice(last, m.index));
+      var cls = '';
+      for (var i = 1; i < m.length; i++) {
+        if (m[i] !== undefined) { cls = c.rules[i - 1][1]; break; }
+      }
+      out += '<span class="' + cls + '">' + esc(m[0]) + '</span>';
+      last = m.index + m[0].length;
+      if (last >= text.length) break;
+    }
+    out += esc(text.slice(last));
+    return out;
+  }
+
+  // ===== Markdown（逐行 + 行内规则） =====
+  function mdInline(line) {
+    var out = '';
+    var last = 0;
+    var re = /(`[^`\n]*`)|(\*\*[^\n*]*\*\*)|(\*[^\n*]*\*)|(\[[^\]\n]*\]\([^)\n]*\))/g;
+    var m;
+    while ((m = re.exec(line)) !== null) {
+      out += esc(line.slice(last, m.index));
+      var cls = m[1] !== undefined ? 'code' : (m[2] !== undefined || m[3] !== undefined) ? 'strong' : 'link';
+      out += '<span class="' + cls + '">' + esc(m[0]) + '</span>';
+      last = m.index + m[0].length;
+    }
+    out += esc(line.slice(last));
+    return out;
+  }
+
+  function markdown(text) {
+    var lines = text.split('\n');
+    var inFence = false;
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (/^(```|~~~)/.test(line.trim())) {
+        inFence = !inFence;
+        out.push('<span class="code">' + esc(line) + '</span>');
+        continue;
+      }
+      if (inFence) {
+        out.push('<span class="code">' + esc(line) + '</span>');
+        continue;
+      }
+      if (/^\s*#{1,6}\s/.test(line)) {
+        out.push('<span class="h">' + esc(line) + '</span>');
+        continue;
+      }
+      if (/^\s*>\s/.test(line)) {
+        out.push('<span class="comment">' + esc(line) + '</span>');
+        continue;
+      }
+      out.push(mdInline(line));
+    }
+    return out.join('\n');
+  }
+
+  // ===== 渲染 =====
+  var rafId = 0;
+
+  function renderNow() {
+    var text = ta.value;
+    var html;
+    if (lang === 'markdown') {
+      html = markdown(text);
+    } else if (lang === 'plain') {
+      html = esc(text);
+    } else {
+      html = tokenize(text, lang);
+    }
+    // 末尾补一个换行，避免 <pre> 风格元素吞掉最后一行
+    hl.innerHTML = html + '\n';
+    syncScroll();
+  }
+
+  function scheduleRender() {
+    if (rafId) return;
+    rafId = requestAnimationFrame(function () {
+      rafId = 0;
+      renderNow();
+    });
+  }
+
+  function syncScroll() {
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+  }
+
+  ta.addEventListener('input', scheduleRender);
+  ta.addEventListener('scroll', syncScroll);
+
+  ta.addEventListener('keydown', function (e) {
+    if (readOnly) return;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      var start = ta.selectionStart;
+      var end = ta.selectionEnd;
+      var value = ta.value;
+      ta.value = value.slice(0, start) + '  ' + value.slice(end);
+      ta.selectionStart = ta.selectionEnd = start + 2;
+      scheduleRender();
+    }
+  });
+
+  // ===== 主题 =====
+  function applyTheme(dark, fontSize) {
+    var palette = dark ? {
+      bg: '#23241f', fg: '#f8f8f2', comment: '#75715e', str: '#e6db74',
+      num: '#ae81ff', kw: '#f92672', tag: '#f92672', attr: '#a6e22e',
+      key: '#a6e22e', h: '#66d9ef', code: '#e6db74', link: '#66d9ef', caret: '#f8f8f2'
+    } : {
+      bg: '#ffffff', fg: '#24292e', comment: '#6a737d', str: '#032f62',
+      num: '#005cc5', kw: '#d73a49', tag: '#22863a', attr: '#6f42c1',
+      key: '#005cc5', h: '#005cc5', code: '#6f42c1', link: '#0366d6', caret: '#24292e'
+    };
+    document.body.style.background = palette.bg;
+    document.body.style.color = palette.fg;
+    ta.style.caretColor = palette.caret;
+    hl.style.color = palette.fg;
+    var root = document.documentElement.style;
+    root.setProperty('--c-comment', palette.comment);
+    root.setProperty('--c-str', palette.str);
+    root.setProperty('--c-num', palette.num);
+    root.setProperty('--c-kw', palette.kw);
+    root.setProperty('--c-tag', palette.tag);
+    root.setProperty('--c-attr', palette.attr);
+    root.setProperty('--c-key', palette.key);
+    root.setProperty('--c-h', palette.h);
+    root.setProperty('--c-code', palette.code);
+    root.setProperty('--c-link', palette.link);
+    var fs = Number(fontSize);
+    if (!isFinite(fs) || fs <= 0) fs = 14;
+    fs = Math.max(10, Math.min(40, fs));
+    ta.style.fontSize = fs + 'px';
+    hl.style.fontSize = fs + 'px';
+  }
+
+  // 主题状态（重渲染前不需要重新着色：span 颜色由 CSS 变量控制）
+  var themeDark = false;
+  var themeFont = 14;
+  function recolor() {
+    applyTheme(themeDark, themeFont);
+  }
+
+  // ===== 码表（UTF-8 Base64 解码） =====
+  function decodeB64(b64) {
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    if (typeof TextDecoder !== 'undefined') {
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    // 兜底：手工 UTF-8 解码
+    var out = '';
+    for (var j = 0; j < bytes.length;) {
+      var c = bytes[j++];
+      if (c < 0x80) {
+        out += String.fromCharCode(c);
+      } else if (c < 0xE0) {
+        out += String.fromCharCode(((c & 0x1F) << 6) | (bytes[j++] & 0x3F));
+      } else if (c < 0xF0) {
+        out += String.fromCharCode(((c & 0x0F) << 12) | ((bytes[j++] & 0x3F) << 6) | (bytes[j++] & 0x3F));
+      } else {
+        var cp = ((c & 0x07) << 18) | ((bytes[j++] & 0x3F) << 12) | ((bytes[j++] & 0x3F) << 6) | (bytes[j++] & 0x3F);
+        cp -= 0x10000;
+        out += String.fromCharCode(0xD800 + (cp >> 10), 0xDC00 + (cp & 0x3FF));
+      }
+    }
+    return out;
+  }
+
+  // ===== 对外 API =====
+  window.editorApi = {
+    setContent: function (b64, opts) {
+      opts = opts || {};
+      lang = String(opts.language || 'plain').toLowerCase();
+      themeDark = opts.dark === true;
+      themeFont = Number(opts.fontSize) || 14;
+      readOnly = opts.readOnly === true;
+      ta.readOnly = readOnly;
+      ta.value = decodeB64(String(b64 || ''));
+      renderNow();
+      recolor();
+      ta.scrollTop = 0;
+      hl.scrollTop = 0;
+      ta.selectionStart = ta.selectionEnd = 0;
+      scheduleRender();
+      return true;
+    },
+    getText: function () {
+      return ta.value;
+    },
+    setTheme: function (dark, fontSize) {
+      themeDark = dark === true;
+      themeFont = Number(fontSize) || themeFont;
+      recolor();
+      return true;
+    },
+    isReady: function () {
+      return true;
+    }
+  };
+})();
+</script>
+</body>
+</html>

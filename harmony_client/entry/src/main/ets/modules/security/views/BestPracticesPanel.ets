@@ -1,14 +1,14 @@
 import { AppTheme, ThemePalette } from '../../../core/theme/AppTheme';
 import { L10n } from '../../../core/localization/L10n';
-import { ToastUtil } from '../../../common/ToastUtil';
 import { GlassCard } from '../../../common/components/GlassCard';
+import { NavUtil } from '../../../common/NavUtil';
+import { AppRouter } from '../../../router/AppRouter';
+import { UserManagementPageParam } from '../../user/router/UserRoutes';
 import { SecurityCenterController } from '../controllers/SecurityCenterController';
 
 /**
  * 最佳实践面板（对齐 Flutter BestPracticesPanel）：
- * 标题 + 建议说明卡（3 条编号建议）；第 2 条尾随「去开启」入口。
- * Flutter 端该入口跳转用户管理应用（PcHomeController.openApp('user')），
- * 鸿蒙端用户管理模块尚未迁移，暂以 Toast 提示兜底，待 user 模块上线后改为 NavUtil.push。
+ * 标题 + 建议说明卡（3 条编号建议）；第 2 条尾随「去开启」入口，点击跳转用户管理（2FA 在用户详情中开启）。
  */
 @ComponentV2
 export struct BestPracticesPanel {
@@ -107,8 +107,7 @@ export struct BestPracticesPanel {
       .fontWeight(FontWeight.Medium)
       .fontColor(this.palette().primary)
       .onClick((): void => {
-        // 鸿蒙端用户管理模块尚未迁移：以提示兜底（对齐 Flutter 跳转 user 应用的入口语义）
-        ToastUtil.show(L10n.t('security.user_app_not_available', '请在服务器端用户管理中开启2FA'));
+        NavUtil.push(AppRouter.USER_MANAGEMENT, new UserManagementPageParam());
       })
   }
 }

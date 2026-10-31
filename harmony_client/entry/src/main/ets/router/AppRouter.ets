@@ -46,6 +46,8 @@ export class AppRouter {
   static readonly BOOK_WEB_READER: string = 'BookWebReaderPage';
   static readonly NOTES_MAIN: string = 'NotesMainPage';
   static readonly NOTES_EDITOR: string = 'NotesEditorPage';
+  static readonly TEXT_EDITOR: string = 'TextEditorPage';
+  static readonly FILE_OFFICE_VIEWER: string = 'OfficeViewerPage';
   static readonly SECURITY_CENTER: string = 'SecurityCenterPage';
   static readonly PROCESS_LIST: string = 'ProcessListPage';
   static readonly MONITOR_PAGE: string = 'MonitorPage';

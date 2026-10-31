@@ -5,12 +5,13 @@ import { DialogUtil } from '../../../common/DialogUtil';
 import { SheetHandle, SheetListItem, SheetParamsBase, SheetUtil } from '../../../common/SheetUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { FileController } from '../controllers/FileController';
-import { FileFormat, FileItem, FileModelAccess, FileStats } from '../models/FileModels';
+import { FileFormat, FileItem, FileModelAccess, FileStats, FileSuffixes } from '../models/FileModels';
 import { FileStatsService } from '../service/FileStatsService';
 import { FileOpener } from '../service/FileOpener';
 import { AppRouter } from '../../../router/AppRouter';
 import { NavUtil } from '../../../common/NavUtil';
 import { ShareServerMainPageParam, ShareServerPageKeys } from '../../share_server/router/ShareServerRoutes';
+import { TextEditorPageParam } from '../router/FileRoutes';
 import { UploadCenterParam } from '../../transfer/views/UploadCenterPage';
 import { DownloadService } from '../../transfer/services/DownloadService';
 import { DownloadTarget } from '../../transfer/models/DownloadModels';
@@ -637,11 +638,23 @@ struct FileItemMenuSheetInner {
     return this.p.ctrl.currentModule === 'favorites';
   }
 
-  private get isTxt(): boolean {
-    const type = FileModelAccess.type(this.p.item);
-    const dot = this.name.lastIndexOf('.');
-    const ext = dot >= 0 && dot < this.name.length - 1 ? this.name.substring(dot + 1).toLowerCase() : '';
-    return type.trim().toLowerCase() === 'txt' || ext === 'txt';
+  private get isEditableText(): boolean {
+    return FileSuffixes.isTextEditable(this.p.item);
+  }
+
+  /** 打开文本编辑器（对齐 Flutter _openTextEditorFromItem） */
+  private openTextEditor(): void {
+    const path = this.path.trim();
+    if (path.length === 0) {
+      ToastUtil.show(L10n.operationFailed);
+      this.p.ctrl.clearSelect();
+      return;
+    }
+    const param = new TextEditorPageParam();
+    param.title = this.name;
+    param.path = path;
+    NavUtil.push(AppRouter.TEXT_EDITOR, param);
+    this.p.ctrl.clearSelect();
   }
 
   /** 发起真实下载（文件/文件夹自动识别），入队后提示「任务已添加」 */
@@ -712,15 +725,13 @@ struct FileItemMenuSheetInner {
               void this.rename();
             }
           })
-          if (this.isTxt && FileModelAccess.type(this.p.item) !== 'dir') {
+          if (this.isEditableText) {
             SheetListItem({
               icon: $r('sys.symbol.square_and_pencil'),
               title: L10n.t('edit', '编辑'),
               onSelect: (): void => {
                 this.p.close();
-                // 文本编辑器模块未迁移
-                ToastUtil.show(L10n.featureComingSoon);
-                this.p.ctrl.clearSelect();
+                this.openTextEditor();
               }
             })
           }

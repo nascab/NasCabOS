@@ -169,6 +169,8 @@ export struct BookSubListPage {
           btnSize: 36,
           iconSize: 18,
           corner: 18,
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.ctrl.exitMultiSelectMode();
           }
@@ -176,7 +178,7 @@ export struct BookSubListPage {
         Text(`${this.ctrl.selectedItems.size} ${L10n.t('selected', '已选择')}`)
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor(AppTheme.current().onSurface)
+          .fontColor(AppTheme.current().appBarFg)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
@@ -192,6 +194,8 @@ export struct BookSubListPage {
           btnSize: 36,
           iconSize: 18,
           corner: 18,
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.popPage();
           }
@@ -224,6 +228,8 @@ export struct BookSubListPage {
         SearchInputBar({
           hintText: L10n.t('book_list_search_hint', '搜索名称'),
           text: this.ctrl.searchText,
+          // 操作栏为深色 appBar 底：搜索栏文字/图标跟随前景色
+          fgColor: AppTheme.current().appBarFg,
           onChanged: (v: string): void => {
             this.ctrl.setSearchText(v);
           },
@@ -238,6 +244,8 @@ export struct BookSubListPage {
         icon: $r('sys.symbol.sort'),
         isEnabled: !this.ctrl.isMultiSelectMode,
         active: this.ctrl.sortBy !== BookSortDefault.by || this.ctrl.sortOrder !== BookSortDefault.order,
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           showBookSortSheet(this.ctrl);
         }
@@ -246,6 +254,8 @@ export struct BookSubListPage {
         icon: $r('sys.symbol.externaldrive'),
         isEnabled: !this.ctrl.isMultiSelectMode,
         active: this.ctrl.selectedPaths.length > 0,
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           showBookSourceSheet(this.ctrl);
         }

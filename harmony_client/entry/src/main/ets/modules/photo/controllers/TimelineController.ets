@@ -10,10 +10,12 @@ import { CurrentUserStore } from '../../../core/user/CurrentUserStore';
 import { DownloadService } from '../../transfer/services/DownloadService';
 import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import {
-  TimelineDateItem, TimelinePhotoItem, TimelinePathItem, TimelineDateInfo
+  TimelineDateItem, TimelinePhotoItem, TimelinePathItem, TimelineDateInfo, TimelineDetectedFaceItem
 } from '../models/PhotoModels';
 import { TimelineFilter, PhotoTimelineApiService } from '../service/PhotoTimelineApiService';
 import { PhotoAlbumApiService } from '../service/PhotoAlbumApiService';
+import { PhotoAiFacesApiService } from '../service/PhotoAiFacesApiService';
+import { AiFaceItem } from '../models/PhotoAiModels';
 
 /** 每次分页请求的照片数量下限（对齐 Flutter minGetCount） */
 const MIN_GET_COUNT = 300;
@@ -1358,6 +1360,95 @@ export class TimelineController {
       }
     } catch (_e) {
       ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+    }
+  }
+
+  // ================= 人脸相册批量动作（对齐 Flutter photo_timeline_selection） =================
+
+  /** 读取可移动的目标人脸（排除当前人脸；空列表由视图提示 face_move_target_empty） */
+  async loadFaceMoveTargets(): Promise<AiFaceItem[]> {
+    const currentFaceId = this.faceId;
+    if (currentFaceId <= 0) {
+      return [];
+    }
+    const res = await new PhotoAiFacesApiService().listFaces(1, 500, 'all', '');
+    if (!res.success || res.data === undefined) {
+      ToastUtil.show(res.message ?? L10n.t('operation_failed', '操作失败'));
+      return [];
+    }
+    const faces: AiFaceItem[] = [];
+    for (const f of res.data.items) {
+      if (f.faceId > 0 && f.faceId !== currentFaceId) {
+        faces.push(f);
+      }
+    }
+    return faces;
+  }
+
+  /** 将选中照片移动到指定人脸（成功后从当前人脸相册移除并退出多选） */
+  async moveSelectedToOtherFace(targetFaceId: number): Promise<void> {
+    const currentFaceId = this.faceId;
+    const hashes = this.selectedFileHashes();
+    if (currentFaceId <= 0 || targetFaceId <= 0 || hashes.length === 0) {
+      return;
+    }
+    try {
+      const res = await new PhotoAiFacesApiService().movePhotoToFace(currentFaceId, targetFaceId, hashes);
+      if (!res.success) {
+        ToastUtil.show(res.message ?? L10n.t('operation_failed', '操作失败'));
+        return;
+      }
+      this.removeIdsAndCleanUp(new Set<number>(this.selectedIds));
+      this.exitMultiSelectMode();
+      ToastUtil.show(L10n.t('operation_success', '操作成功'));
+    } catch (_e) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+    }
+  }
+
+  /** 把选中照片移出当前人脸相册（确认后逐张移除，全部失败则保留本地数据） */
+  async removeSelectedFromFaceAlbum(): Promise<void> {
+    const currentFaceId = this.faceId;
+    const hashes = this.selectedFileHashes();
+    if (currentFaceId <= 0 || hashes.length === 0) {
+      return;
+    }
+    const confirmed = await DialogUtil.showConfirmDialog(
+      L10n.t('need_confirm', '需要确认'),
+      L10n.t('face_remove_from_album_confirm', '移出后,这张照片将不再出现在当前人脸相册中,是否继续?'));
+    if (confirmed !== true) {
+      return;
+    }
+    let successCount = 0;
+    for (const hash of hashes) {
+      const res = await new PhotoAiFacesApiService().removePhotoFromFace(currentFaceId, hash);
+      if (res.success) {
+        successCount++;
+      }
+    }
+    if (successCount === 0) {
+      ToastUtil.show(L10n.t('operation_failed', '操作失败'));
+      return;
+    }
+    this.removeIdsAndCleanUp(new Set<number>(this.selectedIds));
+    this.exitMultiSelectMode();
+    ToastUtil.show(L10n.t('operation_success', '操作成功'));
+  }
+
+  /** 读取某张照片中检测到的人脸（视图负责弹层展示） */
+  async loadPhotoDetectedFaces(photo: TimelinePhotoItem): Promise<TimelineDetectedFaceItem[]> {
+    const fileHash = photo.fileHash.trim();
+    if (fileHash.length === 0) {
+      return [];
+    }
+    try {
+      const res = await this.apiService.listPhotoFaces(fileHash);
+      if (!res.success || res.data === undefined) {
+        return [];
+      }
+      return res.data;
+    } catch (_e) {
+      return [];
     }
   }
 }

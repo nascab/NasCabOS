@@ -10,6 +10,9 @@ import { FileWatcherService, FileChangeData } from '../service/FileWatcherServic
 import { FileViewModeStore } from '../service/FileViewModeStore';
 import { FileOpener } from '../service/FileOpener';
 import { FileClipboard } from './FileClipboard';
+import { AppRouter } from '../../../router/AppRouter';
+import { NavUtil } from '../../../common/NavUtil';
+import { TextEditorPageParam } from '../router/FileRoutes';
 import {
   FileItem, FileModelAccess, FileSuffixes, fileItemIsDotHidden
 } from '../models/FileModels';
@@ -740,7 +743,7 @@ export class FileController {
     }
   }
 
-  /** 新建 txt/md 文件（打开编辑器功能未迁移，创建成功后仅刷新列表） */
+  /** 新建 txt/md 文件，创建成功后直接打开文本编辑器（对齐 Flutter） */
   async createTextFile(name: string, type: string): Promise<boolean> {
     const base = this.currentPath;
     const trimmed = name.trim();
@@ -754,6 +757,16 @@ export class FileController {
         return false;
       }
       await this.listDirectory(base, 'normal');
+      const created = res.data as FileItem | undefined;
+      let path = created !== undefined ? FileModelAccess.path(created) : '';
+      if (path.length === 0) {
+        const sep = base.endsWith('/') || base.endsWith('\\') ? '' : '/';
+        path = `${base}${sep}${trimmed}`;
+      }
+      const param = new TextEditorPageParam();
+      param.title = trimmed;
+      param.path = path;
+      NavUtil.push(AppRouter.TEXT_EDITOR, param);
       return true;
     } catch (_e) {
       ToastUtil.show(L10n.operationFailed);

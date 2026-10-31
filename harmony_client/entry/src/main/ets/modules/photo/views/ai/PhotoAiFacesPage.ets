@@ -124,7 +124,7 @@ function FaceActionSheetContent(p: FaceActionSheetParams) {
       title: L10n.t('download', '下载'),
       onSelect: (): void => {
         p.close();
-        p.ctrl.downloadSelected();
+        void p.ctrl.downloadSelected();
       }
     })
     SheetListItem({
@@ -669,18 +669,24 @@ export struct PhotoAiFacesPage {
     Row({ space: 6 }) {
       BorderedIconButton({
         icon: $r('sys.symbol.funnel'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openFilterSheet();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.magnifyingglass'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           this.openSearch();
         }
       })
       BorderedIconButton({
         icon: $r('sys.symbol.arrow_counterclockwise'),
+        strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+        iconColor: AppTheme.current().appBarFg,
         onTap: (): void => {
           void this.ctrl.refreshFaces();
         }
@@ -688,6 +694,8 @@ export struct PhotoAiFacesPage {
       if (CurrentUserStore.getInstance().isAdmin) {
         BorderedIconButton({
           icon: $r('sys.symbol.more'),
+          strokeColor: AppTheme.withAlpha(AppTheme.current().appBarFg, 0.35),
+          iconColor: AppTheme.current().appBarFg,
           onTap: (): void => {
             this.openAdminSheet();
           }
@@ -857,7 +865,7 @@ export struct PhotoAiFacesPage {
         })
       }
       this.BarTextEnabled(L10n.t('download', '下载'), true, (): void => {
-        this.ctrl.downloadSelected();
+        void this.ctrl.downloadSelected();
       })
       this.BarTextEnabled(L10n.t('cancel', '取消'), true, (): void => {
         this.ctrl.exitSelectionMode();

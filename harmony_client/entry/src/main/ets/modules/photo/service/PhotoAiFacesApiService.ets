@@ -54,4 +54,54 @@ export class PhotoAiFacesApiService {
     const body: Record<string, Object> = {};
     return this.api().apiPost<boolean>('/api/photo/face/reset', body);
   }
+
+  /** 把整个人脸合并（移动）到另一人脸（对齐 Flutter moveFaceToOther） */
+  async moveFaceToOther(fromFaceId: number, toFaceId: number): Promise<APIResponse<boolean>> {
+    const body: Record<string, Object> = { 'from_face_id': fromFaceId, 'to_face_id': toFaceId };
+    return this.api().apiPost<boolean>('/api/photo/face/merge', body);
+  }
+
+  /** 把单张照片移出指定人脸（对齐 Flutter removePhotoFromFace） */
+  async removePhotoFromFace(faceId: number, fileHash: string): Promise<APIResponse<boolean>> {
+    const body: Record<string, Object> = { 'face_id': faceId, 'file_hash': fileHash };
+    return this.api().apiPost<boolean>('/api/photo/face/photo/remove', body);
+  }
+
+  /** 把照片移动到另一人脸（对齐 Flutter movePhotoToFace） */
+  async movePhotoToFace(fromFaceId: number, toFaceId: number,
+    fileHashes: string[]): Promise<APIResponse<boolean>> {
+    const body: Record<string, Object> = {
+      'from_face_id': fromFaceId,
+      'to_face_id': toFaceId,
+      'file_hashes': fileHashes
+    };
+    return this.api().apiPost<boolean>('/api/photo/face/photo/move', body);
+  }
+
+  /** 人脸相册下载文件路径（对齐 Flutter /api/photo/download/info，albumType:face） */
+  async faceDownloadPaths(faceId: number): Promise<string[]> {
+    const body: Record<string, Object> = { 'albumType': 'face', 'albumId': faceId };
+    try {
+      const res = await this.api().apiPost<Record<string, Object>>('/api/photo/download/info', body,
+        undefined, undefined, undefined, (d: Object, _c: number) => d as Record<string, Object>);
+      if (!res.success || res.data === undefined) {
+        return [];
+      }
+      const items = res.data['items'];
+      if (!Array.isArray(items)) {
+        return [];
+      }
+      const paths: string[] = [];
+      for (const e of items as Record<string, Object>[]) {
+        const p = e['path'];
+        const v = p === undefined || p === null ? '' : `${p}`.trim();
+        if (v.length > 0) {
+          paths.push(v);
+        }
+      }
+      return paths;
+    } catch (_e) {
+      return [];
+    }
+  }
 }
