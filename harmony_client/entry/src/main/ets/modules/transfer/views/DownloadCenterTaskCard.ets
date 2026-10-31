@@ -30,7 +30,7 @@ export struct DownloadCenterTaskCard {
         this.IconBox()
         Column({ space: 5 }) {
           this.NameRow()
-          Text(`${L10n.t('download_to', '下载至')} ${this.task.localPath}`)
+          Text(this.targetText())
             .fontSize(12)
             .fontColor(this.palette().subText)
             .maxLines(1)
@@ -53,6 +53,20 @@ export struct DownloadCenterTaskCard {
     .padding(12)
     .borderRadius(16)
     .backgroundColor(this.palette().surfaceBg)
+  }
+
+  // ==================== 保存目标文案 ====================
+
+  /** 保存目标：媒体已完成显示相册；媒体未完成显示图库；其余显示下载目录 */
+  private targetText(): string {
+    const done: boolean = this.task.status === TransferStatus.COMPLETED;
+    if (DownloadService.isGalleryUri(this.task.localPath)) {
+      return L10n.t('save_to_gallery_success', '已保存到图库');
+    }
+    if (!done && DownloadService.isSavableMedia(this.task.name)) {
+      return L10n.t('save_to_gallery', '保存到图库');
+    }
+    return `${L10n.t('download_to', '下载至')} ${this.task.localPath}`;
   }
 
   // ==================== 左侧图标 ====================

@@ -130,7 +130,9 @@ export class DownloadCenterController {
     e.remotePath = row.remotePath;
     e.size = row.size;
     e.completedTimeMs = row.completedTimeMs;
-    e.fileMissing = !DownloadCenterController.pathExists(e.path);
+    // 已保存到相册的媒体记录存的是媒体 URI（file://media/...），不可用文件 API 访问
+    e.fileMissing = DownloadService.isGalleryUri(e.path) ?
+      false : !DownloadCenterController.pathExists(e.path);
     return e;
   }
 

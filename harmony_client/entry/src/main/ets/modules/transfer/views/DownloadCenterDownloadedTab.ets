@@ -135,7 +135,7 @@ struct DownloadedFileCard {
             .fontWeight(FontWeight.Medium)
             .fontColor(this.palette().error)
         }
-        Text(this.entry.remotePath)
+        Text(this.localPathText())
           .fontSize(12)
           .fontColor(this.palette().subText)
           .maxLines(1)
@@ -174,11 +174,25 @@ struct DownloadedFileCard {
     })
   }
 
+  /** 条目本地保存位置文案：媒体已在相册则显示相册，其余显示本地绝对路径 */
+  private localPathText(): string {
+    if (DownloadService.isGalleryUri(this.entry.path)) {
+      return L10n.t('save_to_gallery_success', '已保存到图库');
+    }
+    return this.entry.path;
+  }
+
+  /** 是否已保存在系统相册（此时无需再提供「保存到图库」） */
+  private inGallery(): boolean {
+    return DownloadService.isGalleryUri(this.entry.path);
+  }
+
   /** 弹出底部操作菜单：图片/视频可保存到图库，任意条目可删除 */
   private showActions(): void {
     const p: DownloadedItemSheetParams = new DownloadedItemSheetParams();
     p.entry = this.entry;
-    p.showGallery = !this.entry.fileMissing && DownloadService.isSavableMedia(this.entry.name);
+    p.showGallery = !this.entry.fileMissing && !this.inGallery() &&
+      DownloadService.isSavableMedia(this.entry.name);
     p.onSaveGallery = (): void => {
       void this.ctrl.saveEntryToGallery(this.entry);
     };
@@ -196,14 +210,14 @@ struct DownloadedFileCard {
         SymbolGlyph($r('sys.symbol.doc_plaintext'))
           .fontSize(26)
           .fontColor([this.palette().error])
-      } else if (IMAGE_EXTS.includes(extLower(this.entry.path))) {
-        Image(`file://${this.entry.path}`)
+      } else if (IMAGE_EXTS.includes(extLower(this.entry.name))) {
+        Image(this.inGallery() ? this.entry.path : `file://${this.entry.path}`)
           .width(56)
           .height(56)
           .objectFit(ImageFit.Cover)
           .borderRadius(12)
           .alt($rawfile('icons/no_data.png'))
-      } else if (VIDEO_EXTS.includes(extLower(this.entry.path))) {
+      } else if (VIDEO_EXTS.includes(extLower(this.entry.name))) {
         SymbolGlyph($r('sys.symbol.film'))
           .fontSize(26)
           .fontColor([this.palette().subText])

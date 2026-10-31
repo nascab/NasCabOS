@@ -2,7 +2,7 @@ import { request } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
 import { notificationManager } from '@kit.NotificationKit';
 import { abilityAccessCtrl } from '@kit.AbilityKit';
-import { fileUri, fileShare, picker } from '@kit.CoreFileKit';
+import { Environment, fileUri, fileShare, picker } from '@kit.CoreFileKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
 import { WindowStore } from '../../../common/WindowStore';
@@ -64,6 +64,10 @@ export class DownloadService {
   @Trace downloadRoot: string = '';
   /** 系统下载目录 URI（DOWNLOAD 模式返回，授权已持久化） */
   private systemDirUri: string = '';
+  /** 公共 Download 目录权限是否已授予（2in1/平板，本次运行内缓存避免重复弹窗） */
+  private publicDirGranted: boolean = false;
+  /** 公共 Download 目录权限是否已询问过（避免用户拒绝后每次下载重复弹窗） */
+  private publicDirChecked: boolean = false;
   /** 任务 id 自增序列（保证同毫秒创建的任务 id 唯一） */
   private seq: number = 0;
   /** 通知授权是否已请求（每次安装期内只请求一次） */
@@ -187,6 +191,10 @@ export class DownloadService {
    * @returns 是否已获得授权（用户取消为 false，调用方应中止本次下载）
    */
   private async ensureSystemAccess(): Promise<boolean> {
+    // 0. 2in1/平板：优先直接使用公共 Download 目录（无需 Picker 授权）
+    if (await this.acquirePublicDownloadDir()) {
+      return true;
+    }
     // 1. 内存中的授权仍有效
     if (this.systemDirUri.length > 0 && this.verifySystemDir(this.systemDirUri)) {
       return true;
@@ -305,6 +313,50 @@ export class DownloadService {
   /** 最终下载根目录绝对路径（已完成页顶部目录说明使用；未授权前为空串） */
   getDownloadRoot(): string {
     return this.downloadRoot;
+  }
+
+  /**
+   * 公共 Download 目录方案（仅 2in1/平板可用）：
+   * 1. Environment.getUserDownloadDir() 返回公共 Download 根目录；
+   * 2. 写入需要 ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY（user_grant，首次弹窗授权）；
+   * 3. 设备不支持该能力（如手机）时返回 false，由调用方回退 DOWNLOAD 模式 Picker 目录。
+   */
+  private async acquirePublicDownloadDir(): Promise<boolean> {
+    if (!canIUse('SystemCapability.FileManagement.File.Environment.FolderObtain')) {
+      return false;
+    }
+    const ctx = WindowStore.appContext;
+    if (!ctx) {
+      return false;
+    }
+    if (!this.publicDirGranted && !this.publicDirChecked) {
+      this.publicDirChecked = true;
+      try {
+        const atManager = abilityAccessCtrl.createAtManager();
+        const result = await atManager.requestPermissionsFromUser(ctx,
+          ['ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY']);
+        const results = result.authResults;
+        this.publicDirGranted = results.length > 0 && results[0] === 0;
+      } catch (e) {
+        console.warn('[Download] 申请公共下载目录权限失败: ' + `${e}`);
+        return false;
+      }
+    }
+    if (!this.publicDirGranted) {
+      return false;
+    }
+    try {
+      const path: string = Environment.getUserDownloadDir();
+      if (path.length === 0 || !fs.accessSync(path)) {
+        return false;
+      }
+      this.systemDirUri = '';
+      this.downloadRoot = path;
+      return true;
+    } catch (e) {
+      console.warn('[Download] 获取公共下载目录失败: ' + `${e}`);
+      return false;
+    }
   }
 
   /** 首次下载时静默请求通知授权（系统代理通知的兜底，拒绝不阻断下载） */
@@ -526,8 +578,8 @@ export class DownloadService {
   }
 
   /**
-   * 系统下载完成：暂存文件发布到最终目录（重名加 (1)(2)）。
-   * 最终目录与暂存目录跨文件系统时 rename 失败，自动降级 copy + 删除暂存。
+   * 系统下载完成：图片/视频直接写入系统相册（不落下载目录）；
+   * 其余文件发布到最终目录（重名加 (1)(2)，跨文件系统时 copy + 删除暂存）。
    */
   private async onSysComplete(item: DownloadTaskItem): Promise<void> {
     const stagingPath: string = this.stagingPathOf(item);
@@ -535,16 +587,37 @@ export class DownloadService {
     try {
       if (fs.accessSync(stagingPath)) {
         const actualSize: number = fs.statSync(stagingPath).size;
-        finalPath = this.uniqueFinalPath(item.localPath);
-        this.publishFile(stagingPath, finalPath);
         item.totalSize = actualSize;
         item.processedSize = actualSize;
+        if (DownloadService.isSavableMedia(item.name)) {
+          const galleryUri: string = await this.publishSandboxMedia(stagingPath, item.name);
+          if (galleryUri.length > 0) {
+            DownloadService.deleteFileQuietly(stagingPath);
+            await this.completeItem(item, galleryUri);
+            return;
+          }
+          // 相册保存失败（如用户拒绝权限）：回退保存到下载目录，避免文件丢失
+          console.warn('[Download] 相册保存失败，回退下载目录: ' + item.name);
+        }
+        finalPath = this.uniqueFinalPath(item.localPath);
+        this.publishFile(stagingPath, finalPath);
       }
     } catch (e) {
       this.markError(item, L10n.t('error', '错误') + `: ${e}`);
       return;
     }
     await this.completeItem(item, finalPath);
+  }
+
+  /** 静默删除文件（不存在/失败忽略） */
+  private static deleteFileQuietly(path: string): void {
+    try {
+      if (fs.accessSync(path)) {
+        fs.unlinkSync(path);
+      }
+    } catch (_e) {
+      // 清理失败忽略
+    }
   }
 
   /**
@@ -580,9 +653,12 @@ export class DownloadService {
     item.localPath = finalPath;
     item.status = TransferStatus.COMPLETED;
     item.error = '';
+    // 相册 URI 未必带扩展名，展示名沿用任务展示名（避免「已完成」条目失去后缀信息）
+    const displayName: string = DownloadService.isGalleryUri(finalPath) ?
+      DownloadService.pathBaseName(item.name) : DownloadService.pathBaseName(finalPath);
     try {
       await this.history.recordCompletedFile(
-        finalPath, item.remotePath, DownloadService.pathBaseName(finalPath),
+        finalPath, item.remotePath, displayName,
         item.totalSize, item.id);
     } catch (e) {
       console.error('[Download] 写入下载历史失败: ' + `${e}`);
@@ -883,58 +959,87 @@ export class DownloadService {
    * @returns true=已保存；false=非媒体/文件缺失/用户取消/失败
    */
   async saveToGallery(srcPath: string, displayName: string): Promise<boolean> {
-    const kind: number = DownloadService.mediaKind(displayName);
-    if (kind === 0) {
-      return false;
+    return (await this.saveToGalleryGetUri(srcPath, displayName)).length > 0;
+  }
+
+  /**
+   * 将图片/视频保存到系统图库，返回新媒体 URI（失败/取消返回空串）。
+   * 源文件为公共目录路径时先复制到沙箱（图库发布要求沙箱 URI）。
+   */
+  async saveToGalleryGetUri(srcPath: string, displayName: string): Promise<string> {
+    if (DownloadService.mediaKind(displayName) === 0) {
+      return '';
     }
     const ctx = WindowStore.appContext;
     if (!ctx) {
-      return false;
+      return '';
     }
-    // 沙箱临时文件：{cacheDir}/gallery_publish/{文件名}
     const tmpDir: string = `${ctx.cacheDir}/gallery_publish`;
     const tmpPath: string = `${tmpDir}/${displayName}`;
-    let srcFile: fs.File | undefined = undefined;
-    let desFile: fs.File | undefined = undefined;
     try {
       if (!fs.accessSync(srcPath)) {
-        return false;
+        return '';
       }
       if (!fs.accessSync(tmpDir)) {
         fs.mkdirSync(tmpDir, true);
       }
-      // 1. 复制到应用沙箱（公共目录文件 → 沙箱临时文件）
       fs.copyFileSync(srcPath, tmpPath);
-
-      // 2. 优先直接写入图库（有 WRITE_IMAGEVIDEO 权限时不弹窗）
-      if (await this.saveToGalleryDirect(tmpPath, displayName, kind)) {
-        return true;
+      return await this.publishSandboxMedia(tmpPath, displayName);
+    } catch (e) {
+      console.warn('[Download] 保存到图库失败: ' + `${e}`);
+      return '';
+    } finally {
+      try {
+        if (fs.accessSync(tmpPath)) {
+          fs.unlinkSync(tmpPath);
+        }
+      } catch (_e) {
+        // 清理失败忽略
       }
+    }
+  }
 
-      // 3. 无权限时回退系统保存确认框（源 URI 必须是沙箱文件 URI）
-      const config: photoAccessHelper.PhotoCreationConfig = {
-        title: DownloadService.galleryTitle(displayName),
-        fileNameExtension: DownloadService.extOfName(displayName),
-        photoType: kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO
-      };
-      const srcUri: string = fileUri.getUriFromPath(tmpPath);
-      const helper: photoAccessHelper.PhotoAccessHelper =
-        photoAccessHelper.getPhotoAccessHelper(ctx);
-      const desUris: string[] = await helper.showAssetsCreationDialog([srcUri], [config]);
-      // 用户点取消：返回空列表
-      if (desUris.length === 0) {
-        return false;
-      }
+  /**
+   * 沙箱内的图片/视频发布到系统图库，返回媒体 URI（失败/取消返回空串）。
+   *
+   * 保存优先级：
+   * 1. 已获 ohos.permission.WRITE_IMAGEVIDEO 时直接创建媒体资源并写入，无需弹窗；
+   * 2. 无权限或直接写入失败时，回退 showAssetsCreationDialog 系统保存确认框。
+   */
+  private async publishSandboxMedia(tmpPath: string, displayName: string): Promise<string> {
+    const kind: number = DownloadService.mediaKind(displayName);
+    const ctx = WindowStore.appContext;
+    if (kind === 0 || !ctx) {
+      return '';
+    }
+    const uri: string = await this.saveToGalleryDirect(tmpPath, displayName, kind);
+    if (uri.length > 0) {
+      return uri;
+    }
 
-      // 3. 对话框只创建了空媒体资源，需自行把内容写入目标 URI
+    const config: photoAccessHelper.PhotoCreationConfig = {
+      title: DownloadService.galleryTitle(displayName),
+      fileNameExtension: DownloadService.extOfName(displayName),
+      photoType: kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO
+    };
+    const helper: photoAccessHelper.PhotoAccessHelper = photoAccessHelper.getPhotoAccessHelper(ctx);
+    const desUris: string[] = await helper.showAssetsCreationDialog(
+      [fileUri.getUriFromPath(tmpPath)], [config]);
+    if (desUris.length === 0) {
+      return '';
+    }
+    // 对话框只创建空媒体资源，需自行把内容写入目标 URI
+    let srcFile: fs.File | undefined = undefined;
+    let desFile: fs.File | undefined = undefined;
+    try {
       srcFile = fs.openSync(tmpPath, fs.OpenMode.READ_ONLY);
       desFile = fs.openSync(desUris[0], fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
       fs.copyFileSync(srcFile.fd, desFile.fd);
       console.info('[Download] 已保存到系统图库: ' + desUris[0]);
-      return true;
+      return desUris[0];
     } catch (e) {
-      console.warn('[Download] 保存到图库失败: ' + `${e}`);
-      return false;
+      console.warn('[Download] 写入图库资源失败: ' + `${e}`);
+      return '';
     } finally {
       if (srcFile) {
         try {
@@ -950,34 +1055,24 @@ export class DownloadService {
           // 关闭失败忽略
         }
       }
-      // 清理沙箱临时文件
-      try {
-        if (fs.accessSync(tmpPath)) {
-          fs.unlinkSync(tmpPath);
-        }
-      } catch (_e) {
-        // 清理失败忽略
-      }
     }
   }
 
   /**
-   * 直接写入系统图库（需 ohos.permission.WRITE_IMAGEVIDEO，ACL 受限权限）。
-   * 通过 MediaAssetChangeRequest.addResource + applyChanges 创建媒体资源并写入内容，
-   * 全程无弹窗。无权限或写入失败时返回 false，由调用方回退系统保存确认框。
+   * 直接创建图库媒体资源并写入内容，返回媒体 URI；无权限或失败返回空串。
    *
    * 注意：原生层对媒体标题有字符校验（中文/空格等可能被拒，日志为
    * "Failed to check displayName"），因此按「原标题 → ASCII 安全标题 → 系统自动命名」
    * 依次重试。
    */
-  private async saveToGalleryDirect(tmpPath: string, displayName: string, kind: number): Promise<boolean> {
+  private async saveToGalleryDirect(tmpPath: string, displayName: string, kind: number): Promise<string> {
     const ctx = WindowStore.appContext;
     if (!ctx) {
-      return false;
+      return '';
     }
     // ACL 只保证可安装，运行时仍需用户授权一次；已授权时系统直接返回不弹窗
     if (!(await DownloadService.ensureWritePermission())) {
-      return false;
+      return '';
     }
     const helper: photoAccessHelper.PhotoAccessHelper = photoAccessHelper.getPhotoAccessHelper(ctx);
     const ext: string = DownloadService.extOfName(displayName);
@@ -992,25 +1087,42 @@ export class DownloadService {
     }
     titles.push(''); // 空标题：由系统按日期自动命名
     for (let i = 0; i < titles.length; i++) {
+      let srcFile: fs.File | undefined = undefined;
+      let desFile: fs.File | undefined = undefined;
       try {
         const options: photoAccessHelper.CreateOptions = titles[i].length > 0 ? { title: titles[i] } : {};
-        const changeRequest: photoAccessHelper.MediaAssetChangeRequest =
-          photoAccessHelper.MediaAssetChangeRequest.createAssetRequest(
-            ctx, kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO,
-            ext, options);
-        changeRequest.addResource(
-          kind === 1 ? photoAccessHelper.ResourceType.IMAGE_RESOURCE
-            : photoAccessHelper.ResourceType.VIDEO_RESOURCE,
-          fileUri.getUriFromPath(tmpPath));
-        await helper.applyChanges(changeRequest);
-        console.info('[Download] 已直接保存到系统图库: ' + displayName);
-        return true;
+        const desUri: string = await helper.createAsset(
+          kind === 1 ? photoAccessHelper.PhotoType.IMAGE : photoAccessHelper.PhotoType.VIDEO,
+          ext, options);
+        if (desUri.length === 0) {
+          continue;
+        }
+        srcFile = fs.openSync(tmpPath, fs.OpenMode.READ_ONLY);
+        desFile = fs.openSync(desUri, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+        fs.copyFileSync(srcFile.fd, desFile.fd);
+        console.info('[Download] 已直接保存到系统图库: ' + desUri);
+        return desUri;
       } catch (e) {
         // 常见为 201 权限未授予或标题校验失败；换下一种标题策略重试
         console.warn(`[Download] 直接保存图库失败(title=${titles[i]}): ` + `${e}`);
+      } finally {
+        if (srcFile) {
+          try {
+            fs.closeSync(srcFile);
+          } catch (_e) {
+            // 关闭失败忽略
+          }
+        }
+        if (desFile) {
+          try {
+            fs.closeSync(desFile);
+          } catch (_e) {
+            // 关闭失败忽略
+          }
+        }
       }
     }
-    return false;
+    return '';
   }
 
   /**
@@ -1038,6 +1150,11 @@ export class DownloadService {
   /** 是否为可保存到图库的图片/视频（bottom 菜单按此决定是否展示该项） */
   static isSavableMedia(displayName: string): boolean {
     return DownloadService.mediaKind(displayName) !== 0;
+  }
+
+  /** 本地路径是否为图库媒体 URI（媒体文件只写相册，不落下载目录） */
+  static isGalleryUri(path: string): boolean {
+    return path.startsWith('file://media/');
   }
 
   /**

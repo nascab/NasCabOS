@@ -68,6 +68,17 @@
           "when": "inuse"
         }
       },
+      // READ_WRITE_DOWNLOAD_DIRECTORY：公共 Download 目录读写权限（user_grant）。
+      // 仅 2in1 / 部分平板支持 Environment.getUserDownloadDir()；手机不支持该能力时
+      // DownloadService 自动回退 FilePicker DOWNLOAD 模式目录（Download/包名）
+      {
+        "name": "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY",
+        "reason": "$string:permission_download_directory_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
+      },
       // MEDIA_LOCATION：读取媒体文件 EXIF 中的地理位置信息。
       // 未申请时 Media Library Kit 读取图片会做脱敏处理（抹除 GPS 等敏感 EXIF 字段），
       // 导致相册备份上传的照片丢失地理位置；normal 级 user_grant，无需 ACL
