@@ -15,6 +15,7 @@ import { DialogUtil } from '../../../common/DialogUtil';
 import { MusicListItem, MusicListPathItem } from '../models/MusicModels';
 import { MusicListApiService, MusicListQuery, MusicListQueryFactory, PlayListApiService } from '../services/MusicApiServices';
 import { pickMusicPlayListId } from '../components/MusicPlayListSelectSheet';
+import { downloadMusicItems } from '../utils/MusicDownloadUtil';
 
 const TAG = 'MusicListController';
 
@@ -396,14 +397,22 @@ export class MusicListController {
 
   // ===== 删除 =====
 
-  // ===== 下载（依赖传输模块，迁移后接入） =====
+  // ===== 下载 =====
 
+  /** 批量下载选中项：入队后跳转下载中心 */
   downloadSelected(): void {
-    ToastUtil.show(L10n.featureComingSoon);
+    const items: MusicListItem[] = this.items.filter((it: MusicListItem): boolean =>
+      this.selectedItems.has(it.id));
+    if (items.length === 0) {
+      return;
+    }
+    downloadMusicItems(items);
+    this.exitMultiSelectMode();
   }
 
-  downloadItem(_item: MusicListItem): void {
-    ToastUtil.show(L10n.featureComingSoon);
+  /** 单条下载：入队后跳转下载中心 */
+  downloadItem(item: MusicListItem): void {
+    downloadMusicItems([item]);
   }
 
   private resolveItemPath(item: MusicListItem): string {

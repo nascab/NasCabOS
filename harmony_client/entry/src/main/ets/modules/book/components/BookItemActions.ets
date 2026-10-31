@@ -9,6 +9,8 @@ import { AppImage } from '../../../common/components/AppImage';
 import { BookListItem } from '../models/BookModels';
 import { BookListApiService, BookScopedTokenApiService } from '../services/BookApiServices';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
+import { DownloadService } from '../../transfer/services/DownloadService';
+import { DownloadTarget } from '../../transfer/models/DownloadModels';
 import { BookComicReaderParam, BookSubListPageParam, BookTxtReaderParam, BookWebReaderParam } from '../router/BookRoutes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -33,6 +35,26 @@ function extOf(path: string): string {
     return '';
   }
   return path.substring(dot + 1).toLowerCase();
+}
+
+/**
+ * 下载图书到本地（走全局下载中心，对齐照片/影音模块）：
+ * 入队后直接跳转下载中心；系列图书按文件夹递归下载。
+ * 阅读时的按需缓存仍由 BookLocalCacheService 负责，与此下载互不影响。
+ */
+export function downloadBookItem(item: BookListItem): void {
+  const remote: string = item.isSeries && item.path.trim().length > 0
+    ? item.path.trim() : resolveBookFilePath(item);
+  if (remote.length === 0) {
+    return;
+  }
+  const target: DownloadTarget = { path: remote, isDirHint: item.isSeries };
+  NavUtil.push(AppRouter.DOWNLOAD_CENTER);
+  void DownloadService.getInstance().enqueue([target]).then((added: number): void => {
+    if (added > 0) {
+      ToastUtil.show(L10n.t('task_added', '任务已添加'));
+    }
+  });
 }
 
 /**

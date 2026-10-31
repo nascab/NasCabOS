@@ -9,7 +9,7 @@ import { BookListItem } from '../models/BookModels';
 import { BookSubListPageParam } from '../router/BookRoutes';
 import { BookListGrid } from '../components/BookListGrid';
 import { showBookSortSheet, showBookSourceSheet } from '../components/BookFilterSheets';
-import { openBookItem, showBookItemActionSheet, BookItemActionHandlers, resolveBookFilePath } from '../components/BookItemActions';
+import { openBookItem, showBookItemActionSheet, BookItemActionHandlers, downloadBookItem } from '../components/BookItemActions';
 import { BookMultiSelectBar } from '../components/BookMultiSelectBar';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
 
@@ -47,8 +47,7 @@ export struct BookSubListPage {
       void this.ctrl.toggleFavoriteSelected();
     };
     h.onDownload = (i: BookListItem): void => {
-      void BookLocalCacheService.getInstance()
-        .ensureCached(i.fileHash.trim(), i.filename.trim(), resolveBookFilePath(i));
+      downloadBookItem(i);
     };
     h.onDeleteLocalCache = (i: BookListItem): void => {
       BookLocalCacheService.getInstance().deleteCache(i.fileHash.trim());

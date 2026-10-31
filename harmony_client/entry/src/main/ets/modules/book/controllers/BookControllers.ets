@@ -794,15 +794,6 @@ export class BookListController {
     }
   }
 
-  // ===== 下载（依赖传输模块，迁移后接入） =====
-
-  downloadSelected(): void {
-    ToastUtil.show(L10n.featureComingSoon);
-  }
-
-  downloadItem(_item: BookListItem): void {
-    ToastUtil.show(L10n.featureComingSoon);
-  }
 }
 
 // ===== 阅读历史控制器 =====

@@ -13,7 +13,7 @@ import { BookFavoriteApiService } from '../services/BookApiServices';
 import { BookListGrid } from '../components/BookListGrid';
 import { BookItemCard } from '../components/BookItemCard';
 import { showBookSortSheet, showBookSourceSheet, currentSortLabel } from '../components/BookFilterSheets';
-import { openBookItem, showBookItemActionSheet, BookItemActionHandlers, resolveBookFilePath } from '../components/BookItemActions';
+import { openBookItem, showBookItemActionSheet, BookItemActionHandlers, downloadBookItem } from '../components/BookItemActions';
 import { BookLocalCacheService } from '../services/BookLocalCacheService';
 
 /**
@@ -61,8 +61,7 @@ export struct BookLibraryView {
       void ctrl.toggleFavoriteSelected();
     };
     h.onDownload = (i: BookListItem): void => {
-      void BookLocalCacheService.getInstance()
-        .ensureCached(i.fileHash.trim(), i.filename.trim(), resolveBookFilePath(i));
+      downloadBookItem(i);
     };
     h.onDeleteLocalCache = (i: BookListItem): void => {
       BookLocalCacheService.getInstance().deleteCache(i.fileHash.trim());
@@ -100,8 +99,7 @@ export struct BookLibraryView {
       });
     };
     h.onDownload = (i: BookListItem): void => {
-      void BookLocalCacheService.getInstance()
-        .ensureCached(i.fileHash.trim(), i.filename.trim(), resolveBookFilePath(i));
+      downloadBookItem(i);
     };
     h.onDeleteLocalCache = (i: BookListItem): void => {
       BookLocalCacheService.getInstance().deleteCache(i.fileHash.trim());

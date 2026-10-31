@@ -16,6 +16,7 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { MusicListItem } from '../models/MusicModels';
 import { MusicListApiService, MusicListQuery, MusicListQueryFactory, PlayListApiService } from '../services/MusicApiServices';
 import { MusicPlayService } from '../service/MusicPlayService';
+import { downloadMusicItems } from '../utils/MusicDownloadUtil';
 
 const TAG = 'MusicSubListController';
 
@@ -628,16 +629,22 @@ export class MusicSubListController {
     return true;
   }
 
-  // ===== 下载（依赖传输模块，迁移后接入） =====
+  // ===== 下载 =====
 
+  /** 批量下载选中项：入队后跳转下载中心 */
   downloadSelected(): void {
-    // 下载依赖传输模块（未迁移）
-    ToastUtil.show(L10n.featureComingSoon);
+    const items: MusicListItem[] = this.items.filter((it: MusicListItem): boolean =>
+      this.selectedItems.has(it.id));
+    if (items.length === 0) {
+      return;
+    }
+    downloadMusicItems(items);
+    this.exitMultiSelectMode();
   }
 
-  downloadItem(_item: MusicListItem): void {
-    // 下载依赖传输模块（未迁移）
-    ToastUtil.show(L10n.featureComingSoon);
+  /** 单条下载：入队后跳转下载中心 */
+  downloadItem(item: MusicListItem): void {
+    downloadMusicItems([item]);
   }
 
   private resolveItemPath(item: MusicListItem): string {

@@ -2,6 +2,7 @@ import { L10n } from '../../../core/localization/L10n';
 import { AppTheme } from '../../../core/theme/AppTheme';
 import { ApiUrls } from '../../../core/network/ApiUrls';
 import { SheetUtil, SheetParamsBase, SheetHandle } from '../../../common/SheetUtil';
+import { downloadMusicItems } from '../utils/MusicDownloadUtil';
 import { ToastUtil } from '../../../common/ToastUtil';
 import { DialogUtil } from '../../../common/DialogUtil';
 import { AppImage } from '../../../common/components/AppImage';
@@ -371,6 +372,10 @@ struct MusicItemSheet {
         const item = this.params.item;
         this.params.close();
         this.ToggleFav(item);
+      })
+      this.SheetAction($r('sys.symbol.download'), L10n.t('download'), false, (): void => {
+        this.params.close();
+        downloadMusicItems([this.params.item]);
       })
       this.SheetAction($r('sys.symbol.music_note_list'), L10n.t('add_to_play_list'), false, (): void => {
         this.params.close();
