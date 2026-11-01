@@ -154,7 +154,7 @@ class _AlbumArtistListPageState extends State<AlbumArtistListPage> {
                         controller: _scrollController,
                         slivers: [
                           SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 28, 66),
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 66),
                             sliver: AlbumArtistListGrid(
                               controller: ctrl,
                               viewMode: viewMode,

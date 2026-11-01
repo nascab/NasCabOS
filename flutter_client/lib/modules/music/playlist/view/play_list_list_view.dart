@@ -106,7 +106,7 @@ class PlayListListView extends StatelessWidget {
                   return CustomScrollView(
                     slivers: [
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                         sliver: SliverLayoutBuilder(
                           builder: (context, constraints) {
                             final width = constraints.crossAxisExtent;

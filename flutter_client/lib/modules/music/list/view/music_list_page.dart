@@ -177,8 +177,8 @@ class _MusicListPageState extends State<MusicListPage> {
   }
 
   void _rebuildGridRectCache({required List items, required double maxWidth}) {
-    const leftPadding = 16.0;
-    const rightPadding = 16.0;
+    const leftPadding = 8.0;
+    const rightPadding = 8.0;
     final contentWidth = math.max(0.0, maxWidth - leftPadding - rightPadding);
     const desiredWidth = 115.0;
     final crossAxisCount = (contentWidth / desiredWidth).floor().clamp(2, 10);
@@ -310,9 +310,9 @@ class _MusicListPageState extends State<MusicListPage> {
                             slivers: [
                               SliverPadding(
                                 padding: const EdgeInsets.fromLTRB(
-                                  16,
+                                  8,
                                   0,
-                                  16,
+                                  8,
                                   16,
                                 ),
                                 sliver: MusicListGrid(
