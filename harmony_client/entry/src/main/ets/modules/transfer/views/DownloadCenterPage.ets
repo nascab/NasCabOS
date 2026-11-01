@@ -65,6 +65,13 @@ export struct DownloadCenterPage {
     return list;
   }
 
+  /** 全部任务（含下载中/等待/暂停/失败/已完成，createdTime 倒序） */
+  private get allItems(): DownloadTaskItem[] {
+    const list: DownloadTaskItem[] = this.service.tasks.slice();
+    list.sort((a: DownloadTaskItem, b: DownloadTaskItem): number => b.createdTime - a.createdTime);
+    return list;
+  }
+
   /** 已失败任务（createdTime 倒序，对齐 Flutter） */
   private get failedItems(): DownloadTaskItem[] {
     const list: DownloadTaskItem[] = this.service.tasks.filter((it: DownloadTaskItem): boolean =>
@@ -140,19 +147,24 @@ export struct DownloadCenterPage {
     Column() {
       Tabs({ index: this.currentTab, barPosition: BarPosition.Start }) {
         TabContent() {
+          this.AllTab()
+        }
+        .tabBar(this.TabLabel(L10n.t('task_all', '全部'), 0))
+
+        TabContent() {
           this.ActiveTab()
         }
-        .tabBar(this.TabLabel(L10n.t('task_downloading', '下载中'), 0))
+        .tabBar(this.TabLabel(L10n.t('task_downloading', '下载中'), 1))
 
         TabContent() {
           this.FailedTab()
         }
-        .tabBar(this.TabLabel(L10n.t('task_failed', '已失败'), 1))
+        .tabBar(this.TabLabel(L10n.t('task_failed', '已失败'), 2))
 
         TabContent() {
           DownloadCenterDownloadedTab({ ctrl: this.centerCtrl })
         }
-        .tabBar(this.TabLabel(L10n.t('task_completed', '已完成'), 2))
+        .tabBar(this.TabLabel(L10n.t('task_completed', '已完成'), 3))
       }
       .barMode(BarMode.Fixed)
       .onChange((index: number): void => {
@@ -165,10 +177,10 @@ export struct DownloadCenterPage {
     .height('100%')
   }
 
-  /** 下载中 Tab */
+  /** 任务列表（空态 / 卡片列表，各 Tab 复用） */
   @Builder
-  ActiveTab() {
-    if (this.activeItems.length === 0) {
+  TaskList(items: DownloadTaskItem[]) {
+    if (items.length === 0) {
       Column() {
         EmptyState({ message: L10n.t('task_empty', '暂无任务') })
       }
@@ -177,7 +189,7 @@ export struct DownloadCenterPage {
       .justifyContent(FlexAlign.Center)
     } else {
       List({ space: 10 }) {
-        ForEach(this.activeItems, (item: DownloadTaskItem): void => {
+        ForEach(items, (item: DownloadTaskItem): void => {
           ListItem() {
             DownloadCenterTaskCard({ task: item })
           }
@@ -190,28 +202,21 @@ export struct DownloadCenterPage {
     }
   }
 
+  /** 全部 Tab（所有状态） */
+  @Builder
+  AllTab() {
+    this.TaskList(this.allItems)
+  }
+
+  /** 下载中 Tab */
+  @Builder
+  ActiveTab() {
+    this.TaskList(this.activeItems)
+  }
+
   /** 已失败 Tab */
   @Builder
   FailedTab() {
-    if (this.failedItems.length === 0) {
-      Column() {
-        EmptyState({ message: L10n.t('task_empty', '暂无任务') })
-      }
-      .width('100%')
-      .height('100%')
-      .justifyContent(FlexAlign.Center)
-    } else {
-      List({ space: 10 }) {
-        ForEach(this.failedItems, (item: DownloadTaskItem): void => {
-          ListItem() {
-            DownloadCenterTaskCard({ task: item })
-          }
-        }, (item: DownloadTaskItem): string => item.id)
-      }
-      .width('100%')
-      .height('100%')
-      .scrollBar(BarState.Off)
-      .padding(12)
-    }
+    this.TaskList(this.failedItems)
   }
 }

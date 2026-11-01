@@ -44,6 +44,12 @@ export struct DownloadCenterTaskCard {
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
+        .onClick((): void => {
+          // 失败任务：点击条目弹出完整错误信息（卡片内单行省略展示）
+          if (this.task.status === TransferStatus.ERROR) {
+            this.showErrorDetail();
+          }
+        })
         this.TrailingArea()
       }
       .alignItems(VerticalAlign.Center)
@@ -214,6 +220,12 @@ export struct DownloadCenterTaskCard {
     .width(45)
     .height(45)
     .alignContent(Alignment.Center)
+  }
+
+  /** 完整错误信息弹窗（内容可滚动、可复制） */
+  private showErrorDetail(): void {
+    const msg: string = this.task.error.length > 0 ? this.task.error : L10n.t('error', '错误');
+    void DialogUtil.showInfoDialog(this.task.name, msg);
   }
 
   /** 删除前确认（对齐 Flutter confirmRemoveTask） */

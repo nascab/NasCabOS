@@ -11,6 +11,10 @@ export class UploadTransferHelper {
     if (trimmed.length === 0) {
       return '';
     }
+    // 服务端返回 PERMISSION_DENIED 时统一显示为本地化的“权限不足”
+    if (trimmed.toUpperCase().includes('PERMISSION_DENIED')) {
+      return L10n.t('permission_insufficient', '权限不足');
+    }
     try {
       const decoded = JSON.parse(trimmed) as Record<string, Object>;
       const msg = decoded['message'];
