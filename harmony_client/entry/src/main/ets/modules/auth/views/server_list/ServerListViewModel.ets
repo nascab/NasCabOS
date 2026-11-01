@@ -404,6 +404,8 @@ export class ServerListViewModel {
     this.tapCancelSignal = new DeferredSignal();
     this.tappingServer = server;
     this.isTapConnecting = true;
+    // 用户连接流程占用通道：期间后台重检避让，避免与本次建连/探测抢 baseUrl 或断开连接
+    ConnectChannelManager.beginUserFlow();
     try {
       const pairCode = (server.pairCode ?? '').trim();
       const hasPairCode = pairCode.length > 0;
@@ -445,7 +447,7 @@ export class ServerListViewModel {
           if (!APIClient.getInstance().isP2pMode) {
             APIClient.getInstance().setBaseUrl(NetworkConfig.P2P_BASE_URL);
           }
-          status = await this.checkStatusRacingCancel(3000);
+          status = await this.checkP2pStatusRacingCancel();
           if (this.tapCancelled) {
             return;
           }
@@ -500,7 +502,7 @@ export class ServerListViewModel {
             APIClient.getInstance().setBaseUrl(NetworkConfig.P2P_BASE_URL);
           }
         }
-        status = await this.checkStatusRacingCancel(3000);
+        status = await this.checkP2pStatusRacingCancel();
         if (this.tapCancelled) {
           return;
         }
@@ -559,6 +561,7 @@ export class ServerListViewModel {
       }
       this.showError(L10n.serverStatusCheckFailedWithError(ServerListViewModel.errorMessage(e)));
     } finally {
+      ConnectChannelManager.endUserFlow();
       this.tapLocked = false;
       // 保留 tappingServer：密码/2FA 二次提交时登录中对话框仍需展示同一服务器信息
       this.isTapConnecting = false;
@@ -691,6 +694,25 @@ export class ServerListViewModel {
       work,
       signal.promise.then((): undefined => undefined)
     ]);
+  }
+
+  /// P2P 建连后首次探测：5G/中继的冷通道未预热，首个请求易超时或丢失，
+  /// 单次 3s 探测会直接判失败（第二次点击因复用热通道才成功）。
+  /// 首次 5s，失败后隔 600ms 再试一次 4s；取消仍即时生效。
+  private async checkP2pStatusRacingCancel(): Promise<ServerStatusResponse | undefined> {
+    let status = await this.checkStatusRacingCancel(5000);
+    if (this.tapCancelled) {
+      return undefined;
+    }
+    if (status !== undefined && status.success && status.isNasCabServer) {
+      return status;
+    }
+    await ServerListViewModel.sleep(600);
+    if (this.tapCancelled) {
+      return undefined;
+    }
+    status = await this.checkStatusRacingCancel(4000);
+    return status;
   }
 
   /// checkServerStatusAt 与取消信号竞速（用于仅直连分支）

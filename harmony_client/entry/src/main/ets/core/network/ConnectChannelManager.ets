@@ -50,6 +50,8 @@ export class ConnectChannelManager {
   private static netChangeSettleRetryCount: number = 0;
   private static lastForegroundProbeAtMs: number = 0;
   private static installed: boolean = false;
+  /** 用户主动发起的连接流程（点击服务器/配对登录）计数：期间后台重检须避让，避免拆掉在途连接 */
+  private static userFlowDepth: number = 0;
 
   /** 安装到 APIClient：请求最终失败时由 APIClient 回调触发重检（避免模块循环依赖） */
   static install(): void {
@@ -70,6 +72,21 @@ export class ConnectChannelManager {
     if (APIClient.getInstance().isAuthenticated) {
       ConnectChannelManager.startGlobalNetworkMonitor();
     }
+  }
+
+  /** 标记用户连接流程开始：期间禁止后台 failover / 网络变化重检改写 baseUrl 或断开 P2P */
+  static beginUserFlow(): void {
+    ConnectChannelManager.userFlowDepth += 1;
+  }
+
+  static endUserFlow(): void {
+    if (ConnectChannelManager.userFlowDepth > 0) {
+      ConnectChannelManager.userFlowDepth -= 1;
+    }
+  }
+
+  static isUserFlowActive(): boolean {
+    return ConnectChannelManager.userFlowDepth > 0;
   }
 
   /** 读取持久化的通道模式（默认 auto） */
@@ -316,7 +333,7 @@ export class ConnectChannelManager {
     failedBaseUrl: string): Promise<boolean> {
     // 有在途 P2P 建连（点击服务器/配对码添加）时避让：后台主动 disconnect 会让
     // 在途建连代际失效并抛 p2p_connect_stale，通道选择交由建连流程自行完成
-    if (P2PService.getInstance().isConnectInFlight()) {
+    if (P2PService.getInstance().isConnectInFlight() || ConnectChannelManager.isUserFlowActive()) {
       return false;
     }
     const api = APIClient.getInstance();
