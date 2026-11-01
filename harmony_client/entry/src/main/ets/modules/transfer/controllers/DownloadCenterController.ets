@@ -233,7 +233,8 @@ export class DownloadCenterController {
       L10n.t('download_history_clear_message',
         '将清空全部下载记录。未勾选时仅移除记录、不删除文件；勾选「同时删除已下载的文件」时，会一并删除系统 Download 目录中本应用下载的文件，已保存到相册的图片/视频不受影响。'),
       L10n.t('delete_downloaded_local_file', '同时删除已下载的文件'),
-      true);
+      // 清理默认仅移除记录，不删除本地文件（避免误删）
+      false);
     if (!r || !r.confirmed) {
       return;
     }
@@ -244,6 +245,8 @@ export class DownloadCenterController {
       }
     }
     await this.history.clearAllRecords();
+    // 同步清空内存中的已完成/已失败任务（「全部」「已失败」Tab 的数据源）
+    this.service.clearFinishedTasks();
     this.downloadedFiles = [];
     this.hasMore = false;
     this.nextOffset = 0;

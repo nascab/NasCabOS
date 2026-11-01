@@ -163,6 +163,15 @@ export class DownloadService {
       it.status === TransferStatus.PAUSED);
   }
 
+  /**
+   * 清理内存中已结束（已完成 / 已失败）的下载任务（「清理下载记录」时调用）。
+   * 这类任务只存在于内存列表，不清理会导致「全部」「已失败」Tab 残留旧记录。
+   */
+  clearFinishedTasks(): void {
+    this.tasks = this.tasks.filter((it: DownloadTaskItem): boolean =>
+      it.status !== TransferStatus.COMPLETED && it.status !== TransferStatus.ERROR);
+  }
+
   private hasUnfinished(remote: string): boolean {
     return this.tasks.some((it: DownloadTaskItem): boolean =>
       it.remotePath === remote &&
@@ -794,10 +803,7 @@ export class DownloadService {
 
   /** 从任务列表与等待队列中丢弃（系统 'remove' 事件） */
   private discardItem(item: DownloadTaskItem): void {
-    const idx: number = this.tasks.findIndex((t: DownloadTaskItem): boolean => t.id === item.id);
-    if (idx >= 0) {
-      this.tasks.splice(idx, 1);
-    }
+    this.tasks = this.tasks.filter((t: DownloadTaskItem): boolean => t.id !== item.id);
     this.removeFromWaiting(item);
     this.release(item);
   }
@@ -872,10 +878,8 @@ export class DownloadService {
    * 无系统任务的残留临时文件手动清理。
    */
   async removeItem(item: DownloadTaskItem): Promise<void> {
-    const idx: number = this.tasks.findIndex((t: DownloadTaskItem): boolean => t.id === item.id);
-    if (idx >= 0) {
-      this.tasks.splice(idx, 1);
-    }
+    // 整体赋值替换数组（而非原地 splice），确保「全部」「已失败」列表可靠刷新
+    this.tasks = this.tasks.filter((t: DownloadTaskItem): boolean => t.id !== item.id);
     this.removeFromWaiting(item);
     this.running.delete(item.id);
 
