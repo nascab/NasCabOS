@@ -2023,7 +2023,6 @@ class PtBr extends Translations {
       'task_clear_all': 'Limpar Tudo',
       'file_logs_cleared': 'Logs de arquivos limpos',
       'task_added': "Tarefa adicionada",
-      'task_all': "Todos",
       'recent_clear': 'Limpar Registros',
       'recent_clear_confirm': 'Limpar todos os registros de acesso recentes?',
       'choose_path': 'Escolher Caminho',

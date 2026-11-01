@@ -2010,7 +2010,6 @@ class EsEs extends Translations {
       'task_clear_all': 'Limpiar todo',
       'file_logs_cleared': 'Registros de archivos limpiados',
       'task_added': 'Tarea agregada',
-      'task_all': 'Todos',
       'recent_clear': 'Limpiar registros',
       'recent_clear_confirm':
           '¿Limpiar todos los registros de acceso reciente?',

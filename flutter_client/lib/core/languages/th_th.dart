@@ -1944,7 +1944,6 @@ class ThTh extends Translations {
       'task_clear_all': 'ล้างทั้งหมด',
       'file_logs_cleared': 'ล้างบันทึกการดำเนินการแล้ว',
       'task_added': 'เพิ่มงานแล้ว',
-      'task_all': 'ทั้งหมด',
       'recent_clear': 'ล้างบันทึก',
       'recent_clear_confirm': 'ล้างบันทึกการเข้าถึงล่าสุดทั้งหมดหรือไม่?',
       'choose_path': 'เลือกเส้นทาง',

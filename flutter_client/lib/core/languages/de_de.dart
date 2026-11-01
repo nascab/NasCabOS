@@ -2012,7 +2012,6 @@ class DeDe extends Translations {
       'task_clear_all': 'Alle leeren',
       'file_logs_cleared': 'Dateilogs geleert',
       'task_added': "Aufgabe hinzugefügt",
-      'task_all': "Alle",
       'recent_clear': 'Datensätze leeren',
       'recent_clear_confirm': 'Alle letzten Zugriffsdatensätze leeren?',
       'choose_path': 'Pfad wählen',

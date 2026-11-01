@@ -1931,7 +1931,6 @@ class ArAr extends Translations {
       'task_clear_all': 'مسح الكل',
       'file_logs_cleared': 'تم مسح سجلات الملفات',
       'task_added': 'تمت إضافة المهمة',
-      'task_all': 'الكل',
       'recent_clear': 'مسح السجلات',
       'recent_clear_confirm': 'مسح جميع سجلات الوصول الحديثة؟',
       'choose_path': 'اختر مسارًا',

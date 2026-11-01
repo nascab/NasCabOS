@@ -97,7 +97,7 @@ class _AppDownloadCenterViewState extends State<AppDownloadCenterView> {
               color: Theme.of(context).colorScheme.surface,
               child: TabBar(
                 tabs: [
-                  Tab(text: 'task_all'.tr),
+                  Tab(text: 'all'.tr),
                   Tab(text: 'task_downloading'.tr),
                   Tab(text: 'task_failed'.tr),
                   Tab(text: 'task_completed'.tr),

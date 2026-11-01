@@ -1858,7 +1858,6 @@ class JaJp extends Translations {
       'task_clear_all': 'すべてクリア',
       'file_logs_cleared': 'ファイルログがクリアされました',
       'task_added': "タスクが追加されました",
-      'task_all': "すべて",
       'recent_clear': '記録をクリア',
       'recent_clear_confirm': 'すべての最近アクセス記録をクリアしますか？',
       'choose_path': 'パスを選択',
