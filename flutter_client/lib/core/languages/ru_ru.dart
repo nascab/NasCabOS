@@ -1967,6 +1967,7 @@ class RuRu extends Translations {
       'task_clear_all': 'Очистить всё',
       'file_logs_cleared': 'Журналы файлов очищены',
       'task_added': 'Задача добавлена',
+      'task_all': 'Все',
       'recent_clear': 'Очистить записи',
       'recent_clear_confirm': 'Очистить все записи недавнего доступа?',
       'choose_path': 'Выбрать путь',

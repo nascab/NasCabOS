@@ -1869,6 +1869,7 @@ class KoKr extends Translations {
       'task_clear_all': '전체 비우기',
       'file_logs_cleared': '작업 기록이 비워졌습니다',
       'task_added': "작업이 추가되었습니다",
+      'task_all': "전체",
       'recent_clear': '기록 비우기',
       'recent_clear_confirm': '최근 액세스 기록을 모두 비우시겠습니까?',
       'choose_path': '경로 선택',

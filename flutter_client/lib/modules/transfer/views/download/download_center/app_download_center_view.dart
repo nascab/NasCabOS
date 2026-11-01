@@ -18,6 +18,7 @@ import '../../../../../utils/toast_util.dart';
 
 part 'parts/download_center_downloaded_files_tab.dart';
 part 'parts/download_center_downloaded_file_item.dart';
+part 'parts/download_center_all_tab.dart';
 part 'parts/download_center_task_tab.dart';
 part 'parts/download_center_failed_tab.dart';
 
@@ -53,7 +54,7 @@ class _AppDownloadCenterViewState extends State<AppDownloadCenterView> {
     final controller = Get.put(AppDownloadCenterController());
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: AppBasePage(
         title: 'home_download_center'.tr,
         actions: [
@@ -96,6 +97,7 @@ class _AppDownloadCenterViewState extends State<AppDownloadCenterView> {
               color: Theme.of(context).colorScheme.surface,
               child: TabBar(
                 tabs: [
+                  Tab(text: 'task_all'.tr),
                   Tab(text: 'task_downloading'.tr),
                   Tab(text: 'task_failed'.tr),
                   Tab(text: 'task_completed'.tr),
@@ -105,6 +107,7 @@ class _AppDownloadCenterViewState extends State<AppDownloadCenterView> {
             Expanded(
               child: TabBarView(
                 children: [
+                  const _DownloadCenterAllTab(),
                   const _DownloadCenterTaskTab(),
                   const _DownloadCenterFailedTab(),
                   const _DownloadCenterDownloadedFilesTab(),

@@ -2008,6 +2008,7 @@ class ViVn extends Translations {
       'task_clear_all': 'Xóa tất cả',
       'file_logs_cleared': 'Bản ghi thao tác đã xóa',
       'task_added': "Nhiệm vụ đã thêm",
+      'task_all': "Tất cả",
       'recent_clear': 'Xóa bản ghi',
       'recent_clear_confirm': 'Xác nhận xóa tất cả bản ghi truy cập gần đây',
       'choose_path': 'Chọn đường dẫn',

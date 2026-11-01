@@ -2038,6 +2038,7 @@ class IdId extends Translations {
       'task_clear_all': 'Hapus Semua',
       'file_logs_cleared': 'Catatan Operasi Telah Dibersihkan',
       'task_added': "Tugas Telah Ditambahkan",
+      'task_all': "Semua",
       'recent_clear': 'Bersihkan Catatan',
       'recent_clear_confirm': 'Hapus semua catatan akses terakhir?',
       'choose_path': 'Pilih Jalur',

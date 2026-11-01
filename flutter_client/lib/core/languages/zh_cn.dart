@@ -1804,6 +1804,7 @@ class ZhCn extends Translations {
       'task_clear_all': '清除全部',
       'file_logs_cleared': '操作记录已清除',
       'task_added': "任务已添加",
+      'task_all': '全部',
       'recent_clear': '清除记录',
       'recent_clear_confirm': '是否清除全部最近访问记录',
       'choose_path': '选择路径',

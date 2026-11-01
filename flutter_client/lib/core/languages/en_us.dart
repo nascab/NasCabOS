@@ -1980,6 +1980,7 @@ class EnUs extends Translations {
       'task_clear_all': 'Clear All',
       'file_logs_cleared': 'File logs cleared',
       'task_added': "Task added",
+      'task_all': "All",
       'recent_clear': 'Clear Records',
       'recent_clear_confirm': 'Clear all recent access records?',
       'choose_path': 'Choose Path',

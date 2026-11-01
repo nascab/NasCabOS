@@ -2032,6 +2032,7 @@ class FrFr extends Translations {
       'task_clear_all': 'Tout effacer',
       'file_logs_cleared': 'Journaux de fichiers effacés',
       'task_added': 'Tâche ajoutée',
+      'task_all': 'Tous',
       'recent_clear': 'Effacer enregistrements',
       'recent_clear_confirm':
           'Effacer tous les enregistrements d\'accès récents ?',
