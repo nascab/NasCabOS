@@ -11,6 +11,7 @@ import { P2PService } from '../../p2p/P2PService';
 import { P2pIcePreference, P2pTransportKind } from '../../p2p/P2pProtocol';
 import { DevConnectMode, DevConnectModeUtil } from './DevConnectMode';
 import { HeaderMap } from '../../common/HeaderMap';
+import { AppEventBus, EVENT_CONNECT_CHANNEL_CHANGED } from '../../common/AppEventBus';
 
 const PROBE_TIMEOUT_MS = 2000;
 const PUBLIC_PROBE_TIMEOUT_MS = 4000;
@@ -52,6 +53,8 @@ export class ConnectChannelManager {
   private static installed: boolean = false;
   /** 用户主动发起的连接流程（点击服务器/配对登录）计数：期间后台重检须避让，避免拆掉在途连接 */
   private static userFlowDepth: number = 0;
+  /** 当前通道模式内存态：切换失败可回滚，UI 勾选与自动重连行为读写同一份状态 */
+  private static currentMode: DevConnectMode | undefined = undefined;
 
   /** 安装到 APIClient：请求最终失败时由 APIClient 回调触发重检（避免模块循环依赖） */
   static install(): void {
@@ -89,20 +92,73 @@ export class ConnectChannelManager {
     return ConnectChannelManager.userFlowDepth > 0;
   }
 
-  /** 读取持久化的通道模式（默认 auto） */
+  /** 读取通道模式（内存优先，默认 auto）；p2pDirect/p2pRelay 为一次性切换，不跨启动持久 */
   static getMode(): DevConnectMode {
-    return DevConnectModeUtil.parse(
+    const inMemory = ConnectChannelManager.currentMode;
+    if (inMemory !== undefined) {
+      return inMemory;
+    }
+    const stored = DevConnectModeUtil.parse(
       PreferencesStore.getInstance().getString(CacheKeys.DEV_CONNECT_MODE, ''));
+    const normalized = ConnectChannelManager.normalizeStoredMode(stored);
+    ConnectChannelManager.currentMode = normalized;
+    return normalized;
   }
 
-  /** 保存并立即生效（对齐 setDevConnectMode(applyNow: true)）；失败抛错由 UI 提示 */
-  static async setMode(mode: DevConnectMode): Promise<void> {
+  /** 启动恢复时不做一次性强制模式（对齐 Flutter _loadDevConnectMode） */
+  private static normalizeStoredMode(mode: DevConnectMode): DevConnectMode {
+    if (mode === DevConnectMode.P2P_DIRECT || mode === DevConnectMode.P2P_RELAY) {
+      return DevConnectMode.AUTO;
+    }
+    return mode;
+  }
+
+  /** 更新内存模式并通知 UI；切换失败时回滚也用此入口，避免勾选与真实通道不一致 */
+  private static setCurrentMode(mode: DevConnectMode): void {
+    if (ConnectChannelManager.currentMode === mode) {
+      return;
+    }
+    ConnectChannelManager.currentMode = mode;
+    AppEventBus.emit(EVENT_CONNECT_CHANNEL_CHANGED);
+  }
+
+  private static async persistMode(mode: DevConnectMode): Promise<void> {
     try {
       await PreferencesStore.getInstance().setString(CacheKeys.DEV_CONNECT_MODE, `${mode}`);
     } catch (_e) {
       // 持久化失败不阻断切换（对齐 Flutter try/catch）
     }
-    await ConnectChannelManager.applyNow(mode);
+  }
+
+  /** 保存并立即生效（对齐 setDevConnectMode(applyNow: true)）；失败抛错由 UI 提示并回滚 */
+  static async setMode(mode: DevConnectMode): Promise<void> {
+    const previous = ConnectChannelManager.getMode();
+    const oneOff = mode === DevConnectMode.P2P_DIRECT || mode === DevConnectMode.P2P_RELAY;
+    // 强制直连/P2P 切换期间标记用户流程，避免网络变化/请求失败的后台重检拆掉在途切换
+    const guardUserFlow = mode !== DevConnectMode.AUTO;
+    ConnectChannelManager.setCurrentMode(mode);
+    if (guardUserFlow) {
+      ConnectChannelManager.beginUserFlow();
+    }
+    let applied = false;
+    try {
+      await ConnectChannelManager.applyNow(mode);
+      applied = true;
+    } finally {
+      if (guardUserFlow) {
+        ConnectChannelManager.endUserFlow();
+      }
+      if (applied) {
+        // p2pDirect/p2pRelay 仅作用于本次切换，应用后回到 auto（对齐 Flutter）
+        const settled = oneOff ? DevConnectMode.AUTO : mode;
+        ConnectChannelManager.setCurrentMode(settled);
+        await ConnectChannelManager.persistMode(settled);
+      } else {
+        // 切换失败：还原为切换前的模式，避免勾选停在未生效的方式上
+        ConnectChannelManager.setCurrentMode(previous);
+        await ConnectChannelManager.persistMode(previous);
+      }
+    }
   }
 
   /** 登录成功后调用：若当前走 P2P 中继，延迟后台探测直连并尝试无缝升级为直连

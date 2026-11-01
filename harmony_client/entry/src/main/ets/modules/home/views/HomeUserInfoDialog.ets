@@ -129,15 +129,31 @@ export struct HomeUserInfoDialog {
     const api = APIClient.getInstance();
     if (api.isP2pMode) {
       const p2p = P2PService.getInstance();
-      // 对齐 Flutter connectChannelDisplayValue：devConnectMode 为 p2pRelay 时也按中继展示
+      // 实际传输类型优先；类型未确认（建连中）时按强制中继意图展示（对齐 Flutter）
       const isRelay = p2p.transportKind === P2pTransportKind.RELAY
-        || ConnectChannelManager.getMode() === DevConnectMode.P2P_RELAY;
+        || (p2p.transportKind === P2pTransportKind.UNKNOWN
+          && ConnectChannelManager.getMode() === DevConnectMode.P2P_RELAY);
       if (isRelay && p2p.relayAddress.trim().length > 0) {
         return `P2P ${p2p.relayAddress.trim()}`;
       }
       return 'P2P';
     }
     return api.baseUrl;
+  }
+
+  /** 当前实际生效的连接方式：勾选以真实通道为准，避免与「连接通道」行显示不一致 */
+  private activeConnectionMode(): DevConnectMode {
+    // 读取 revision：P2P 类型确认、baseUrl 变化后重新计算勾选
+    const _rev = this.channelRevision;
+    const api = APIClient.getInstance();
+    if (!api.isP2pMode) {
+      return DevConnectMode.DIRECT;
+    }
+    const p2p = P2PService.getInstance();
+    const isRelay = p2p.transportKind === P2pTransportKind.RELAY
+      || (p2p.transportKind === P2pTransportKind.UNKNOWN
+        && ConnectChannelManager.getMode() === DevConnectMode.P2P_RELAY);
+    return isRelay ? DevConnectMode.P2P_RELAY : DevConnectMode.P2P_DIRECT;
   }
 
   /** 通道模式选项（对齐 Flutter _showDevConnectModePicker：auto/direct + 有配对码时的 p2p 直连/中继） */
@@ -165,28 +181,29 @@ export struct HomeUserInfoDialog {
   }
 
   private isModeActive(m: DevConnectMode): boolean {
-    const current = ConnectChannelManager.getMode();
-    if (current === DevConnectMode.P2P && m === DevConnectMode.P2P_DIRECT) {
-      return true;
-    }
-    return current === m;
+    // 勾选跟随实际正在使用的通道，而不是“上一次选中的意图”
+    return m === this.activeConnectionMode();
   }
 
-  /** 切换连接通道（对齐 Flutter：setDevConnectMode 后刷新展示，失败 toast） */
+  /** 切换连接通道（对齐 Flutter：setDevConnectMode 后刷新展示，失败 toast 并复原勾选） */
   private async selectMode(m: DevConnectMode): Promise<void> {
     if (this.switchingMode) {
       return;
     }
+    // 立即关闭选择浮层：P2P 建连可能耗时较久，避免浮层一直盖在上面看起来“点了没反应”
+    this.showModePicker = false;
     this.switchingMode = true;
+    // 触发一次刷新，让通道行的“切换”按钮立即显示加载态
+    this.channelRevision++;
     try {
       await ConnectChannelManager.setMode(m);
-      this.showModePicker = false;
-      this.channelRevision++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : `${e}`;
-      ToastUtil.show(msg.length > 0 ? msg : L10n.t('operation_failed', '操作失败'));
+      const isInternalCode = msg.startsWith('dev_switch') || msg.length === 0;
+      ToastUtil.show(isInternalCode ? L10n.networkFailure : msg);
     } finally {
       this.switchingMode = false;
+      this.channelRevision++;
     }
   }
 
@@ -363,7 +380,7 @@ export struct HomeUserInfoDialog {
             .onClick(() => {
               void this.selectMode(m);
             })
-          }, (m: DevConnectMode) => `${m}`)
+          }, (m: DevConnectMode) => `${m}_${this.channelRevision}`)
         }
         .width(240)
         .padding(16)
