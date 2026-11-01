@@ -2,6 +2,7 @@ package com.nascabos.mobile
 
 import com.nascabos.mobile.playback.Media3PlayerViewFactory
 import com.nascabos.mobile.playback.NascabPlaybackMethodHandler
+import com.nascabos.mobile.storage.PublicDownloadsHandler
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -17,6 +18,10 @@ class MainActivity : AudioServiceActivity() {
         NascabPlaybackMethodHandler.install(
             this,
             MethodChannel(messenger, "com.nascabos/playback"),
+        )
+        PublicDownloadsHandler.install(
+            this,
+            MethodChannel(messenger, "com.nascabos/public_downloads"),
         )
     }
 }

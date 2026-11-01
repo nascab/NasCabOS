@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- 下载保存到公共 Download 目录：Android 9 及以下需要写外部存储权限，10+ 走 MediaStore 不需要 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <application
         android:label="NasCabOS"
         android:name=".NascabApplication"

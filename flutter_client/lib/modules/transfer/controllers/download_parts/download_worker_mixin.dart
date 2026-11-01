@@ -152,7 +152,7 @@ mixin DownloadWorkerMixin on DesktopDownloadWorkerMixin {
         lower.endsWith('.3gp');
   }
 
-  /// 将已下载文件复制到系统「下载」目录下可见子路径（替代 background_downloader 的 moveFileToSharedStorage）。
+  /// 将已下载文件写入系统公共「下载」目录（Android 10+ 走 MediaStore，低版本直接写公共目录）。
   Future<String?> _exposeAndroidDownloadInPublicStorage({
     required String sourcePath,
     required int childrenCount,
@@ -163,8 +163,6 @@ mixin DownloadWorkerMixin on DesktopDownloadWorkerMixin {
     try {
       final src = File(sourcePath);
       if (!await src.exists()) return null;
-      final downloads = await getDownloadsDirectory();
-      if (downloads == null) return null;
 
       String? relDir;
       if (childrenCount > 1) {
@@ -185,25 +183,11 @@ mixin DownloadWorkerMixin on DesktopDownloadWorkerMixin {
           : 'NasCabDownload';
       final sub = relDir == null ? baseSharedDir : p.join(baseSharedDir, relDir);
 
-      final destDir = Directory(p.join(downloads.path, sub));
-      if (!await destDir.exists()) {
-        await destDir.create(recursive: true);
-      }
-
-      final baseName = p.basename(sourcePath);
-      var destPath = p.join(destDir.path, baseName);
-      var destFile = File(destPath);
-      var i = 1;
-      while (await destFile.exists()) {
-        destPath = p.join(
-          destDir.path,
-          '${p.basenameWithoutExtension(baseName)}($i)${p.extension(baseName)}',
-        );
-        destFile = File(destPath);
-        i++;
-      }
-      await src.copy(destPath);
-      return destPath;
+      return AndroidPublicDownloads.save(
+        sourcePath: sourcePath,
+        fileName: p.basename(sourcePath),
+        relativeDir: p.join('Download', sub),
+      );
     } catch (e) {
       print('_exposeAndroidDownloadInPublicStorage: $e');
       return null;

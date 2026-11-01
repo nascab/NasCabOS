@@ -48,6 +48,8 @@ class _DownloadCenterDownloadedFilesTabState
 
       final dirCaption = Platform.isIOS
           ? 'download_center_completed_dir_ios'.tr
+          : Platform.isAndroid
+          ? '${'download_to'.tr} Download/NasCabDownload'
           : '${'download_to'.tr} $dir';
 
       return Column(
