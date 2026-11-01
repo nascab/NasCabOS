@@ -18,7 +18,7 @@ class BookCollectionEditParams extends DialogParamsBase {
   editing: BookCollectionItem | undefined = undefined;
 }
 
-function canSubmit(name: string, paths: string[]): boolean {
+function canSubmitCollection(name: string, paths: string[]): boolean {
   return name.trim().length > 0 && paths.length > 0;
 }
 
@@ -32,14 +32,20 @@ struct BookCollectionEditDialogInner {
   @Param p: BookCollectionEditParams = new BookCollectionEditParams();
   @Local name: string = '';
   @Local paths: string[] = [];
+  @Local canSubmit: boolean = false;
 
   aboutToAppear(): void {
     this.name = this.p.name;
     this.paths = this.p.pathList.slice();
+    this.recomputeCanSubmit();
+  }
+
+  private recomputeCanSubmit(): void {
+    this.canSubmit = canSubmitCollection(this.name, this.paths);
   }
 
   private submit(): void {
-    if (!canSubmit(this.name, this.paths)) {
+    if (!this.canSubmit) {
       return;
     }
     const trimmedName = this.name.trim();
@@ -67,22 +73,27 @@ struct BookCollectionEditDialogInner {
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .layoutWeight(1)
       SymbolGlyph($r('sys.symbol.xmark'))
-        .fontSize(14)
-        .fontColor([AppTheme.withAlpha(AppTheme.current().onSurface, 0.6)])
+        .fontSize(16)
+        .fontColor([AppTheme.current().hint])
         .onClick(() => {
-          const next = this.paths.slice();
-          next.splice(index, 1);
-          this.paths = next;
+          if (index < 0 || index >= this.paths.length) {
+            return;
+          }
+          this.paths.splice(index, 1);
+          this.paths = this.paths.slice();
+          this.recomputeCanSubmit();
         })
     }
+    .alignItems(VerticalAlign.Center)
     .width('100%')
-    .padding({ left: 10, right: 6, top: 6, bottom: 6 })
+    .padding({ left: 10, right: 10, top: 6, bottom: 6 })
     .borderRadius(8)
-    .border({ width: 1, color: AppTheme.current().divider })
+    .border({ width: 1, color: AppTheme.withAlpha(AppTheme.current().onSurface, 0.15) })
+    .margin({ top: index > 0 ? 6 : 0 })
   }
 
   build() {
-    Column({ space: 12 }) {
+    Column() {
       Row({ space: 8 }) {
         Text(this.p.title)
           .fontSize(17)
@@ -90,94 +101,120 @@ struct BookCollectionEditDialogInner {
           .fontColor(AppTheme.current().onSurface)
           .layoutWeight(1)
         if (this.p.showHelp) {
-          SymbolGlyph($r('sys.symbol.questionmark_circle'))
-            .fontSize(20)
-            .fontColor([AppTheme.withAlpha(AppTheme.current().onSurface, 0.6)])
+          SymbolGlyph($r('sys.symbol.info_circle'))
+            .fontSize(18)
+            .fontColor([AppTheme.current().hint])
             .onClick(() => {
-              DialogUtil.showInfoDialog(L10n.t('book_create_collection', '创建合集'),
+              DialogUtil.showInfoDialog(this.p.title,
                 L10n.t('book_create_collection_alert',
                   '合集用于把多个文件夹聚合为一个入口，选择多个文件夹路径后即可在合集内浏览其中的图书。'));
             })
         }
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize(18)
+          .fontColor([AppTheme.current().hint])
+          .onClick(() => {
+            this.p.onResult(undefined);
+          })
       }
       .width('100%')
 
-      TextInput({ text: this.name, placeholder: L10n.t('name', '名称') })
-        .width('100%')
-        .height(44)
+      TextInput({ text: this.name })
         .fontSize(14)
-        .backgroundColor(AppTheme.current().inputFill)
         .fontColor(AppTheme.current().onSurface)
-        .placeholderColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.6))
+        .placeholderFont({ size: 14 })
+        .placeholderColor(AppTheme.current().hint)
+        .backgroundColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.05))
+        .borderRadius(8)
+        .border({ width: 1, color: AppTheme.current().inputBorder })
+        .height(42)
+        .margin({ top: 16 })
+        .width('100%')
         .onChange((v: string): void => {
           this.name = v;
+          this.recomputeCanSubmit();
         })
 
-      Button(L10n.t('choose_path', '选择路径'))
-        .width('100%')
-        .height(40)
-        .fontSize(14)
-        .backgroundColor(AppTheme.current().inputFill)
-        .fontColor(AppTheme.current().onSurface)
-        .onClick(() => {
-          pickTargetFolderViaSheet('', (picked: string[]): void => {
-            if (picked.length === 0) {
-              return;
+      Button() {
+        Row({ space: 6 }) {
+          SymbolGlyph($r('sys.symbol.folder'))
+            .fontSize(16)
+            .fontColor([AppTheme.current().buttonText])
+          Text(L10n.t('choose_path', '选择路径'))
+            .fontSize(14)
+            .fontColor(AppTheme.current().buttonText)
+        }
+      }
+      .backgroundColor(AppTheme.current().buttonBg)
+      .height(40)
+      .width('100%')
+      .margin({ top: 12 })
+      .onClick(() => {
+        pickTargetFolderViaSheet('', (picked: string[]): void => {
+          if (picked.length === 0) {
+            return;
+          }
+          let changed = false;
+          for (const path of picked) {
+            const v = path.trim();
+            if (v.length > 0 && !this.paths.includes(v)) {
+              this.paths.push(v);
+              changed = true;
             }
-            const next = this.paths.slice();
-            for (const path of picked) {
-              if (next.indexOf(path) < 0) {
-                next.push(path);
-              }
-            }
-            this.paths = next;
-          }, true, 'book');
-        })
+          }
+          if (changed) {
+            this.paths = this.paths.slice();
+            this.recomputeCanSubmit();
+          }
+        }, true, 'book');
+      })
 
       if (this.paths.length > 0) {
         Scroll() {
-          Column({ space: 6 }) {
+          Column() {
             ForEach(this.paths, (path: string, index: number) => {
               this.PathRow(path, index)
             }, (path: string, index: number): string => `${index}_${path}`)
           }
           .width('100%')
         }
-        .width('100%')
         .constraintSize({ maxHeight: 220 })
-        .align(Alignment.Top)
         .scrollBar(BarState.Auto)
+        .align(Alignment.Top)
+        .margin({ top: 12 })
+        .width('100%')
       }
 
-      Row({ space: 12 }) {
-        Button(L10n.t('cancel', '取消'), { buttonStyle: ButtonStyleMode.NORMAL })
-          .layoutWeight(1)
-          .height(40)
+      Row({ space: 10 }) {
+        Button(L10n.cancel)
           .fontSize(14)
           .fontColor(AppTheme.current().onSurface)
-          .backgroundColor(AppTheme.current().inputFill)
+          .backgroundColor(AppTheme.withAlpha(AppTheme.current().onSurface, 0.08))
+          .height(40)
+          .layoutWeight(1)
           .onClick(() => {
             this.p.onResult(undefined);
           })
-        Button(this.p.confirmText)
-          .layoutWeight(1)
-          .height(40)
+        Button(this.p.confirmText.length > 0 ? this.p.confirmText : L10n.ok)
           .fontSize(14)
-          .enabled(canSubmit(this.name, this.paths))
-          .backgroundColor(AppTheme.current().primary)
-          .fontColor(AppTheme.current().buttonText)
-          .opacity(canSubmit(this.name, this.paths) ? 1 : 0.4)
+          .fontColor(this.canSubmit ? AppTheme.current().buttonText : AppTheme.current().hint)
+          .backgroundColor(this.canSubmit ? AppTheme.current().buttonBg
+            : AppTheme.withAlpha(AppTheme.current().onSurface, 0.08))
+          .height(40)
+          .layoutWeight(1)
           .onClick(() => {
-            this.submit();
+            if (this.canSubmit) {
+              this.submit();
+            }
           })
       }
       .width('100%')
-      .margin({ top: 4 })
+      .margin({ top: 16 })
     }
-    .width('92%')
-    .padding(16)
+    .padding(20)
     .borderRadius(16)
     .backgroundColor(AppTheme.current().surfaceBg)
+    .width('92%')
   }
 }
 
