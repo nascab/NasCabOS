@@ -4,7 +4,7 @@ import { BorderedIconButton } from '../../../../common/components/BorderedIconBu
 import { SearchInputBar } from '../../../../common/components/SearchInputBar';
 import { EmptyState } from '../../../../common/components/EmptyState';
 import { PickOption, showOptionPickSheet } from '../../../../common/components/OptionPickSheet';
-import { TimelineController, TimelineRowItem } from '../../controllers/TimelineController';
+import { TimelineController, TimelineRowItem, TimelineViewport } from '../../controllers/TimelineController';
 import { TimelinePhotoItem } from '../../models/PhotoModels';
 import { PhotoTimelineItem } from './PhotoTimelineItem';
 import { PhotoTimelineDateHeader } from './PhotoTimelineDateHeader';
@@ -220,6 +220,26 @@ export struct PhotoTimelineView {
   /** onScrollIndex 实际上报的首个可见项下标，用于定位后反馈校正 */
   private observedFirst: number = 0;
 
+  // ---- 多选拖选（长按 + 滑动框选，边缘自动滚动）----
+  /** 列表窗口位置与高度（拖选命中测试用） */
+  private listLeft: number = 0;
+  private listTop: number = 0;
+  private listHeight: number = 0;
+  /** 当前手指窗口坐标（拖选命中测试用） */
+  private fingerX: number = 0;
+  private fingerY: number = 0;
+  /** 拖选进行中 */
+  private dragging: boolean = false;
+  private autoScrollTimer: number = -1;
+  /** 长按检测：按住不动 380ms 进入拖选；手指移动超过阈值即取消（把滚动让给列表） */
+  private pressTimer: number = -1;
+  private pressStartX: number = 0;
+  private pressStartY: number = 0;
+  /** 本次触摸已处理过长按（计时器与 LongPressGesture 双通道去重） */
+  private pressHandled: boolean = false;
+  /** 拖选期间锁定列表手势滚动（只允许程序化的边缘自动滚动，避免双重位移） */
+  @Local scrollLocked: boolean = false;
+
   aboutToAppear(): void {
     this.ctrl.onRowsChanged = (): void => {
       this.ds.sync(this.ctrl);
@@ -247,6 +267,10 @@ export struct PhotoTimelineView {
 
   aboutToDisappear(): void {
     this.disposed = true;
+    this.cancelPressTimer();
+    this.stopAutoScroll();
+    this.dragging = false;
+    this.ctrl.endSelectionDrag();
     this.ctrl.programmaticScroll = false;
     this.ctrl.onRowsChanged = undefined;
     this.ctrl.onTimelineReset = undefined;
@@ -256,6 +280,130 @@ export struct PhotoTimelineView {
   private nextScrollEpoch(): number {
     this.scrollEpoch++;
     return this.scrollEpoch;
+  }
+
+  /** 拖选命中测试所需的列表视口几何（列表窗口位置 + 当前滚动偏移 + 顶部哨兵高度） */
+  private viewport(): TimelineViewport {
+    const vp = new TimelineViewport();
+    vp.left = this.listLeft;
+    vp.top = this.listTop;
+    vp.scrollY = this.scroller.currentOffset().yOffset;
+    // 顶部 loading 哨兵与 ListContent 中插入条件保持一致（高度 56 + 1vp 行间距）
+    vp.topSentinel = (this.ctrl.isLoadingUp && !this.ctrl.programmaticScroll) ? 57 : 0;
+    return vp;
+  }
+
+  /** 按下：启动长按检测（手指移动超过阈值或双指落下时取消，把滚动交还给列表） */
+  private handleTouchDown(): void {
+    this.cancelPressTimer();
+    this.pressStartX = this.fingerX;
+    this.pressStartY = this.fingerY;
+    this.pressTimer = setTimeout((): void => {
+      this.pressTimer = -1;
+      this.handleLongPress();
+    }, 380);
+  }
+
+  private cancelPressTimer(): void {
+    if (this.pressTimer >= 0) {
+      clearTimeout(this.pressTimer);
+      this.pressTimer = -1;
+    }
+  }
+
+  /** 长按：多选模式开始拖选；非多选模式先进入多选选中该张，同一根手指继续框选 */
+  private handleLongPress(): void {
+    if (this.pressHandled) {
+      return;
+    }
+    this.pressHandled = true;
+    const vp = this.viewport();
+    if (!this.ctrl.isMultiSelectMode) {
+      const id = this.ctrl.photoIdAtWindowPoint(this.fingerX, this.fingerY, vp);
+      if (id < 0) {
+        return;
+      }
+      this.ctrl.toggleSelection(id);
+      this.dragging = this.ctrl.beginSelectionDrag(this.fingerX, this.fingerY, vp, true);
+    } else {
+      this.dragging = this.ctrl.beginSelectionDrag(this.fingerX, this.fingerY, vp, false);
+    }
+    if (this.dragging) {
+      // 锁定列表手势滚动：拖选期间内容只由边缘自动滚动移动，避免“框选 + 惯性滚动”双重位移
+      this.scrollLocked = true;
+      this.ensureAutoScroll();
+    }
+  }
+
+  private handleDragMove(): void {
+    if (!this.dragging) {
+      return;
+    }
+    this.ctrl.updateSelectionDrag(this.fingerX, this.fingerY, this.viewport());
+    this.ensureAutoScroll();
+  }
+
+  private endDragSelect(): void {
+    this.stopAutoScroll();
+    if (!this.dragging) {
+      return;
+    }
+    this.dragging = false;
+    this.scrollLocked = false;
+    this.ctrl.endSelectionDrag();
+  }
+
+  /** 手指进入列表上下边缘区域时，启动连续滚动，让框选能自然延伸到屏幕外 */
+  private ensureAutoScroll(): void {
+    if (!this.dragging) {
+      this.stopAutoScroll();
+      return;
+    }
+    if (this.autoScrollTimer >= 0 || this.autoScrollStep() === 0) {
+      return;
+    }
+    this.autoScrollTimer = setTimeout((): void => this.autoScrollTick(), 16);
+  }
+
+  /** 单次自动滚动距离（vp，正数向下滚）：越靠近边缘滚得越快 */
+  private autoScrollStep(): number {
+    if (!this.dragging || this.listHeight <= 0) {
+      return 0;
+    }
+    const zone = 72;
+    const topEdge = this.listTop + zone;
+    const bottomEdge = this.listTop + this.listHeight - zone;
+    if (this.fingerY < topEdge) {
+      const ratio = Math.min(1, (topEdge - this.fingerY) / zone);
+      return -Math.max(3, Math.round(16 * ratio));
+    }
+    if (this.fingerY > bottomEdge) {
+      const ratio = Math.min(1, (this.fingerY - bottomEdge) / zone);
+      return Math.max(3, Math.round(16 * ratio));
+    }
+    return 0;
+  }
+
+  private autoScrollTick(): void {
+    this.autoScrollTimer = -1;
+    if (!this.dragging) {
+      return;
+    }
+    const step = this.autoScrollStep();
+    if (step === 0) {
+      return;
+    }
+    this.scroller.scrollBy(0, step);
+    // 滚动后手指下方的照片已变化，重新按“起点→当前点”矩形更新选中
+    this.ctrl.updateSelectionDrag(this.fingerX, this.fingerY, this.viewport());
+    this.autoScrollTimer = setTimeout((): void => this.autoScrollTick(), 16);
+  }
+
+  private stopAutoScroll(): void {
+    if (this.autoScrollTimer >= 0) {
+      clearTimeout(this.autoScrollTimer);
+      this.autoScrollTimer = -1;
+    }
   }
 
   /** 结束程序化滚动状态（仅当本指令链仍是最新一代时生效），留 120ms 宽限吃掉残余滚动事件 */
@@ -436,7 +584,68 @@ export struct PhotoTimelineView {
         this.scrollPos += delta;
       }
     })
-    .gesture(PinchGesture({ fingers: 2 })
+    .onAreaChange((_o: Area, n: Area): void => {
+      this.listLeft = Number(n.globalPosition.x);
+      this.listTop = Number(n.globalPosition.y);
+      this.listHeight = Number(n.height);
+    })
+    .onTouch((e: TouchEvent): void => {
+      // 抬手/取消必须先处理：不依赖 touches[0] 是否仍然存在，避免拖选状态与滚动锁卡死
+      if (e.type === TouchType.Up || e.type === TouchType.Cancel) {
+        this.cancelPressTimer();
+        this.endDragSelect();
+        return;
+      }
+      const t = e.touches[0];
+      if (t === undefined) {
+        return;
+      }
+      this.fingerX = t.windowX;
+      this.fingerY = t.windowY;
+      if (e.type === TouchType.Down) {
+        this.pressHandled = false;
+        this.pressStartX = this.fingerX;
+        this.pressStartY = this.fingerY;
+        // 双指（缩放手势）不进入长按拖选
+        if (e.touches.length > 1) {
+          this.cancelPressTimer();
+          return;
+        }
+        this.handleTouchDown();
+        return;
+      }
+      if (e.type === TouchType.Move) {
+        if (this.dragging) {
+          this.handleDragMove();
+          return;
+        }
+        // 移动超过 10vp 即判定为滑动，取消长按：多选模式下列表滑动与平时完全一致
+        const dx = this.fingerX - this.pressStartX;
+        const dy = this.fingerY - this.pressStartY;
+        if (dx * dx + dy * dy >= 100) {
+          this.cancelPressTimer();
+        }
+        return;
+      }
+      if (e.type === TouchType.Up || e.type === TouchType.Cancel) {
+        this.cancelPressTimer();
+        this.endDragSelect();
+      }
+    })
+    .enableScrollInteraction(!this.scrollLocked)
+    .gesture(
+      // 长按手势只负责“消费本次点击并赢得手势竞争”：
+      // 手指按住不动 380ms 即识别，使内置滚动与照片点击都失败，避免松手时误触打开大图。
+      // 拖选的移动跟踪与自动滚动在 onTouch 中处理（不依赖手势，滚动时单元格被回收也不会中断）。
+      LongPressGesture({ fingers: 1, duration: 380 })
+        .onAction((e: GestureEvent): void => {
+          if (e.fingerList.length !== 1) {
+            return;
+          }
+          this.cancelPressTimer();
+          this.handleLongPress();
+        }))
+    .parallelGesture(PinchGesture({ fingers: 2 })
       .onActionStart((_e: GestureEvent) => {
         this.pinchStartSize = this.ctrl.itemSize;
         this.pinchLastApplied = this.ctrl.itemSize;

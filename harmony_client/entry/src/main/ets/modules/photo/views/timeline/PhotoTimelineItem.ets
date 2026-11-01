@@ -135,12 +135,7 @@ export struct PhotoTimelineItem {
       }
       this.ctrl.openMedia(this.item);
     })
-    .gesture(LongPressGesture({ duration: 500 })
-      .onAction(() => {
-        if (!this.ctrl.isMultiSelectMode) {
-          this.ctrl.toggleSelection(this.item.id);
-        }
-      }))
+
   }
 
   private cellExtent(): number {

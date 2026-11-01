@@ -46,6 +46,32 @@ export class TimelineListPhoto {
 
 type FlatItem = TimelineListDateHeader | TimelineListPhoto;
 
+/** 网格中的行列位置（拖选命中/锚点定位用） */
+class DragCell {
+  row: number = 0;
+  col: number = 0;
+
+  constructor(row: number, col: number) {
+    this.row = row;
+    this.col = col;
+  }
+}
+
+/**
+ * 拖选命中测试用的列表视口几何。
+ * 由视图在每次命中前构造：列表窗口位置 + 当前滚动偏移 + 顶部哨兵高度。
+ */
+export class TimelineViewport {
+  /** 列表左边缘的窗口坐标 */
+  left: number = 0;
+  /** 列表上边缘的窗口坐标 */
+  top: number = 0;
+  /** 当前纵向滚动偏移 */
+  scrollY: number = 0;
+  /** 顶部 loading 哨兵高度（含 1vp 行间距），无哨兵为 0 */
+  topSentinel: number = 0;
+}
+
 /** 渲染行：header 行或一行 N 个照片 */
 @ObservedV2
 export class TimelineRowItem {
@@ -156,6 +182,29 @@ export class TimelineController {
   /** 当前列表顶部可见行的稳定 key（向上分页前保存锚点用） */
   private visibleFirstRowKey: string = '';
 
+  // ---- 拖选（多选模式下长按并滑动：起点到终点矩形范围内的照片批量选中/反选）----
+  /** 拖选进行中 */
+  private dragging: boolean = false;
+  /** 本次拖选是“多选”(true) 还是“反选”(false)，由起点照片的选中状态决定 */
+  private dragSelecting: boolean = true;
+  /** 拖选矩形的起点/终点（网格行列） */
+  private dragAnchorRow: number = 0;
+  private dragAnchorCol: number = 0;
+  private dragCurRow: number = 0;
+  private dragCurCol: number = 0;
+  /** 起点照片 id 与其行下标对应的 rows 版本：向上补页后行下标会整体后移，需按 id 重定位 */
+  private dragAnchorId: number = -1;
+  private dragAnchorRowVersion: number = -1;
+  /** 拖选开始时的选中集合快照：矩形外的选择状态保持不变 */
+  private dragBaseIds: number[] = [];
+  /** 上次应用的矩形标记，矩形与行数据未变化时跳过重算 */
+  private dragLastRect: string = '';
+  /** 行顶内容坐标缓存（拖选命中测试用） */
+  private rowTops: number[] = [];
+  private rowTopsDirty: boolean = true;
+  /** rows 版本号：行数据重建后矩形范围内的照片需要重算 */
+  private rowsVersion: number = 0;
+
   /** 用初始上下文初始化（视图 aboutToAppear 调用一次） */
   configure(initialListType: string, albumId: number, collectionId: number, smartAlbumId: number,
     faceId: number, placeName: string, loadTheDay: boolean, geohash: string, year: number,
@@ -244,6 +293,8 @@ export class TimelineController {
     this.crossAxisCount = count;
     const usable = Math.max(0, contentWidth - (count - 1) * spacing);
     this.cellExtent = usable / count;
+    // 单元格尺寸变化会让拖选命中测试的行高缓存失效
+    this.rowTopsDirty = true;
     if (count !== prevCount) {
       this.rebuildRows();
     }
@@ -666,6 +717,9 @@ export class TimelineController {
       }
     }
     this.rows = next;
+    // 行数据变化后拖选命中测试的行高缓存失效，矩形覆盖范围也可能变化
+    this.rowTopsDirty = true;
+    this.rowsVersion++;
     // TODO(diag) 跳转整天丢失排查，定位后删除
     if (this.jumping) {
       const headers: string[] = [];
@@ -902,6 +956,7 @@ export class TimelineController {
   }
 
   toggleMultiSelectMode(): void {
+    this.dragging = false;
     this.isMultiSelectMode = !this.isMultiSelectMode;
     if (!this.isMultiSelectMode) {
       this.selectedIds = [];
@@ -909,6 +964,7 @@ export class TimelineController {
   }
 
   exitMultiSelectMode(): void {
+    this.dragging = false;
     this.isMultiSelectMode = false;
     this.selectedIds = [];
   }
@@ -928,6 +984,234 @@ export class TimelineController {
     if (next.length === 0) {
       this.exitMultiSelectMode();
     }
+  }
+
+  // ---- 拖选（对齐移动端相册：多选模式下长按并滑动，起点到终点矩形内的照片批量选中/反选）----
+
+  /**
+   * 开始拖选：仅多选模式下生效。
+   * (windowX, windowY) 为长按点的窗口坐标，vp 为列表视口几何。
+   * 起点照片已选中则本次为“反选”（矩形内取消选中），否则为“多选”。
+   * forceSelecting=true 时强制为“多选”方向（长按进入多选模式后同一根手指继续框选用）。
+   * 返回 false 表示本次长按不进入拖选（调用方按“长按进入多选”处理）。
+   */
+  beginSelectionDrag(windowX: number, windowY: number, vp: TimelineViewport,
+    forceSelecting: boolean = false): boolean {
+    this.dragging = false;
+    if (!this.isMultiSelectMode) {
+      return false;
+    }
+    const cell = this.cellAtWindowPoint(windowX, windowY, vp);
+    if (cell === undefined) {
+      return false;
+    }
+    const anchorId = this.photoIdAtCell(cell.row, cell.col);
+    if (anchorId < 0) {
+      return false;
+    }
+    this.dragAnchorRow = cell.row;
+    this.dragAnchorCol = cell.col;
+    this.dragCurRow = cell.row;
+    this.dragCurCol = cell.col;
+    this.dragAnchorId = anchorId;
+    this.dragAnchorRowVersion = this.rowsVersion;
+    this.dragSelecting = forceSelecting || !this.isSelected(anchorId);
+    this.dragBaseIds = this.selectedIds.slice();
+    this.dragLastRect = '';
+    this.dragging = true;
+    this.applySelectionRect();
+    return true;
+  }
+
+  /** 拖选中手指移动：按“起点→当前点”的矩形范围更新选中（列表自动滚动时也复用此入口） */
+  updateSelectionDrag(windowX: number, windowY: number, vp: TimelineViewport): void {
+    if (!this.dragging) {
+      return;
+    }
+    const cell = this.cellAtWindowPoint(windowX, windowY, vp);
+    if (cell === undefined) {
+      return;
+    }
+    this.dragCurRow = cell.row;
+    this.dragCurCol = cell.col;
+    this.applySelectionRect();
+  }
+
+  /** 结束拖选：全部取消后退出多选（与点击反选到底的行为一致） */
+  endSelectionDrag(): void {
+    if (!this.dragging) {
+      return;
+    }
+    this.dragging = false;
+    this.dragLastRect = '';
+    this.dragBaseIds = [];
+    if (this.selectedIds.length === 0) {
+      this.exitMultiSelectMode();
+    }
+  }
+
+  /** 窗口坐标 → 照片 id（长按进入多选时用）；未命中照片返回 -1 */
+  photoIdAtWindowPoint(windowX: number, windowY: number, vp: TimelineViewport): number {
+    const cell = this.cellAtWindowPoint(windowX, windowY, vp);
+    if (cell === undefined) {
+      return -1;
+    }
+    return this.photoIdAtCell(cell.row, cell.col);
+  }
+
+  /** 应用“起点→当前点”矩形：矩形内照片置为本次拖选状态，矩形外恢复为按下时的快照 */
+  private applySelectionRect(): void {
+    // 行数据重建（例如向上补页插入了更多行）后，起点行下标会整体后移，按起点照片 id 重定位
+    if (this.dragAnchorRowVersion !== this.rowsVersion) {
+      this.dragAnchorRowVersion = this.rowsVersion;
+      const r = this.rowOfPhoto(this.dragAnchorId);
+      if (r >= 0) {
+        this.dragAnchorRow = r;
+      }
+    }
+    const r0 = Math.min(this.dragAnchorRow, this.dragCurRow);
+    const r1 = Math.max(this.dragAnchorRow, this.dragCurRow);
+    const c0 = Math.min(this.dragAnchorCol, this.dragCurCol);
+    const c1 = Math.max(this.dragAnchorCol, this.dragCurCol);
+    const key = `${this.rowsVersion}_${r0}_${r1}_${c0}_${c1}`;
+    if (key === this.dragLastRect) {
+      return;
+    }
+    this.dragLastRect = key;
+    // 先收集矩形内的照片 id（集合运算，避免多选量很大时逐格 indexOf 造成 O(n²) 卡顿）
+    const rectIds: number[] = [];
+    const lastRow = Math.min(r1, this.rows.length - 1);
+    for (let r = r0; r <= lastRow; r++) {
+      const row = this.rows[r];
+      if (row.isHeader || row.photos.length === 0) {
+        continue;
+      }
+      const lastCol = Math.min(c1, row.photos.length - 1);
+      for (let c = Math.max(0, c0); c <= lastCol; c++) {
+        rectIds.push(row.photos[c].id);
+      }
+    }
+    let next: number[];
+    if (this.dragSelecting) {
+      const existed = new Set<number>(this.dragBaseIds);
+      next = this.dragBaseIds.slice();
+      for (const id of rectIds) {
+        if (!existed.has(id)) {
+          existed.add(id);
+          next.push(id);
+        }
+      }
+    } else {
+      const inRect = new Set<number>(rectIds);
+      next = this.dragBaseIds.filter((id: number): boolean => !inRect.has(id));
+    }
+    if (!this.sameIds(next, this.selectedIds)) {
+      this.selectedIds = next;
+    }
+  }
+
+  private sameIds(a: number[], b: number[]): boolean {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /** 窗口坐标 → 网格行列；越界时夹到首/末行、首/末列 */
+  private cellAtWindowPoint(windowX: number, windowY: number, vp: TimelineViewport): DragCell | undefined {
+    this.ensureRowMetrics();
+    if (this.rows.length === 0) {
+      return undefined;
+    }
+    const contentY = windowY - vp.top + vp.scrollY - vp.topSentinel;
+    const rowIdx = this.rowIndexClamped(contentY);
+    const contentX = windowX - vp.left - 6;
+    let col = Math.floor(contentX / (this.cellExtent + 1));
+    if (col < 0) {
+      col = 0;
+    } else if (col > this.crossAxisCount - 1) {
+      col = this.crossAxisCount - 1;
+    }
+    return new DragCell(rowIdx, col);
+  }
+
+  /** 内容 Y 坐标所属行下标（落在行间隙归入下一行，越界夹到首/末行） */
+  private rowIndexClamped(contentY: number): number {
+    const tops = this.rowTops;
+    const last = tops.length - 1;
+    if (last < 0) {
+      return 0;
+    }
+    if (contentY <= 0) {
+      return 0;
+    }
+    let lo = 0;
+    let hi = last;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi + 1) / 2);
+      if (tops[mid] <= contentY) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    const row = this.rows[lo];
+    const extent = row.isHeader ? this.headerExtent : this.cellExtent;
+    if (contentY >= tops[lo] + extent && lo < last) {
+      return lo + 1;
+    }
+    return lo;
+  }
+
+  /** 照片所在行下标；不存在返回 -1 */
+  private rowOfPhoto(id: number): number {
+    for (let r = 0; r < this.rows.length; r++) {
+      const row = this.rows[r];
+      if (row.isHeader) {
+        continue;
+      }
+      for (const p of row.photos) {
+        if (p.id === id) {
+          return r;
+        }
+      }
+    }
+    return -1;
+  }
+
+  /** 行列位置 → 照片 id；header 行、行尾空白、越界返回 -1 */
+  private photoIdAtCell(rowIdx: number, col: number): number {
+    if (rowIdx < 0 || rowIdx >= this.rows.length) {
+      return -1;
+    }
+    const row = this.rows[rowIdx];
+    if (row.isHeader || row.photos.length === 0) {
+      return -1;
+    }
+    if (col < 0 || col >= row.photos.length) {
+      return -1;
+    }
+    return row.photos[col].id;
+  }
+
+  /** 行顶内容坐标缓存（行数或单元格尺寸变化时重建） */
+  private ensureRowMetrics(): void {
+    if (!this.rowTopsDirty && this.rowTops.length === this.rows.length) {
+      return;
+    }
+    this.rowTopsDirty = false;
+    const tops: number[] = [];
+    let y = 0;
+    for (const row of this.rows) {
+      tops.push(y);
+      y += (row.isHeader ? this.headerExtent : this.cellExtent) + 1;
+    }
+    this.rowTops = tops;
   }
 
   isDateSelected(date: string): boolean {
