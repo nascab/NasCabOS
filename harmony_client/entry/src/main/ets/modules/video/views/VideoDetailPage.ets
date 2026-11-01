@@ -172,19 +172,8 @@ export struct VideoDetailPage {
         .align(Alignment.Top)
         .opacity(this.themeTick >= 0 ? 1 : 1)
 
-        // 顶部浮层：左侧分辨率标签 + 右侧关闭按钮（对齐 Flutter Positioned 顶栏）
+        // 顶部浮层：左侧关闭按钮 + 右侧分辨率标签（对齐 Flutter Positioned 顶栏）
         Row() {
-          if (this.resLabel().length > 0) {
-            Text(this.resLabel())
-              .fontSize(14)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(DetailColors.onSurface)
-              .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-              .borderRadius(999)
-              .border({ width: 1, color: DetailColors.alpha(0.22) })
-              .backgroundColor(AppTheme.withAlpha('#000000', 0.45))
-          }
-          Blank()
           Column() {
             SymbolGlyph($r('sys.symbol.xmark'))
               .fontSize(20)
@@ -198,6 +187,17 @@ export struct VideoDetailPage {
           .onClick(() => {
             this.popPage();
           })
+          Blank()
+          if (this.resLabel().length > 0) {
+            Text(this.resLabel())
+              .fontSize(14)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(DetailColors.onSurface)
+              .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+              .borderRadius(999)
+              .border({ width: 1, color: DetailColors.alpha(0.22) })
+              .backgroundColor(AppTheme.withAlpha('#000000', 0.45))
+          }
         }
         .alignItems(VerticalAlign.Center)
         .width('100%')
