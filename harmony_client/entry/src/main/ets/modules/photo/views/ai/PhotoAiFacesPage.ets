@@ -753,9 +753,12 @@ export struct PhotoAiFacesPage {
       .height('100%')
       .justifyContent(FlexAlign.Center)
     } else if (this.ctrl.items.length === 0) {
-      EmptyState({ message: L10n.t('no_data', '暂无数据') })
-        .width('100%')
-        .height('100%')
+      Column() {
+        EmptyState({ message: L10n.t('no_data', '暂无数据') })
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
     } else {
       this.GridContent()
     }
