@@ -55,6 +55,17 @@ class TaskDownloadItem extends StatelessWidget {
     return error;
   }
 
+  /// Android 文件最终会写入公共 Download 目录，展示时把沙盒路径替换为公共路径。
+  String _displaySavePath(TransferTask task) {
+    final path = task.localPath;
+    if (!DeviceUtils.isAndroid) return path;
+    const marker = 'NasCabDownload';
+    if (path.contains('Download/$marker')) return path;
+    final idx = path.lastIndexOf(marker);
+    if (idx < 0) return path;
+    return 'Download/$marker${path.substring(idx + marker.length)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedProcessed = FileUtil.formatSize(task.processedSize);
@@ -139,7 +150,7 @@ class TaskDownloadItem extends StatelessWidget {
                         child: Text(
                           isWebP2pTask
                               ? '${'download_to'.tr} ${'browser_download_location'.tr}'
-                              : '${'download_to'.tr} ${task.localPath}',
+                              : '${'download_to'.tr} ${_displaySavePath(task)}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
