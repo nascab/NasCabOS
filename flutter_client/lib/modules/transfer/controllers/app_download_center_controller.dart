@@ -449,7 +449,20 @@ class AppDownloadCenterController extends GetxController {
       downloadedFiles.clear();
       hasMore.value = false;
       _nextOffset = 0;
+      _clearFinishedTasksInMemory();
     }
+  }
+
+  /// 同步清理内存中已结束（完成/失败）的下载任务，避免「全部」tab 仍残留记录。
+  /// 进行中（上传中/等待中/暂停）的任务保留，以便继续下载。
+  void _clearFinishedTasksInMemory() {
+    downloadController.tasks.removeWhere(
+      (t) =>
+          t.type == TransferType.download &&
+          (t.status == TransferStatus.completed ||
+              t.status == TransferStatus.error),
+    );
+    downloadController.tasks.refresh();
   }
 
   /// iOS：清空下载记录库，并仅删除仍位于应用沙盒内的本地文件（不删已保存到系统相册等公共位置的副本）。
@@ -464,6 +477,7 @@ class AppDownloadCenterController extends GetxController {
     downloadedFiles.clear();
     hasMore.value = false;
     _nextOffset = 0;
+    _clearFinishedTasksInMemory();
   }
 
   Future<File?> getVideoThumbFile(DownloadedFileEntry entry) async {
