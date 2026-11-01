@@ -20,6 +20,7 @@ import { ToastUtil } from '../../../common/ToastUtil';
 import { DownloadTarget, DownloadTaskItem } from '../models/DownloadModels';
 import { TransferStatus } from '../models/TransferModels';
 import { DownloadHistoryStorage } from '../storage/DownloadHistoryStorage';
+import { UploadTransferHelper } from '../utils/UploadTransferHelper';
 
 /** 下载保存根目录名（应用 filesDir 下，对齐 Flutter getApplicationDocumentsDirectory/NasCabDownload） */
 const DOWNLOAD_DIR_NAME: string = 'NasCabDownload';
@@ -644,9 +645,14 @@ export class DownloadService {
     }
     if (failed || status < 200 || status >= 300) {
       DownloadService.deleteFileQuietly(tmpPath);
-      const detail: string = failed ? failedMessage :
-        (errText.length > 0 ? errText : L10n.t('server_error', '服务器错误'));
-      this.markError(item, `${detail} (${status})`);
+      let detail: string = L10n.t('server_error', '服务器错误');
+      if (failed) {
+        detail = failedMessage;
+      } else if (errText.length > 0) {
+        // 服务端错误体通常为 {"success":false,"message":"..."}，只展示其中的 message
+        detail = UploadTransferHelper.getDisplayMessage(errText);
+      }
+      this.markError(item, status > 0 ? `${detail} (${status})` : detail);
       return;
     }
     await this.onSysComplete(item);
@@ -781,7 +787,8 @@ export class DownloadService {
       return;
     }
     item.status = TransferStatus.ERROR;
-    item.error = message;
+    // 统一清理错误文案：错误体为 JSON 时只保留 message，避免详情页展示整段 JSON
+    item.error = UploadTransferHelper.getDisplayMessage(message);
     this.release(item);
   }
 
