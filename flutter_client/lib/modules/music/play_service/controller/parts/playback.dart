@@ -1,5 +1,8 @@
 part of '../music_play_service_controller.dart';
 
+/// 单次打开曲目的快速重试次数（间隔 2s、4s）
+const int _kOpenTrackMaxAttempts = 3;
+
 extension MusicPlayServicePlayback on MusicPlayServiceController {
   bool _isWebUnsupportedByPath(String path) {
     if (!kIsWeb) return false;
@@ -39,6 +42,8 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
     _pagingLoading = false;
     _shuffleHistory.clear();
     _desiredPlaying = false;
+    _cancelOpenRetry();
+    _openRetryAttempt = 0;
     await _disposePlayer();
     isPlaying.value = false;
     _handler?.updateQueue(const <MediaItem>[]);
@@ -146,6 +151,8 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
       await _handleNoPlayableItems();
       return;
     }
+    _cancelOpenRetry();
+    _openRetryAttempt = 0;
     await _initService();
     _paging = paging;
     _pagingToken++;
@@ -191,6 +198,7 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
 
   Future<void> play() async {
     await _initService();
+    _cancelOpenRetry();
     _desiredPlaying = true;
     await _activateIosAudioSessionForPlayback();
     await _ensureNotificationPermission();
@@ -218,6 +226,7 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
   Future<void> pause() async {
     await _initService();
     _desiredPlaying = false;
+    _cancelOpenRetry();
     await _player?.pause();
     _syncHandlerPlaybackState();
   }
@@ -232,6 +241,8 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
   Future<void> stop() async {
     await _initService();
     _desiredPlaying = false;
+    _cancelOpenRetry();
+    _openRetryAttempt = 0;
     final p = _player;
     if (p != null) {
       await p.pause();
@@ -463,10 +474,55 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
     if (playlist.isEmpty) return;
     final safeIndex = index.clamp(0, playlist.length - 1);
 
+    _cancelOpenRetry();
     final token = ++_rebuildToken;
     _isOpeningTrack = true;
     _suppressCompletedUntil = DateTime.now().add(const Duration(seconds: 4));
     _syncHandlerPlaybackState();
+    try {
+      for (var attempt = 1; attempt <= _kOpenTrackMaxAttempts; attempt++) {
+        if (isClosed || token != _rebuildToken) return;
+        _isOpeningTrack = true;
+        try {
+          await _openTrackAttempt(
+            safeIndex,
+            token,
+            autoPlay: autoPlay,
+            initialPosition: initialPosition,
+          );
+          _openRetryAttempt = 0;
+          return;
+        } catch (_) {
+          if (isClosed || token != _rebuildToken) return;
+          await _disposePlayer();
+          if (attempt >= _kOpenTrackMaxAttempts || !_desiredPlaying) rethrow;
+          // 网络/P2P 抖动时按 2s、4s 退避重试，避免后台切歌一次失败就静默停止
+          await Future.delayed(Duration(seconds: attempt * 2));
+          // 用户在等待期间已暂停/切歌，则放弃本次重试
+          if (isClosed || token != _rebuildToken) return;
+          if (autoPlay && !_desiredPlaying) return;
+        }
+      }
+    } catch (_) {
+      // 快速重试全部失败：若用户仍希望播放，再排一次较长间隔的兜底重试
+      if (!isClosed && token == _rebuildToken && _desiredPlaying) {
+        _scheduleOpenRetry();
+      }
+      rethrow;
+    } finally {
+      if (!isClosed && token == _rebuildToken) {
+        _isOpeningTrack = false;
+        _syncHandlerPlaybackState();
+      }
+    }
+  }
+
+  Future<void> _openTrackAttempt(
+    int safeIndex,
+    int token, {
+    bool autoPlay = true,
+    Duration initialPosition = Duration.zero,
+  }) async {
     try {
       await cancelDownload();
       await _disposePlayer();
@@ -719,12 +775,14 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
         await _activateIosAudioSessionForPlayback();
         _isOpeningTrack = false;
         await _player?.play();
+        _maybePrewarmP2p();
       } else {
         _isOpeningTrack = false;
       }
     } finally {
+      // 失败时不在这里清 _isOpeningTrack，交给外层重试/收尾；
+      // 期间状态保持 loading，避免 Android 前台服务因 idle 被降级。
       if (!isClosed && token == _rebuildToken) {
-        _isOpeningTrack = false;
         _syncHandlerPlaybackState();
       }
     }
@@ -889,7 +947,9 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
         : (_isCompleted
               ? AudioProcessingState.completed
               : (p == null
-                    ? AudioProcessingState.idle
+                    ? (_desiredPlaying
+                          ? AudioProcessingState.loading
+                          : AudioProcessingState.idle)
                     : (!p.isInitialized
                           ? AudioProcessingState.loading
                           : (playing
@@ -950,7 +1010,7 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
       final next = _resolveNextIndex(forward: true);
       if (next == null) return;
       _shuffleHistory.add(idx);
-      await playAt(next);
+      await _safePlayAt(next);
       return;
     }
 
@@ -982,14 +1042,24 @@ extension MusicPlayServicePlayback on MusicPlayServiceController {
           );
           return;
         }
-        await playAt(0);
+        await _safePlayAt(0);
         return;
       }
     }
 
     final next = idx + 1;
     if (next >= 0 && next < playlist.length) {
-      await playAt(next);
+      await _safePlayAt(next);
+    }
+  }
+
+  /// 自动切歌时的安全播放入口：失败不抛出未处理异常，并安排兜底重试。
+  Future<void> _safePlayAt(int index) async {
+    try {
+      await playAt(index);
+    } catch (_) {
+      if (isClosed) return;
+      if (_desiredPlaying) _scheduleOpenRetry();
     }
   }
 }

@@ -163,6 +163,7 @@ extension MusicPlayServiceLifecycle on MusicPlayServiceController {
   }
 
   void _syncFromPlayer() {
+    if (_desiredPlaying) _maybePrewarmP2p();
     final p = _player;
     if (p == null) {
       if (isPlaying.value) isPlaying.value = false;

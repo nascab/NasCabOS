@@ -18,48 +18,75 @@ class _ProxyStreamAudioSource extends StreamAudioSource {
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
     final client = HttpClient();
-    final req = await client.getUrl(Uri.parse(proxyUrl));
+    try {
+      final req = await client.getUrl(Uri.parse(proxyUrl));
 
-    if (start != null || end != null) {
-      final s = start ?? 0;
-      if (end != null) {
-        req.headers.set(HttpHeaders.rangeHeader, 'bytes=$s-${end - 1}');
-      } else {
-        req.headers.set(HttpHeaders.rangeHeader, 'bytes=$s-');
+      if (start != null || end != null) {
+        final s = start ?? 0;
+        if (end != null) {
+          req.headers.set(HttpHeaders.rangeHeader, 'bytes=$s-${end - 1}');
+        } else {
+          req.headers.set(HttpHeaders.rangeHeader, 'bytes=$s-');
+        }
       }
-    }
 
-    final resp = await req.close();
+      // 本地代理在 P2P 未就绪时最多等待 12s 再返回 503，这里加超时
+      // 防止切歌时整个打开流程无限挂起。
+      final resp = await req.close().timeout(const Duration(seconds: 30));
 
-    int? sourceLength;
-    final cr = resp.headers.value(HttpHeaders.contentRangeHeader);
-    if (cr != null) {
-      final m = RegExp(r'/(\d+)$').firstMatch(cr);
-      if (m != null) sourceLength = int.tryParse(m.group(1)!);
-    }
-    if (sourceLength == null &&
-        resp.statusCode == 200 &&
-        resp.contentLength > 0) {
-      sourceLength = resp.contentLength;
-    }
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        client.close(force: true);
+        // 显式抛错，让 just_audio 走错误回调而不是把 503 JSON 当音频解码
+        throw Exception('audio_source_http_${resp.statusCode}');
+      }
 
-    final offset = start ?? 0;
-    var contentLength = 0;
-    if (end != null) {
-      contentLength = end - offset;
-    } else if (sourceLength != null && sourceLength > offset) {
-      contentLength = sourceLength - offset;
-    } else if (resp.contentLength > 0) {
-      contentLength = resp.contentLength;
-    }
+      int? sourceLength;
+      final cr = resp.headers.value(HttpHeaders.contentRangeHeader);
+      if (cr != null) {
+        final m = RegExp(r'/(\d+)$').firstMatch(cr);
+        if (m != null) sourceLength = int.tryParse(m.group(1)!);
+      }
+      if (sourceLength == null &&
+          resp.statusCode == 200 &&
+          resp.contentLength > 0) {
+        sourceLength = resp.contentLength;
+      }
 
-    return StreamAudioResponse(
-      sourceLength: sourceLength,
-      contentLength: contentLength,
-      offset: offset,
-      stream: resp,
-      contentType: mimeType,
-    );
+      final offset = start ?? 0;
+      var contentLength = 0;
+      if (end != null) {
+        contentLength = end - offset;
+      } else if (sourceLength != null && sourceLength > offset) {
+        contentLength = sourceLength - offset;
+      } else if (resp.contentLength > 0) {
+        contentLength = resp.contentLength;
+      }
+
+      final stream = resp.transform(
+        StreamTransformer<List<int>, List<int>>.fromHandlers(
+          handleDone: (sink) {
+            client.close();
+            sink.close();
+          },
+          handleError: (error, stackTrace, sink) {
+            client.close(force: true);
+            sink.addError(error, stackTrace);
+            sink.close();
+          },
+        ),
+      );
+
+      return StreamAudioResponse(
+        sourceLength: sourceLength,
+        contentLength: contentLength,
+        offset: offset,
+        stream: stream,
+        contentType: mimeType,
+      );
+    } catch (_) {
+      client.close(force: true);
+      rethrow;
+    }
   }
 }
 
@@ -125,6 +152,7 @@ class MusicPlayerJustAudioAdapter extends MusicPlayerAdapter {
           _ProxyStreamAudioSource(proxyUrl: playbackUrl, mimeType: mimeType),
         );
       } catch (_) {
+        _hasError = true;
         if (_proxyAcquired) {
           _proxyAcquired = false;
           await LocalWebAssetServer.instance.release();
@@ -160,6 +188,16 @@ class MusicPlayerJustAudioAdapter extends MusicPlayerAdapter {
         _lastProcessingState = state.processingState;
         _notify();
       }),
+    );
+    // 播放过程中的错误（如 P2P 建流失败/中断）需要上报给控制器触发恢复
+    _subs.add(
+      _player.playbackEventStream.listen(
+        (_) {},
+        onError: (Object error, StackTrace stackTrace) {
+          _hasError = true;
+          _notify();
+        },
+      ),
     );
     _subs.add(_player.positionStream.listen((_) => _notify()));
     _subs.add(_player.durationStream.listen((_) => _notify()));

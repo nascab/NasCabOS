@@ -117,6 +117,9 @@ class MusicPlayServiceController extends GetxController
   VoidCallback? _playerListener;
   bool _isCompleted = false;
   Timer? _stallTimer;
+  Timer? _openRetryTimer;
+  int _openRetryAttempt = 0;
+  DateTime? _lastP2pPrewarmAt;
   bool _desiredPlaying = false;
   bool _pendingNotificationPermissionGuide = false;
   DateTime? _lastRecoveryAt;
@@ -173,6 +176,7 @@ class MusicPlayServiceController extends GetxController
     WidgetsBinding.instance.removeObserver(this);
     _stopPositionPolling();
     _stallTimer?.cancel();
+    _cancelOpenRetry();
     for (final sub in _audioSessionSubs) {
       sub.cancel();
     }
