@@ -1863,6 +1863,7 @@ class ViVn extends Translations {
       'play': 'Phát',
       'video_detail_continue_play': 'Tiếp tục phát',
       'video_detail_watched': 'Đã xem @time',
+      'video_detail_total_duration': 'Tổng thời lượng: @time',
       'video_detail_watched_episode': 'Đã xem @time [Tập @ep]',
       'video_detail_mark_watched': 'Đánh dấu đã xem',
       'video_detail_operation': 'Thao tác',

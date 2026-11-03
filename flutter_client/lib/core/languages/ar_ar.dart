@@ -1795,6 +1795,7 @@ class ArAr extends Translations {
       'play': 'تشغيل',
       'video_detail_continue_play': 'استئناف',
       'video_detail_watched': 'تمت المشاهدة @time',
+      'video_detail_total_duration': 'المدة الإجمالية: @time',
       'video_detail_watched_episode': 'تمت المشاهدة @time [حلقة @ep]',
       'video_detail_mark_watched': 'تحديد كمُشاهد',
       'video_detail_operation': 'عملية',

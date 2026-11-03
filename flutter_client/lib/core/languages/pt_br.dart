@@ -1877,6 +1877,7 @@ class PtBr extends Translations {
       'play': 'Reproduzir',
       'video_detail_continue_play': 'Retomar',
       'video_detail_watched': 'Assistido @time',
+      'video_detail_total_duration': 'Duração total: @time',
       'video_detail_watched_episode': 'Assistido @time [Ep @ep]',
       'video_detail_mark_watched': 'Marcar como Assistido',
       'video_detail_operation': 'Operação',

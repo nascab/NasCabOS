@@ -1803,6 +1803,7 @@ class ThTh extends Translations {
       'play': 'เล่น',
       'video_detail_continue_play': 'เล่นต่อ',
       'video_detail_watched': 'ดูแล้ว @time',
+      'video_detail_total_duration': 'ระยะเวลารวม: @time',
       'video_detail_watched_episode': 'ดูแล้ว @time [ตอนที่ @ep]',
       'video_detail_mark_watched': 'ทำเครื่องหมายว่าดูแล้ว',
       'video_detail_operation': 'การดำเนินการ',

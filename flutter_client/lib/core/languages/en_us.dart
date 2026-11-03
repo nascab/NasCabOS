@@ -1843,6 +1843,7 @@ class EnUs extends Translations {
       'play': 'Play',
       'video_detail_continue_play': 'Resume',
       'video_detail_watched': 'Watched @time',
+      'video_detail_total_duration': 'Total duration: @time',
       'video_detail_watched_episode': 'Watched @time [Ep @ep]',
       'video_detail_mark_watched': 'Mark Watched',
       'video_detail_operation': 'Operation',

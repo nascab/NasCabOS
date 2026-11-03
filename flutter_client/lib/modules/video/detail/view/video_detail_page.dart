@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../base/components/custom_bordered_icon_button.dart';
 import '../../../base/components/custom_icon_button.dart';
 import '../../base/beans/video_item_bean.dart';
 import '../../base/video_utils/video_utils.dart';
@@ -78,6 +79,52 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                   : '')
             : itemResLabel;
 
+        final closeButton = isPhone
+            ? CustomBorderedIconButton(
+                icon: Icons.close,
+                onTap: widget.onClose ?? AppRoutes.back,
+                tooltip: 'close'.tr,
+                size: 42,
+                iconSize: 22,
+                borderRadius: 999,
+                backgroundColor: theme.colorScheme.surface.withValues(
+                  alpha: 0.75,
+                ),
+                borderColor: theme.colorScheme.onSurface.withValues(
+                  alpha: 0.12,
+                ),
+                iconColor: theme.colorScheme.onSurface,
+              )
+            : CustomIconButton(
+                icon: Icons.close,
+                onPressed: widget.onClose ?? AppRoutes.back,
+                backgroundColor: Colors.black.withValues(alpha: 0.35),
+                iconColor: Colors.white,
+                tooltip: 'close'.tr,
+              );
+        final resTag = resLabel.isEmpty
+            ? null
+            : Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.22),
+                  ),
+                ),
+                child: Text(
+                  resLabel,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              );
+
         return Theme(
           data: ThemeData.dark(), //详情页锁定黑色主题
           child: Scaffold(
@@ -114,39 +161,16 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                       top: closeTop,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (isPhone && resLabel.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.22),
-                                ),
-                              ),
-                              child: Text(
-                                resLabel,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          const Spacer(),
-                          CustomIconButton(
-                            icon: Icons.close,
-                            onPressed: widget.onClose ?? AppRoutes.back,
-                            backgroundColor: Colors.black.withValues(
-                              alpha: 0.35,
-                            ),
-                            iconColor: Colors.white,
-                            tooltip: 'close'.tr,
-                          ),
-                        ],
+                        children: isPhone
+                            ? [
+                                closeButton,
+                                const Spacer(),
+                                if (resTag != null) resTag,
+                              ]
+                            : [
+                                const Spacer(),
+                                closeButton,
+                              ],
                       ),
                     ),
                     if (loading && !hasItem)

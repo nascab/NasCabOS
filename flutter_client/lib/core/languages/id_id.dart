@@ -1887,6 +1887,7 @@ class IdId extends Translations {
       'play': 'Putar',
       'video_detail_continue_play': 'Lanjutkan Putar',
       'video_detail_watched': 'Telah Ditonton @time',
+      'video_detail_total_duration': 'Durasi total: @time',
       'video_detail_watched_episode': 'Telah Ditonton @time [Episode @ep]',
       'video_detail_mark_watched': 'Tandai Telah Ditonton',
       'video_detail_operation': 'Operasi',

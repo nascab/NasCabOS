@@ -1872,6 +1872,7 @@ class DeDe extends Translations {
       'play': 'Abspielen',
       'video_detail_continue_play': 'Fortsetzen',
       'video_detail_watched': '@time angesehen',
+      'video_detail_total_duration': 'Gesamtdauer: @time',
       'video_detail_watched_episode': '@time angesehen [Ep @ep]',
       'video_detail_mark_watched': 'Als angesehen markieren',
       'video_detail_operation': 'Operation',

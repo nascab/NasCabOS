@@ -1726,6 +1726,7 @@ class JaJp extends Translations {
       'play': '再生',
       'video_detail_continue_play': '再開',
       'video_detail_watched': '@time 視聴済み',
+      'video_detail_total_duration': '合計時間：@time',
       'video_detail_watched_episode': '@time 視聴済み [Ep @ep]',
       'video_detail_mark_watched': '視聴済みにマーク',
       'video_detail_operation': '操作',

@@ -1887,6 +1887,7 @@ class FrFr extends Translations {
       'play': 'Lire',
       'video_detail_continue_play': 'Reprendre',
       'video_detail_watched': 'Regardé @time',
+      'video_detail_total_duration': 'Durée totale : @time',
       'video_detail_watched_episode': 'Regardé @time [Ep @ep]',
       'video_detail_mark_watched': 'Marquer comme vu',
       'video_detail_operation': 'Opération',

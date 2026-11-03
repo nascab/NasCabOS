@@ -1863,6 +1863,7 @@ class EsEs extends Translations {
       'play': 'Reproducir',
       'video_detail_continue_play': 'Reanudar',
       'video_detail_watched': 'Visto @time',
+      'video_detail_total_duration': 'Duración total: @time',
       'video_detail_watched_episode': 'Visto @time [Ep @ep]',
       'video_detail_mark_watched': 'Marcar como visto',
       'video_detail_operation': 'Operación',

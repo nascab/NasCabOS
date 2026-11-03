@@ -46,10 +46,7 @@ class _VideoDetailActionsSectionState extends State<VideoDetailActionsSection> {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60);
     final s = d.inSeconds.remainder(60);
-    if (h > 0) {
-      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-    return '$m:${s.toString().padLeft(2, '0')}';
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   bool get _effectiveFavorite {
@@ -143,6 +140,15 @@ class _VideoDetailActionsSectionState extends State<VideoDetailActionsSection> {
     final total = ctrl.historyDurationSeconds;
     final progress = total > 0 ? (watched / total).clamp(0.0, 1.0) : 0.0;
     final epNum = ctrl.historyEpisodeNum;
+    final totalSuffix = total > 0 ? ' / ${_formatSeconds(total)}' : '';
+    final watchedText = ctrl.mediaType == 'season' && epNum > 0
+        ? 'video_detail_watched_episode'.trParams({
+            'time': _formatSeconds(watched),
+            'ep': epNum.toString(),
+          })
+        : 'video_detail_watched'.trParams({
+            'time': _formatSeconds(watched),
+          });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,19 +286,23 @@ class _VideoDetailActionsSectionState extends State<VideoDetailActionsSection> {
               ),
               const SizedBox(width: 20),
               Text(
-                ctrl.mediaType == 'season' && epNum > 0
-                    ? 'video_detail_watched_episode'.trParams({
-                        'time': _formatSeconds(watched),
-                        'ep': epNum.toString(),
-                      })
-                    : 'video_detail_watched'.trParams({
-                        'time': _formatSeconds(watched),
-                      }),
+                '$watchedText$totalSuffix',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
+          ),
+        ],
+        if (!hasHistory && total > 0) ...[
+          const SizedBox(height: 15),
+          Text(
+            'video_detail_total_duration'.trParams({
+              'time': _formatSeconds(total),
+            }),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ],

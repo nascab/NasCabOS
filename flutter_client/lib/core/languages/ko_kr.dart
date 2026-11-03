@@ -1733,6 +1733,7 @@ class KoKr extends Translations {
       'play': '재생',
       'video_detail_continue_play': '계속 재생',
       'video_detail_watched': '@time 시청함',
+      'video_detail_total_duration': '총 재생 시간: @time',
       'video_detail_watched_episode': '@time 시청함 [제 @ep 화]',
       'video_detail_mark_watched': '시청함으로 표시',
       'video_detail_operation': '작업',

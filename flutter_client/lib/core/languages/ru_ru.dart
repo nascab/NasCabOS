@@ -1831,6 +1831,7 @@ class RuRu extends Translations {
       'play': 'Воспроизвести',
       'video_detail_continue_play': 'Продолжить',
       'video_detail_watched': 'Просмотрено @time',
+      'video_detail_total_duration': 'Общая длительность: @time',
       'video_detail_watched_episode': 'Просмотрено @time [Эпизод @ep]',
       'video_detail_mark_watched': 'Отметить как просмотренное',
       'video_detail_operation': 'Операция',

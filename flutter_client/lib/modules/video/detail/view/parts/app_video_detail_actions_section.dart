@@ -123,10 +123,7 @@ class _AppVideoDetailActionsSectionState
     final h = d.inHours;
     final m = d.inMinutes.remainder(60);
     final s = d.inSeconds.remainder(60);
-    if (h > 0) {
-      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-    return '$m:${s.toString().padLeft(2, '0')}';
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   String _resolveBrowsePath(Map<String, dynamic> m) {
@@ -541,6 +538,15 @@ class _AppVideoDetailActionsSectionState
     final total = ctrl.historyDurationSeconds;
     final progress = total > 0 ? (watched / total).clamp(0.0, 1.0) : 0.0;
     final epNum = ctrl.historyEpisodeNum;
+    final totalSuffix = total > 0 ? ' / ${_formatSeconds(total)}' : '';
+    final watchedText = ctrl.mediaType == 'season' && epNum > 0
+        ? 'video_detail_watched_episode'.trParams({
+            'time': _formatSeconds(watched),
+            'ep': epNum.toString(),
+          })
+        : 'video_detail_watched'.trParams({
+            'time': _formatSeconds(watched),
+          });
 
     final buttonBg = theme.colorScheme.surfaceContainerHighest;
     final onButton = theme.colorScheme.onSurface;
@@ -667,14 +673,19 @@ class _AppVideoDetailActionsSectionState
           ),
           const SizedBox(height: 10),
           Text(
-            ctrl.mediaType == 'season' && epNum > 0
-                ? 'video_detail_watched_episode'.trParams({
-                    'time': _formatSeconds(watched),
-                    'ep': epNum.toString(),
-                  })
-                : 'video_detail_watched'.trParams({
-                    'time': _formatSeconds(watched),
-                  }),
+            '$watchedText$totalSuffix',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.3,
+            ),
+          ),
+        ],
+        if (!hasHistory && total > 0) ...[
+          const SizedBox(height: 10),
+          Text(
+            'video_detail_total_duration'.trParams({
+              'time': _formatSeconds(total),
+            }),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.3,

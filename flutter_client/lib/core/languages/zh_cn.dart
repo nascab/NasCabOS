@@ -1673,6 +1673,7 @@ class ZhCn extends Translations {
       'play': '播放',
       'video_detail_continue_play': '继续播放',
       'video_detail_watched': '已观看@time',
+      'video_detail_total_duration': '总时长：@time',
       'video_detail_watched_episode': '已观看@time [第@ep集]',
       'video_detail_mark_watched': '标记已看',
       'video_detail_operation': '操作',
