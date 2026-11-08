@@ -7,6 +7,6 @@ Pod::Spec.new do |s|
   s.license          = { :type => 'MIT' }
   s.author           = { 'libass' => 'libass' }
   s.source           = { :path => '.' }
-  s.platform         = :ios, '11.0'
+  s.platform         = :ios, '15.5'
   s.vendored_frameworks = 'ass.framework'
 end
